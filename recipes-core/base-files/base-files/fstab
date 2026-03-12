@@ -1,0 +1,11 @@
+# security-hardened mount table
+# All pseudo-filesystems are mounted with restrictive options
+# to reduce attack surface
+proc                 /proc                proc       hidepid=2,nosuid,nodev,noexec              0 0
+sysfs                /sys                 sysfs      nosuid,nodev,noexec                        0 0
+securityfs           /sys/kernel/security securityfs nosuid,nodev,noexec                        0 0
+devpts               /dev/pts             devpts     mode=0620,gid=5,noexec,nosuid              0 0
+tmpfs                /run                 tmpfs      mode=0755,nodev,noexec,nosuid,strictatime  0 0
+tmpfs                /var/volatile        tmpfs      noexec,nodev,nosuid                        0 0
+tmpfs                /tmp                 tmpfs      noexec,nodev,nosuid                        0 0
+tmpfs                /dev/shm             tmpfs      noexec,nodev,nosuid                        0 0
