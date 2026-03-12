@@ -1,0 +1,30 @@
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT DROP [0:0]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m limit --limit 3/min --limit-burst 5 -j ACCEPT
+-A INPUT -p tcp -m tcp -s fc00::/7 --dport 443 -m connlimit --connlimit-above 30 -j DROP
+-A INPUT -p tcp -m tcp -s fe80::/10 --dport 443 -m connlimit --connlimit-above 30 -j DROP
+-A INPUT -p tcp -m tcp -s fc00::/7 --dport 443 -m conntrack --ctstate NEW -m limit --limit 25/min --limit-burst 50 -j ACCEPT
+-A INPUT -p tcp -m tcp -s fe80::/10 --dport 443 -m conntrack --ctstate NEW -m limit --limit 25/min --limit-burst 50 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 128 -m limit --limit 1/sec -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 134 -m hl --hl-eq 255 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -m hl --hl-eq 255 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -m hl --hl-eq 255 -j ACCEPT
+-A INPUT -p udp -m udp --sport 547 --dport 546 -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+-A OUTPUT -m conntrack --ctstate INVALID -j DROP
+-A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 128 -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 133 -m hl --hl-eq 255 -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -m hl --hl-eq 255 -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -m hl --hl-eq 255 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+-A OUTPUT -p udp -m udp --dport 123 -j ACCEPT
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 53 -j ACCEPT
+-A OUTPUT -p udp -m udp --sport 546 --dport 547 -j ACCEPT
+COMMIT
