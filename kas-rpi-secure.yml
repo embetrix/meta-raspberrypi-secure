@@ -38,7 +38,7 @@ local_conf_header:
     CONF_VERSION = "2"
     INHERIT += "rm_work"
     PACKAGE_CLASSES = "package_deb"
-    DISTRO_FEATURES += "systemd usrmerge integrity harden"
+    DISTRO_FEATURES += "systemd usrmerge"
     VIRTUAL-RUNTIME_init_manager = "systemd"
     DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
   debug-tweaks: |
