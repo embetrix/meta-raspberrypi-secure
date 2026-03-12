@@ -7,6 +7,9 @@
 # Enable security related distro features
 DISTRO_FEATURES += "ima integrity security harden"
 
+# Disable root login
+DISABLE_ROOT = "True"
+
 ##############################################################
 # Kernel module signing
 ##############################################################
