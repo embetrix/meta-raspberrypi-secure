@@ -27,5 +27,5 @@ IMA_EVM_X509 ?= "${IMA_EVM_KEY_DIR}/x509_ima.der"
 ##############################################################
 # Extra packages
 ##############################################################
-MACHINE_EXTRA_RRECOMMENDS += "usbguard"
+MACHINE_EXTRA_RDEPENDS += "usbguard"
 

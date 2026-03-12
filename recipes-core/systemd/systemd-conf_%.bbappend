@@ -1,8 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRC_URI += "\
-	file://90-security.conf \
-	"
+SRC_URI += "file://90-security.conf"
 
 do_install() {
 	install -d ${D}${sysconfdir}/sysctl.d
