@@ -27,7 +27,7 @@ pipeline {
 
         stage('Build-Image') {
             steps {
-                sh "BTC_CHAIN=${params.BTC_CHAIN} KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} kas build --force-checkout --update kas-satobox.yml"
+                sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} kas build --force-checkout --update kas-rpi-secure.yml"
                 archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-*.wic*" ,
                                              followSymlinks: true,
                                              fingerprint: true,
