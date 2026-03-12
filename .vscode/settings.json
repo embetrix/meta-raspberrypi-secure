@@ -1,0 +1,18 @@
+{
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/layers/bitbake/lib",
+        "${workspaceFolder}/layers/meta/lib",
+        "${workspaceFolder}/layers/poky/bitbake/lib",
+        "${workspaceFolder}/layers/poky/meta/lib"
+    ],
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/layers/bitbake/lib",
+        "${workspaceFolder}/layers/meta/lib",
+        "${workspaceFolder}/layers/poky/bitbake/lib",
+        "${workspaceFolder}/layers/poky/meta/lib"
+    ],
+    "files.associations": {
+        "*.conf": "bitbake",
+        "*.inc": "bitbake"
+    }
+}
