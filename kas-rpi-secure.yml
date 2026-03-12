@@ -25,13 +25,6 @@ repos:
     path: "layers/meta-openembedded"
     layers:
       meta-oe:
-      meta-python:
-      meta-networking:
-      meta-perl:
-      meta-python:
-      meta-multimedia:
-      meta-filesystems:
-      meta-webserver:
   meta-security:
     url: https://git.yoctoproject.org/meta-security
     branch: scarthgap
