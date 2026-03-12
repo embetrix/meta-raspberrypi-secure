@@ -28,8 +28,8 @@ pipeline {
         stage('Build-Image') {
             steps {
                 sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} kas build --force-checkout --update kas-rpi-secure.yml"
-                archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-*.wic*" ,
-                                             followSymlinks: true,
+                archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-*" ,
+                                             followSymlinks: false,
                                              fingerprint: true,
                                              onlyIfSuccessful: true
             }
