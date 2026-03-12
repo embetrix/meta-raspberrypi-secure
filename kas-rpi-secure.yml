@@ -3,7 +3,7 @@ header:
 machine: "raspberrypi5"
 distro: poky
 target:
-  - core-image-minimal
+  - rpi-secure-image
 repos:
   # It's current revision will be used to perform the build.
   meta-raspberrypi-secure:
@@ -41,8 +41,6 @@ local_conf_header:
     DISTRO_FEATURES += "systemd usrmerge"
     VIRTUAL-RUNTIME_init_manager = "systemd"
     DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
-  debug-tweaks: |
-    EXTRA_IMAGE_FEATURES = "debug-tweaks"
   sdk: |
     SDKMACHINE = "x86_64"
   license_flags: |
