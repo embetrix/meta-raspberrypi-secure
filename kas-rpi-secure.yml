@@ -32,7 +32,6 @@ repos:
     layers:
       .:
       meta-integrity:
-      meta-hardening:
 local_conf_header:
   standard: |
     CONF_VERSION = "2"
