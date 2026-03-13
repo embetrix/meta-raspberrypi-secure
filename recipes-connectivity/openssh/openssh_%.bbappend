@@ -1,19 +1,24 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRC_URI += "file://authorized_keys"
+SRC_URI += "file://ssh_ca.pub"
 
-SSH_USER ?= "myadmin"
 
-# Create myadmin in pseudo's fakeroot so chown works at do_install time.
-# openssh already inherits useradd; we append our user to it.
-USERADD_PACKAGES:append = " ${PN}"
-USERADD_PARAM:${PN} = "-m -s /bin/sh ${SSH_USER}"
-GROUPADD_PARAM:${PN} = "wheel"
+do_install:append () {
 
-do_install:append() {
-    install -d -m 0700 ${D}/home/${SSH_USER}/.ssh
-    install -m 0600 ${WORKDIR}/authorized_keys ${D}/home/${SSH_USER}/.ssh/authorized_keys
-    chown -R ${SSH_USER}:${SSH_USER} ${D}/home/${SSH_USER}/.ssh
+	sed -i -e 's:#AllowTcpForwarding yes:AllowTcpForwarding no:' ${D}${sysconfdir}/ssh/sshd_config
+	sed -i -e 's:ClientAliveCountMax 4:ClientAliveCountMax 2:' ${D}${sysconfdir}/ssh/sshd_config
+	sed -i -e 's:#LogLevel INFO:LogLevel VERBOSE:' ${D}${sysconfdir}/ssh/sshd_config
+	sed -i -e 's:#MaxSessions.*:MaxSessions 2:' ${D}${sysconfdir}/ssh/sshd_config
+	sed -i -e 's:#TCPKeepAlive yes:TCPKeepAlive no:' ${D}${sysconfdir}/ssh/sshd_config
+	sed -i -e 's:#AllowAgentForwarding yes:AllowAgentForwarding no:' ${D}${sysconfdir}/ssh/sshd_config
+    sed -i -e 's:#PermitRootLogin.*:PermitRootLogin prohibit-password:' ${D}${sysconfdir}/ssh/sshd_config
+	if grep -q '^[#[:space:]]*TrustedUserCAKeys[[:space:]]' ${D}${sysconfdir}/ssh/sshd_config; then
+		sed -i -e 's:^[#[:space:]]*TrustedUserCAKeys[[:space:]].*:TrustedUserCAKeys /etc/ssh/ssh_ca.pub:' ${D}${sysconfdir}/ssh/sshd_config
+	else
+		echo 'TrustedUserCAKeys /etc/ssh/ssh_ca.pub' >> ${D}${sysconfdir}/ssh/sshd_config
+	fi
+    
+	install -m 0644 ${WORKDIR}/ssh_ca.pub ${D}${sysconfdir}/ssh/ssh_ca.pub
 }
 
-FILES:${PN} += "/home/${SSH_USER}/.ssh"
+FILES:${PN}-sshd += "${sysconfdir}/ssh/ssh_ca.pub"
