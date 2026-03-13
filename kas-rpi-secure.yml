@@ -1,7 +1,7 @@
 header:
   version: 11
 machine: "raspberrypi5"
-distro: poky
+distro: rpi-secure
 target:
   - rpi-secure-image
 repos:
