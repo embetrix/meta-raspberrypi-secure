@@ -1,6 +1,8 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRC_URI += "file://rules.conf file://usbguard-daemon.conf"
+SRC_URI += "file://rules.conf \
+            file://usbguard-daemon.conf \
+            "
 
 DEPENDS += "audit"
 RDEPENDS:${PN} += "auditd"
