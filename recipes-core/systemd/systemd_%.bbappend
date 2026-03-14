@@ -7,9 +7,9 @@ PACKAGECONFIG:remove = " \
     utmp \
 "
 
-PACKAGECONFIG:append = " cryptsetup cryptsetup-plugins"
+PACKAGECONFIG:append = " cryptsetup cryptsetup-plugins journal-upload"
 
-RRECOMMENDS:${PN} += "systemd-crypt systemd-container"
+RRECOMMENDS:${PN} += "${PN}-journal-upload ${PN}-crypt ${PN}-container"
 
 do_install:append() {
 
