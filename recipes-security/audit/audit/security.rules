@@ -1,0 +1,47 @@
+## Filesystem tamper detection (read-only rootfs: triggers indicate remount or overlay breach)
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/ssh/sshd_config -p wa -k sshd
+-w /etc/audit/ -p wa -k audit-config
+-w /etc/iptables/ -p wa -k firewall
+-w /etc/usbguard/ -p wa -k usbguard
+-w /etc/systemd/system/ -p wa -k systemd
+
+## Mount operations: detect remount rw attempts on read-only rootfs
+-a always,exit -F arch=b64 -S mount,umount2 -k mount
+-a always,exit -F arch=b32 -S mount,umount2 -k mount
+
+## Kernel module loading: log even if signature verification rejects them
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
+-a always,exit -F arch=b32 -S init_module,finit_module,delete_module -k modules
+
+## Privilege escalation
+-a always,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -k privilege
+-a always,exit -F arch=b32 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -k privilege
+
+## Execution tracking: all execve calls
+-a always,exit -F arch=b64 -S execve -k exec
+-a always,exit -F arch=b32 -S execve -k exec
+
+## ptrace: process injection / debugging attempts
+-a always,exit -F arch=b64 -S ptrace -k ptrace
+-a always,exit -F arch=b32 -S ptrace -k ptrace
+
+## Time changes: clock tampering undermines log integrity
+-a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k time
+-a always,exit -F arch=b32 -S adjtimex,settimeofday,clock_settime -k time
+
+## Network: socket creation outside established services
+-a always,exit -F arch=b64 -S socket -F a0=2 -k network-ipv4
+-a always,exit -F arch=b64 -S socket -F a0=10 -k network-ipv6
+
+## Failed access attempts: someone probing the filesystem
+-a always,exit -F arch=b64 -S open,openat -F exit=-EACCES -k access-denied
+-a always,exit -F arch=b64 -S open,openat -F exit=-EPERM -k access-denied
+-a always,exit -F arch=b32 -S open,openat -F exit=-EACCES -k access-denied
+-a always,exit -F arch=b32 -S open,openat -F exit=-EPERM -k access-denied
+
+## Personality / prctl: sandbox escape indicators
+-a always,exit -F arch=b64 -S personality -k personality
+-a always,exit -F arch=b64 -S prctl -k prctl
