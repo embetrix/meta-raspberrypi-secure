@@ -37,10 +37,10 @@
 -a always,exit -F arch=b64 -S socket -F a0=10 -k network-ipv6
 
 ## Failed access attempts: someone probing the filesystem
--a always,exit -F arch=b64 -S open,openat -F exit=-EACCES -k access-denied
--a always,exit -F arch=b64 -S open,openat -F exit=-EPERM -k access-denied
--a always,exit -F arch=b32 -S open,openat -F exit=-EACCES -k access-denied
--a always,exit -F arch=b32 -S open,openat -F exit=-EPERM -k access-denied
+-a always,exit -F arch=b64 -S openat -F exit=-EACCES -k access-denied
+-a always,exit -F arch=b64 -S openat -F exit=-EPERM -k access-denied
+-a always,exit -F arch=b32 -S openat -F exit=-EACCES -k access-denied
+-a always,exit -F arch=b32 -S openat -F exit=-EPERM -k access-denied
 
 ## Personality / prctl: sandbox escape indicators
 -a always,exit -F arch=b64 -S personality -k personality
