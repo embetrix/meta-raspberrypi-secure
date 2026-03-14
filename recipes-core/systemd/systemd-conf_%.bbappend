@@ -1,6 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRC_URI += "file://90-security.conf"
+SRC_URI += "file://90-security.conf \
+            file://timesyncd.conf"
 
 do_install:append() {
 	install -d ${D}${sysconfdir}/sysctl.d
