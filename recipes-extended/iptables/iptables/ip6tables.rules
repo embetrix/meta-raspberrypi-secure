@@ -10,14 +10,25 @@
 -A INPUT -p tcp -m tcp -s fe80::/10 --dport 443 -m connlimit --connlimit-above 30 -j DROP
 -A INPUT -p tcp -m tcp -s fc00::/7 --dport 443 -m conntrack --ctstate NEW -m limit --limit 25/min --limit-burst 50 -j ACCEPT
 -A INPUT -p tcp -m tcp -s fe80::/10 --dport 443 -m conntrack --ctstate NEW -m limit --limit 25/min --limit-burst 50 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 1 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 2 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 3/0 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 4/1 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 4/2 -j ACCEPT
 -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 128 -m limit --limit 1/sec -j ACCEPT
 -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 134 -m hl --hl-eq 255 -j ACCEPT
 -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -m hl --hl-eq 255 -j ACCEPT
 -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -m hl --hl-eq 255 -j ACCEPT
 -A INPUT -p udp -m udp --sport 547 --dport 546 -j ACCEPT
+-A INPUT -m limit --limit 5/min --limit-burst 10 -j LOG --log-prefix "ip6tables:DROP:IN " --log-level 4
 -A OUTPUT -o lo -j ACCEPT
 -A OUTPUT -m conntrack --ctstate INVALID -j DROP
 -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 1 -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 2 -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 3/0 -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 4/1 -j ACCEPT
+-A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 4/2 -j ACCEPT
 -A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 128 -j ACCEPT
 -A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 133 -m hl --hl-eq 255 -j ACCEPT
 -A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -m hl --hl-eq 255 -j ACCEPT
@@ -27,4 +38,6 @@
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
 -A OUTPUT -p tcp -m tcp --dport 53 -j ACCEPT
 -A OUTPUT -p udp -m udp --sport 546 --dport 547 -j ACCEPT
+-A OUTPUT -m limit --limit 5/min --limit-burst 10 -j LOG --log-prefix "ip6tables:DROP:OUT " --log-level 4
+-A FORWARD -m limit --limit 5/min --limit-burst 10 -j LOG --log-prefix "ip6tables:DROP:FWD " --log-level 4
 COMMIT
