@@ -22,11 +22,11 @@
 #   RSA-2048 private key is generated at ${DEPLOY_DIR_IMAGE}/sec-boot-sign.key
 #
 #   To deploy boot.img/boot.sig to the boot partition via wic add:
-#     IMAGE_BOOT_FILES += "boot.img boot.sig"
+#   IMAGE_BOOT_FILES += "boot.img boot.sig"
 #   This remains backward compatible when secure boot signing is disabled.
 #
 #   For strict secure boot, use:
-#     IMAGE_BOOT_FILES = "boot.img boot.sig"
+#   IMAGE_BOOT_FILES = "boot.img boot.sig"
 #
 
 inherit image_types
@@ -37,7 +37,7 @@ RPI_SECURE_BOOT_SIGN_KEY ?= ""
 RPI_SECURE_BOOT_SIGN_KEY_GEN ?= "0"
 
 # Space-separated list of files to remove from boot.img after it is populated
-SECBOOT_FILES_EXCLUDE ?= ""
+SECURE_BOOT_FILES_EXCLUDE ?= ""
 
 # Boot FAT size in KiB for the standalone boot.img.
 # Keep this larger than the sdcard_image-rpi default to leave room for
@@ -49,7 +49,7 @@ RPI_SECURE_BOOTIMG = "${DEPLOY_DIR_IMAGE}/boot.img"
 RPI_SECURE_BOOTIMG_SIG = "${DEPLOY_DIR_IMAGE}/boot.sig"
 RPI_SECURE_BOOT_SIGN_KEY_GENERATED = "${DEPLOY_DIR_IMAGE}/sec-boot-sign.key"
 
-do_image_rpi_secboot[depends] = " \
+do_image_rpi_secure_boot[depends] = " \
     mtools-native:do_populate_sysroot \
     dosfstools-native:do_populate_sysroot \
     virtual/kernel:do_deploy \
@@ -60,12 +60,12 @@ do_image_rpi_secboot[depends] = " \
     ${@bb.utils.contains('RPI_USE_U_BOOT', '1', 'u-boot-default-script:do_deploy', '',d)} \
 "
 
-do_image_rpi_secboot[recrdeps] = "do_build"
+do_image_rpi_secure_boot[recrdeps] = "do_build"
 
-# Ensure wic images depend on rpi-secboot image type when both are enabled.
-IMAGE_TYPEDEP:wic += " rpi-secboot"
+# Ensure wic images depend on rpi-secure-boot image type when both are enabled.
+IMAGE_TYPEDEP:wic += " rpi-secure-boot"
 
-IMAGE_CMD:rpi-secboot () {
+IMAGE_CMD:rpi-secure-boot () {
 
     # Check if we are building with device tree support
     DTS="${@make_dtb_boot_files(d)}"
@@ -106,8 +106,8 @@ IMAGE_CMD:rpi-secboot () {
     fi
     
     # Exclude files from boot.img if specified
-    if [ -n "${SECBOOT_FILES_EXCLUDE}" ]; then
-        for entry in ${SECBOOT_FILES_EXCLUDE} ; do
+    if [ -n "${SECURE_BOOT_FILES_EXCLUDE}" ]; then
+        for entry in ${SECURE_BOOT_FILES_EXCLUDE} ; do
             mdel -i ${WORKDIR}/boot.img ::${entry} || bbfatal "mdel cannot remove ${entry} from boot.img"
         done
     fi
