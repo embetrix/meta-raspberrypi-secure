@@ -14,7 +14,8 @@
 ## Kernel module loading: log even if signature verification rejects them
 -a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
 
-## Privilege escalation
+## Privilege escalation (exclude sshd)
+-a never,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -F exe=/usr/sbin/sshd
 -a always,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -k privilege
 
 ## Execution tracking: all execve calls
@@ -27,19 +28,28 @@
 -a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k time
 
 ## Network: socket creation outside established services
+-a never,exit -F arch=b64 -S socket -F exe=/usr/lib/systemd/systemd-timesyncd
 -a always,exit -F arch=b64 -S socket -F a0=2 -k network-ipv4
 -a always,exit -F arch=b64 -S socket -F a0=10 -k network-ipv6
 
-## Exclude trusted systemd internals from noisy syscall rules
+## Exclude trusted service internals from noisy syscall rules
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-udevd
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/bin/udevadm
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-userwork
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-userdbd
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-timesyncd
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd
+-a never,exit -F arch=b64 -S prctl -F exe=/usr/sbin/sshd
+-a never,exit -F arch=b64 -S prctl -F exe=/usr/bin/journalctl
+-a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-journald
 -a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-timesyncd
 -a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-resolved
 -a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd
+-a never,exit -F arch=b64 -S connect -F exe=/usr/sbin/sshd
+-a never,exit -F arch=b64 -S accept,accept4 -F exe=/usr/lib/systemd/systemd-userwork
+-a never,exit -F arch=b64 -S accept,accept4 -F exe=/usr/lib/systemd/systemd-userdbd
+-a never,exit -F arch=b64 -S bind -F exe=/usr/lib/systemd/systemd-timesyncd
+-a never,exit -F arch=b64 -S bind -F exe=/usr/lib/systemd/systemd-resolved
 
 ## Network intrusion detection: inbound connections, outbound connections, listening sockets
 -a always,exit -F arch=b64 -S connect -k network-connect
