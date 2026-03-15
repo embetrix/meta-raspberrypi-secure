@@ -52,10 +52,14 @@ IMA_EVM_KEY_DIR = "${INTEGRITY_BASE}/data/debug-keys"
 IMA_EVM_PRIVKEY ?= "${IMA_EVM_KEY_DIR}/privkey_ima.pem"
 IMA_EVM_X509 ?= "${IMA_EVM_KEY_DIR}/x509_ima.der"
 
-# Runtime Packages
+# Extra Runtime Packages
 MACHINE_EXTRA_RRECOMMENDS += "\
     usbguard \
     rpi-config \
     rpi-eeprom \
     raspi-utils \
     "
+
+# CVE checks
+INHERIT += "cve-check"
+include conf/distro/include/cve-extra-exclusions.inc
