@@ -9,13 +9,15 @@
 -w /etc/systemd/system/ -p wa -k systemd
 
 ## Mount operations: detect remount rw attempts on read-only rootfs
+-a never,exit -F arch=b64 -S mount,umount2 -F exe=/usr/lib/systemd/systemd-executor
 -a always,exit -F arch=b64 -S mount,umount2 -k mount
 
 ## Kernel module loading: log even if signature verification rejects them
 -a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
 
-## Privilege escalation (exclude sshd)
+## Privilege escalation (exclude sshd and systemd-executor)
 -a never,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -F exe=/usr/sbin/sshd
+-a never,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -F exe=/usr/lib/systemd/systemd-executor
 -a always,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -k privilege
 
 ## Execution tracking: all execve calls
@@ -42,10 +44,13 @@
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/sbin/sshd
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/bin/journalctl
 -a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-journald
+-a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-executor
+-a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-journal-upload
 -a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-timesyncd
 -a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-resolved
 -a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd
 -a never,exit -F arch=b64 -S connect -F exe=/usr/sbin/sshd
+-a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-executor
 -a never,exit -F arch=b64 -S accept,accept4 -F exe=/usr/lib/systemd/systemd-userwork
 -a never,exit -F arch=b64 -S accept,accept4 -F exe=/usr/lib/systemd/systemd-userdbd
 -a never,exit -F arch=b64 -S bind -F exe=/usr/lib/systemd/systemd-timesyncd
@@ -60,6 +65,13 @@
 ## Failed access attempts: someone probing the filesystem
 -a always,exit -F arch=b64 -S openat -F exit=-EACCES -k access-denied
 -a always,exit -F arch=b64 -S openat -F exit=-EPERM -k access-denied
+
+## System integrity: reboot attempts, hostname/identity tampering
+-a always,exit -F arch=b64 -S reboot -k reboot
+-a always,exit -F arch=b64 -S sethostname,setdomainname -k hostname
+
+## Log integrity: detect log deletion or modification
+-w /var/log/ -p wa -k log-tamper
 
 ## Personality / prctl: sandbox escape indicators
 -a always,exit -F arch=b64 -S personality -k personality
