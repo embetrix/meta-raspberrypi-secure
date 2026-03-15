@@ -4,7 +4,7 @@ MACHINE_EXTRA_RDEPENDS += "usbguard"
 # Silence firmware boot stage
 ENABLE_UART = "0"
 DISABLE_SPLASH = "1"
-RPI_EXTRA_CONFIG = "init_uart_baud=0\n"
+RPI_EXTRA_CONFIG = "init_uart_baud=0\ndtparam=watchdog=on\n"
 
 # Suppress kernel messages on console and remove any serial console= from cmdline
 SERIAL_CONSOLES = ""
