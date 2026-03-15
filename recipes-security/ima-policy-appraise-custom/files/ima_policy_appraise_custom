@@ -1,0 +1,44 @@
+#
+#  https://ima-doc.readthedocs.io/en/latest/policy-syntax.html
+#
+
+# Skip pseudo filesystems
+## PROC_SUPER_MAGIC
+# dont_appraise fsmagic=0x9fa0
+## SYSFS_MAGIC
+# dont_appraise fsmagic=0x62656572
+## DEBUGFS_MAGIC
+# dont_appraise fsmagic=0x64626720
+## TMPFS_MAGIC
+# dont_appraise fsmagic=0x01021994
+## DEVPTS_SUPER_MAGIC
+# dont_appraise fsmagic=0x1cd1
+## SECURITYFS_MAGIC
+# dont_appraise fsmagic=0x73636673
+# CGROUP_SUPER_MAGIC
+# dont_appraise fsmagic=0x27e0eb
+# CGROUP2_SUPER_MAGIC
+# dont_appraise fsmagic=0x63677270
+## RAMFS_MAGIC
+dont_appraise fsmagic=0x858458f6
+
+##########################################################################
+# Enforce signature checks for :
+
+## Executables (e.g., binaries)
+appraise func=BPRM_CHECK mask=MAY_EXEC appraise_type=imasig
+
+## Libraries (e.g., .so files)
+appraise func=MMAP_CHECK mask=MAY_EXEC appraise_type=imasig
+
+## Firmware
+appraise func=FIRMWARE_CHECK appraise_type=imasig
+
+## Kernel modules
+appraise func=MODULE_CHECK appraise_type=imasig
+
+## IMA Policy itself 
+appraise func=POLICY_CHECK appraise_type=imasig
+
+## all opened files from filesystem specified with __FSUUID__
+appraise func=FILE_CHECK mask=^MAY_READ fsuuid=__FSUUID__ appraise_type=imasig
