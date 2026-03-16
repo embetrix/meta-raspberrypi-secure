@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
-# Author: Ayoub Zaki <ayoub.zaki@embetrix.com>
+# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+
 # Original reference:
 #   https://github.com/agherzan/meta-raspberrypi/blob/master/classes/sdcard_image-rpi.bbclass
 #
