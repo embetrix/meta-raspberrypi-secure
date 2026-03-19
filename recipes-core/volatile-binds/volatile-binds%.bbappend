@@ -5,4 +5,5 @@ AVOID_OVERLAYFS = "1"
 VOLATILE_BINDS += "\
                 /var/data/etc/certs /etc/certs\n\
                 /var/data/home/root /home/root\n\
+                /var/data/var/log   /var/log\n\
                 /var/data/etc/systemd/network/ /etc/systemd/network/\n"
