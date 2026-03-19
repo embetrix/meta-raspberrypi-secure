@@ -191,7 +191,7 @@ setup_integrity() {
 
 	# Enable EVM in signature verification mode only 
 	# and lock the configuration to prevent changes at runtime
-	klog "0x80000002" > /sys/kernel/security/integrity/evm/evm
+	echo "0x80000002" > /sys/kernel/security/integrity/evm/evm
 }
 
 # Derive LUKS encryption key from secure storage:
