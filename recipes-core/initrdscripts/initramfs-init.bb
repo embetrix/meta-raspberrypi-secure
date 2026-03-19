@@ -1,14 +1,21 @@
 SUMMARY = "basic initramfs image init script"
-LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
+LICENSE = "GPL-3.0-or-later"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-3.0-or-later;md5=1c76c4cc354acaac30ed4d5eefea7245"
 
 SRC_URI = "file://initramfs-init.sh"
 
 RDEPENDS:${PN}:append = " \
                         busybox \
+                        util-linux-mount \
                         util-linux-blkid \
+                        e2fsprogs-mke2fs \
+                        e2fsprogs-e2fsck \
+                        e2fsprogs-resize2fs \
+                        cryptsetup \
+                        raspi-utils \
+                        block-device-id \
                         keyutils \
-                        ima-policy-appraise-custom \
+                        ima-policy-appraise-sb \
                         ima-evm-keys \
                         "
 
