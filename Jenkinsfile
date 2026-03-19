@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+// Jenkinsfile for building Raspberry Pi secure images with KAS and Yocto
 pipeline {
     agent { dockerfile true }
 
