@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+# Description: Create a secure Raspberry Pi GPT disk image 
+# with A/B boot and root partitions plus data and backup volumes
+part /        --ondisk mmcblk0  --part-name bootA      --fixed-size 512M   --fstype=vfat  --source bootimg-partition --align 4096 --active 
+part /        --ondisk mmcblk0  --part-name bootB      --fixed-size 512M   --fstype=vfat
+part /        --ondisk mmcblk0  --part-name rootA      --fixed-size 2048M  --fstype=${ROOTFS_TYPE}  --source rootfs
+part /        --ondisk mmcblk0  --part-name rootB      --fixed-size 2048M  --fstype=${ROOTFS_TYPE}  --source rootfs
+part /        --ondisk mmcblk0  --part-name data       --fixed-size 2048M  --fstype=ext4
+part /        --ondisk mmcblk0  --part-name backups    --fixed-size 2048M  --fstype=ext4
+bootloader --ptable gpt
