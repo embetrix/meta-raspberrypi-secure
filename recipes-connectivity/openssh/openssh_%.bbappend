@@ -1,6 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRC_URI += "file://ssh_ca.pub \
+SRC_URI += "file://ssh_ca_dev.pub \
             file://sshd-time-sync.conf"
 
 PACKAGECONFIG:remove = "systemd-sshd-socket-mode"
@@ -24,7 +24,7 @@ do_install:append () {
 		fi
 	done
 
-	install -m 0644 ${WORKDIR}/ssh_ca.pub ${D}${sysconfdir}/ssh/ssh_ca.pub
+	install -m 0644 ${WORKDIR}/ssh_ca_dev.pub ${D}${sysconfdir}/ssh/ssh_ca.pub
 
 	# Drop-in: start sshd after NTP sync (certificate validity needs correct time)
 	install -d ${D}${systemd_system_unitdir}/sshd.service.d
