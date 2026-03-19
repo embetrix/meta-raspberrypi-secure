@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
-# Early initramfs init script:
-#   mount_pseudo_fs  - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
-#   get_boot_slot    - Detect A/B boot slot from device tree and set ROOT_DEV accordingly
-#   get_key     - Derive LUKS key from OTP HMAC or serial fallback
-#   encrypt_rootfs   - First-boot rootfs encryption via update partition
-#   mount_data_luks  - Format (first boot) and mount LUKS data partitions
-#   setup_ima_evm    - Import IMA/EVM keys and load appraise custom policy
+# initramfs init script:
+#   mount_early_fs   - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
+#   get_boot_slot    - Detect A/B boot slot from device tree
+#   get_key          - Derive LUKS key from OTP HMAC or serial fallback
+#   encrypt_rootfs   - First-boot rootfs encryption
+#   mount_data_luks  - First-boot data partitions encryption
+#   setup_integrity  - Import IMA/EVM keys and load secure boot policy
 #   switch_root      - Switch to the real root filesystem
 #
 
@@ -158,7 +158,7 @@ await_blockdev() {
 	fi
 }
 
-setup_ima_evm() {
+setup_integrity() {
 
 	root_dev="$1"
 
@@ -377,7 +377,7 @@ mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 	|| fatal "cannot mount boot device $BOOT_DEV"
 
 # Setup IMA/EVM
-setup_ima_evm "/dev/mapper/$ROOT_DM_NAME"
+setup_integrity "/dev/mapper/$ROOT_DM_NAME"
 
 # Switch to real root
 klog "Switch to real root..."
