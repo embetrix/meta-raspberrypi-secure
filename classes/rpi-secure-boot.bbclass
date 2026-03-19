@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
 # Original reference:
@@ -26,11 +26,11 @@
 #   IMAGE_BOOT_FILES += "boot.img boot.sig"
 #   This remains backward compatible when secure boot signing is disabled.
 #
-#   For strict secure boot, use:
+#   For strict secure boot usage:
 #   IMAGE_BOOT_FILES = "boot.img boot.sig"
 #
 
-inherit image_types
+inherit image_types signing
 
 # Enable signing of boot.img in deploy directory.
 RPI_SECURE_BOOT_SIGN ?= "0"
