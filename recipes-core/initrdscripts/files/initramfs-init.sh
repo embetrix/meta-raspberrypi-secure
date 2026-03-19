@@ -9,17 +9,13 @@
 #   encrypt_rootfs   - First-boot rootfs encryption
 #   mount_data_luks  - First-boot data partitions encryption
 #   setup_integrity  - Import IMA/EVM keys and load secure boot policy
+#   setup_machine_id - Persistent machine-id on data partition
 #   switch_root      - Switch to the real root filesystem
 #
 
 #set -x
 
 export PATH=$PATH:/sbin:/usr/sbin
-
-ROOT_MNT="/tmp/rootfs"
-BOOT_MNT="/boot"
-DATA_MNT="/var/data"
-BACKUPS_MNT="/var/backups"
 
 BOOT_DEV=""
 ROOT_DEV=""
@@ -31,6 +27,11 @@ ROOT_DM_NAME="root"
 UPDATE_DM_NAME="update"
 DATA_DM_NAME="data"
 BACKUPS_DM_NAME="backups"
+
+ROOT_MNT="/tmp/rootfs"
+BOOT_MNT="/boot"
+DATA_MNT="/var/data"
+BACKUPS_MNT="/var/backups"
 
 OPT_ROOT="ro,noatime"
 OPT_PART="noexec,nodev,nosuid"
@@ -58,10 +59,10 @@ TIMEOUT=40
 
 OTP_KEY_ID=1
 
-# LUKS dm-integrity: set to "hmac-sha256" 
+# dm-integrity: set to "hmac-sha256"
 # to enable block-level tamper detection
 # Disable for better RW performance
-LUKS_INTEGRITY=""
+DM_INTEGRITY=""
 
 # Init
 INIT="/sbin/init"
@@ -70,7 +71,6 @@ fatal() {
 
 	echo "FATAL: $1" >&2
 	reboot -f
-	#exec sh
 }
 
 klog() {
@@ -83,6 +83,22 @@ klog() {
 hex2bin() {
 
 	printf '%b' "$(echo "$1" | sed 's/../\\x&/g')"
+}
+
+# Persistent machine-id on the data partition
+# Bind-mount over the empty /etc/machine-id before systemd starts
+setup_machine_id() {
+
+	machine_id_file="$ROOT_MNT$DATA_MNT/etc/machine-id"
+	if [ ! -f "$machine_id_file" ]; then
+		mkdir -p "${machine_id_file%/*}" \
+			|| fatal "cannot create directory for machine-id"
+		MACHINE_ID=$(hexdump -vn16 -e '/1 "%02x"' /dev/urandom)
+		[ -n "$MACHINE_ID" ] || fatal "cannot generate machine-id"
+		echo $MACHINE_ID > "$machine_id_file"
+	fi
+	mount -o bind "$machine_id_file" "$ROOT_MNT/etc/machine-id" \
+		|| fatal "cannot bind-mount machine-id"
 }
 
 mount_early_fs() {
@@ -252,11 +268,11 @@ encrypt_rootfs() {
 	update_dev="$2"
 	root_dm="$3"
 	update_dm="$4"
+	luks_opts="--key-size 256"
 
 	klog "First-boot rootfs encryption: migrating plain rootfs to dm-crypt LUKS..."
 	enc_start=$(date +%s)
 
-	luks_opts="--type luks2 --cipher aes-xts-plain64 --key-size 256"
 
 	# Detect filesystem type
 	fstype=$(blkid -s TYPE -o value "$update_dev" 2>/dev/null) \
@@ -309,11 +325,10 @@ mount_data_luks() {
 	label="$3"
 	mnt="$4"
 	mnt_opts="${5:-$OPT_PART}"
+	luks_opts="--key-size 256"
 
 	[ -n "$dev" ] || return 0
-
-	luks_opts="--type luks2 --cipher aes-xts-plain64 --key-size 256"
-	[ -n "$LUKS_INTEGRITY" ] && luks_opts="$luks_opts --integrity $LUKS_INTEGRITY"
+	[ -n "$DM_INTEGRITY" ] && luks_opts="$luks_opts --integrity $DM_INTEGRITY"
 
 	if ! cryptsetup isLuks "$dev" 2>/dev/null; then
 		fmt_start=$(date +%s)
@@ -360,10 +375,11 @@ else
 		|| fatal "cannot open update LUKS device $UPDATE_DEV"
 fi
 
-# Mount encrypted root filesystem
+# Probe and validate root filesystem type
 fstype=$(blkid -s TYPE -o value "/dev/mapper/$ROOT_DM_NAME" 2>/dev/null) \
 	|| fatal "cannot detect root filesystem type"
 mkdir -p "$ROOT_MNT"
+# Mount encrypted root filesystem
 mount -t "$fstype" -o "$OPT_ROOT" "/dev/mapper/$ROOT_DM_NAME" "$ROOT_MNT" \
 	|| fatal "cannot mount root partition"
 
@@ -378,6 +394,9 @@ mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 
 # Setup IMA/EVM
 setup_integrity "/dev/mapper/$ROOT_DM_NAME"
+
+# Setup persistent Machine-id
+setup_machine_id
 
 # Switch to real root
 klog "Switch to real root..."
