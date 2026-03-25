@@ -1,6 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 # security-hardened mount table
-# All pseudo-filesystems are mounted with restrictive options
-# to reduce attack surface
+# All mount points with restrictive options to reduce attack surface
+#
 proc                 /proc                proc       hidepid=2,nosuid,nodev,noexec              0 0
 sysfs                /sys                 sysfs      nosuid,nodev,noexec                        0 0
 securityfs           /sys/kernel/security securityfs nosuid,nodev,noexec                        0 0
@@ -9,3 +11,5 @@ tmpfs                /run                 tmpfs      mode=0755,nodev,noexec,nosu
 tmpfs                /var/volatile        tmpfs      noexec,nodev,nosuid                        0 0
 tmpfs                /tmp                 tmpfs      noexec,nodev,nosuid                        0 0
 tmpfs                /dev/shm             tmpfs      noexec,nodev,nosuid                        0 0
+/dev/mapper/data     /var/data            ext4       noexec,nodev,nosuid,x-systemd.before=local-fs.target  0 0
+/dev/mapper/backups  /var/backups         ext4       noexec,nodev,nosuid,x-systemd.before=local-fs.target  0 0
