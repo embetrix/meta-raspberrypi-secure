@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+# KAS configuration for building a secure Raspberry Pi image with Yocto Project
 header:
   version: 11
 machine: "raspberrypi5"
@@ -25,6 +28,13 @@ repos:
     path: "layers/meta-openembedded"
     layers:
       meta-oe:
+      meta-python:
+      meta-networking:
+      meta-perl:
+      meta-python:
+      meta-multimedia:
+      meta-filesystems:
+      meta-webserver:
   meta-security:
     url: https://git.yoctoproject.org/meta-security
     branch: scarthgap
@@ -32,14 +42,22 @@ repos:
     layers:
       .:
       meta-integrity:
+  meta-selinux:
+    url: "https://git.yoctoproject.org/git/meta-selinux.git"
+    branch: scarthgap
+    path: "layers/meta-selinux"
 local_conf_header:
   standard: |
     CONF_VERSION = "2"
     INHERIT += "rm_work"
+    EXTRA_IMAGE_FEATURES += "debug-tweaks"
     PACKAGE_CLASSES = "package_deb"
     DISTRO_FEATURES += "systemd usrmerge"
     VIRTUAL-RUNTIME_init_manager = "systemd"
+    VIRTUAL-RUNTIME_initscripts = ""
     DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
+  security: |
+    RPI_SECURITY_PROFILE = "dev"
   sdk: |
     SDKMACHINE = "x86_64"
   license_flags: |
