@@ -1,3 +1,0 @@
-define KFEATURE_DESCRIPTION "Netfilter built-in support for iptables"
-
-kconf non-hardware netfilter.cfg
