@@ -1,65 +1,75 @@
 
-# Firmware Boot
-DISABLE_SPLASH = "1"
-RPI_EXTRA_CONFIG = "init_uart_baud=0\ndtparam=watchdog=on\n"
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+#
 
-# Console Policy
-SERIAL_CONSOLES = ""
-CMDLINE:append = " console=null quiet loglevel=0 ro"
+# Security profile "dev" or "prod"
+RPI_SECURITY_PROFILE ?= "dev"
 
-# Boot Artifacts
-# Ship the bundled kernel+initramfs image as the firmware-loaded kernel.
-IMAGE_BOOT_FILES += "${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERNELIMAGE}"
+# Firmware
+#ENABLE_WATCHDOG         = "1"
+#ENABLE_USB_MAX_CURRENT  = "1"
+#ENABLE_TRYBOOT_AB       = "1"
+#LOCK_DEVICE_KEY         = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
+ENABLE_UART             = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '1', d)}"
+DISABLE_SPLASH          = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
+# check for more options in
+# https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
+
+
+# Console disable serial console login in production
+SERIAL_CONSOLES_DEFAULT := "${SERIAL_CONSOLES}"
+CONSOLE_VERBOSE ?= "loglevel=7 systemd.journald.forward_to_console=1 systemd.journald.max_level_console=warning"
+CONSOLE_SILENT  ?= "console=null quiet loglevel=0"
+SERIAL_CONSOLES  = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '', '${SERIAL_CONSOLES_DEFAULT}', d)}"
+CONSOLE_SELECT   = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '${CONSOLE_SILENT}', '${CONSOLE_VERBOSE}', d)}"
+
+# Kernel Command Line
+CMDLINE_ROOTFS  = "ro"
+IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
+CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE}"
 
 # Device Tree Hardening
-# Keep only the DTB and overlays required by the actual hardware.
-# This reduces the kernel attack surface.
+# Keep only the DTB and overlays required by the actual hardware
+# This reduces the kernel attack surface
 # RPI_KERNEL_DEVICETREE_OVERLAYS = ""
 # RPI_KERNEL_DEVICETREE = ""
 
-# Image Policy
-EXTRA_IMAGE_FEATURES:remove = "debug-tweaks"
+# Remove debug-tweaks in production
+EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
 
-# Initramfs Bundling
-INITRAMFS_IMAGE  = "initramfs-image"
-INITRAMFS_IMAGE_NAME = "initramfs-image-${MACHINE}.rootfs"
-INITRAMFS_IMAGE_BUNDLE = "1"
+# Initramfs Bundle
+INITRAMFS_IMAGE        ?= "initramfs-image"
+INITRAMFS_IMAGE_NAME   ?= "initramfs-image-${MACHINE}.rootfs"
+INITRAMFS_IMAGE_BUNDLE  = "1"
+
+# Ship the bundled kernel+initramfs image as the firmware-loaded kernel
+IMAGE_BOOT_FILES:append = " ${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERNELIMAGE}"
+
+# No kernel image inside the rootfs
+RDEPENDS:${KERNEL_PACKAGE_NAME}-base = ""
 
 # Raspberry Pi Secure Boot
-IMAGE_CLASSES += "rpi-secure-boot"
 RPI_SECURE_BOOT_SIGN = "1"
-RPI_SECURE_BOOT_SIGN_KEY_GEN = "1"
-IMAGE_BOOT_FILES += "boot.img boot.sig"
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# WARNING: Debug keys to replace with production keys before deployment
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# RPI_SECURE_BOOT_SIGN_KEY = "/path/to/keys/secure-boot-sign.key"
-
-# Kernel Module Signing
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# WARNING: Debug keys to replace with production keys before deployment
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-MODSIGN_KEY_DIR  = "${INTEGRITY_BASE}/data/debug-keys"
-MODSIGN_PRIVKEY ?= "${MODSIGN_KEY_DIR}/privkey_modsign.pem"
-MODSIGN_X509    ?= "${MODSIGN_KEY_DIR}/x509_modsign.crt"
+IMAGE_CLASSES += "rpi-secure-boot"
+INHERIT += "rpi-signing-keys"
+IMAGE_BOOT_FILES:append = " boot.img boot.sig"
 
 # IMA/EVM Rootfs Signing
 INHERIT += "ima-evm-rootfs"
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# WARNING: Debug keys to replace with production keys before deployment
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMA_EVM_KEY_DIR = "${INTEGRITY_BASE}/data/debug-keys"
-IMA_EVM_PRIVKEY ?= "${IMA_EVM_KEY_DIR}/privkey_ima.pem"
-IMA_EVM_X509 ?= "${IMA_EVM_KEY_DIR}/x509_ima.der"
 
 # Extra Runtime Packages
-MACHINE_EXTRA_RRECOMMENDS += "\
-    usbguard \
-    rpi-config \
-    rpi-eeprom \
-    raspi-utils \
-    "
+# MACHINE_EXTRA_RRECOMMENDS += " \"
+#
 
 # CVE checks
-INHERIT += "cve-check"
+INHERIT += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'cve-check', '', d)}"
 include conf/distro/include/cve-extra-exclusions.inc
+
+# WKS file
+WKS_FILES = "raspberrypi-secure.wks.in"
+ROOTFS_TYPE="${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'erofs', 'ext4', d)}"
+
+# Files for the boot partition selector
+WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
+IMAGE_BOOT_PARTITION_FILES = "autoboot.txt"
