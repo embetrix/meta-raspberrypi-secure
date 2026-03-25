@@ -12,10 +12,14 @@ SRC_URI += "file://dm-crypt-verity.cfg \
             file://netfilter.cfg \
             "
 
-SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'file://tpm.cfg', '', d)}"
 SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '', 'file://no-wifi.cfg', d)}"
 SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', '', 'file://no-bluetooth.cfg', d)}"
 
+# TPM support 
+TPM_SRC_URI = "file://tpm.cfg \
+               file://tpm-stm-overlay.dts;subdir=git/arch/${ARCH}/boot/dts/overlays \
+               file://0001-add-tpm-stm-overlay-support.patch \
+               "
+SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '${TPM_SRC_URI}', '', d)}"
+
 SRC_URI += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.cfg', '', d)}"
-
-
