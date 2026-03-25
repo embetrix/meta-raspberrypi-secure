@@ -29,12 +29,6 @@ CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
 CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE}"
 
-# Device Tree Hardening
-# Keep only the DTB and overlays required by the actual hardware
-# This reduces the kernel attack surface
-# RPI_KERNEL_DEVICETREE_OVERLAYS = ""
-# RPI_KERNEL_DEVICETREE = ""
-
 # Remove debug-tweaks in production
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
 
@@ -73,3 +67,15 @@ ROOTFS_TYPE="${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'erofs', 'ext4
 # Files for the boot partition selector
 WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
 IMAGE_BOOT_PARTITION_FILES = "autoboot.txt"
+
+# TPM support
+MACHINE_FEATURES += "tpm"
+ENABLE_TPM_SLB9670   = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
+ENABLE_TPM_ST        = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
+RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'overlays/tpm-stm.dtbo overlays/tpm-slb9670.dtbo', '', d)}"
+
+# Device Tree Hardening
+# Keep only the DTB and overlays required by the actual hardware
+# This reduces the kernel attack surface
+# RPI_KERNEL_DEVICETREE_OVERLAYS = ""
+# RPI_KERNEL_DEVICETREE = ""
