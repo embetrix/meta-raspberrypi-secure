@@ -12,10 +12,13 @@ inherit core-image
 IMAGE_FEATURES = ""
 IMAGE_LINGUAS = ""
 
-# initramfs is bundled inside the signed kernel image so skip IMA/EVM signing
-ima_evm_sign_rootfs () {
-    bbnote "IMA/EVM: Skipping signing for initramfs!"
-}
+# Do not install RRECOMMENDS
+NO_RECOMMENDATIONS = "1"
+
+# save IMA/EVM signatures to manifest files
+REQUIRED_DISTRO_FEATURES += "ima"
+IMA_FILE_SIGNATURES_FILE = "etc/ima/ima-signatures.manifest"
+EVM_FILE_SIGNATURES_FILE = "etc/ima/evm-signatures.manifest"
 
 IMAGE_FSTYPES = "${INITRAMFS_FSTYPES}"
 
