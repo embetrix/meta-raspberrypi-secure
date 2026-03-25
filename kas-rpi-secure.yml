@@ -42,6 +42,7 @@ repos:
     layers:
       .:
       meta-integrity:
+      meta-tpm:
   meta-selinux:
     url: "https://git.yoctoproject.org/git/meta-selinux.git"
     branch: scarthgap
