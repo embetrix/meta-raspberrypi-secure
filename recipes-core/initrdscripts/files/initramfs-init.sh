@@ -5,11 +5,10 @@
 # initramfs init script:
 #   mount_early_fs   - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
 #   get_boot_slot    - Detect A/B boot slot from device tree
-#   get_key          - Derive LUKS key from OTP HMAC or serial fallback
+#   inject_key       - Derive LUKS key from OTP HMAC or serial fallback
 #   encrypt_rootfs   - First-boot rootfs encryption
 #   mount_data_luks  - First-boot data partitions encryption
 #   setup_integrity  - Import IMA/EVM keys and load secure boot policy
-#   setup_machine_id - Persistent machine-id on data partition
 #   switch_root      - Switch to the real root filesystem
 #
 
@@ -28,7 +27,7 @@ UPDATE_DM_NAME="update"
 DATA_DM_NAME="data"
 BACKUPS_DM_NAME="backups"
 
-ROOT_MNT="/tmp/rootfs"
+ROOT_MNT="/root"
 BOOT_MNT="/boot"
 DATA_MNT="/var/data"
 BACKUPS_MNT="/var/backups"
@@ -39,6 +38,8 @@ OPT_PART="noexec,nodev,nosuid"
 IMA_POLICY="/etc/ima/ima-policy"
 IMA_X509="/etc/keys/x509_ima.der"
 EVM_X509="/etc/keys/x509_evm.der"
+IMA_MANIFEST="/etc/ima/ima-signatures.manifest"
+EVM_MANIFEST="/etc/ima/evm-signatures.manifest"
 
 BOOT_SLOT="/proc/device-tree/chosen/bootloader/partition"
 BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
@@ -46,14 +47,17 @@ BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
 HW_SERIAL="/proc/device-tree/serial-number"
 CID=""
 
+ENC_KEY_HEX=""
+MACHINE_ID=""
+
 # Partition numbers for A/B slots, data and backups
 # following wic configuration in rpi-secure.wks
-BOOT_SLOT_A=1
-BOOT_SLOT_B=2
-ROOT_SLOT_A=3
-ROOT_SLOT_B=4
-DATA_PART=5
-BACKUPS_PART=6
+BOOT_SLOT_A=2
+BOOT_SLOT_B=3
+ROOT_SLOT_A=4
+ROOT_SLOT_B=5
+DATA_PART=6
+BACKUPS_PART=7
 
 TIMEOUT=40
 
@@ -71,6 +75,7 @@ fatal() {
 
 	echo "FATAL: $1" >&2
 	reboot -f
+	#sh
 }
 
 klog() {
@@ -79,26 +84,9 @@ klog() {
     echo "Initramfs: $@" > /dev/kmsg
 }
 
-
 hex2bin() {
 
 	printf '%b' "$(echo "$1" | sed 's/../\\x&/g')"
-}
-
-# Persistent machine-id on the data partition
-# Bind-mount over the empty /etc/machine-id before systemd starts
-setup_machine_id() {
-
-	machine_id_file="$ROOT_MNT$DATA_MNT/etc/machine-id"
-	if [ ! -f "$machine_id_file" ]; then
-		mkdir -p "${machine_id_file%/*}" \
-			|| fatal "cannot create directory for machine-id"
-		MACHINE_ID=$(hexdump -vn16 -e '/1 "%02x"' /dev/urandom)
-		[ -n "$MACHINE_ID" ] || fatal "cannot generate machine-id"
-		echo $MACHINE_ID > "$machine_id_file"
-	fi
-	mount -o bind "$machine_id_file" "$ROOT_MNT/etc/machine-id" \
-		|| fatal "cannot bind-mount machine-id"
 }
 
 mount_early_fs() {
@@ -127,12 +115,7 @@ get_boot_slot() {
 	# Partition separator: 'p' for mmcblk/nvme empty for sd
 	case "$BASE_DEV" in
 		sd*) SEP="" ;;
-		*)	SEP="p"
-			CID=$(block-device-id "/dev/$BASE_DEV" 2>/dev/null) \
-				|| fatal "cannot read CID from /dev/$BASE_DEV"
-			[ -n "$CID" ] || fatal "empty CID for /dev/$BASE_DEV"
-			klog "Device CID: $CID"
-			;;
+		*)	SEP="p" ;;
 	esac
 
 	boot_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_SLOT" 2>/dev/null || true)
@@ -140,13 +123,13 @@ get_boot_slot() {
 		fatal "Failed to read boot slot from $BOOT_SLOT"
 	}
 	case "$boot_hex" in
-		00000001)
+		00000002)
 			klog "Boot Slot A"
 			BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_A}"
 			ROOT_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_A}"
 			UPDATE_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_B}"
 			;;
-		00000002)
+		00000003)
 			klog "Boot Slot B"
 			BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_B}"
 			ROOT_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_B}"
@@ -174,9 +157,46 @@ await_blockdev() {
 	fi
 }
 
+# Restore IMA/EVM xattrs from build-time manifest
+# cpio newc format does not preserve xattrs so we re-apply them
+# Usage: restore_ima_evm_signatures <manifest> <xattr> <target_root> [file]
+#   If [file] is given, only restore that single file's signature
+restore_ima_evm_signatures() {
+
+	manifest="$1"
+	xattr="$2"
+	target="$3"
+	single="$4"
+
+	[ -f "$manifest" ] || return 0
+
+	if [ -n "$single" ]; then
+		sig=$(grep "^${single} " "$manifest" | cut -d' ' -f2)
+		[ -n "$sig" ] && [ -e "${target}${single}" ] && \
+			setfattr -n "$xattr" -v "${sig#*:}" "${target}${single}" 2>/dev/null
+		return 0
+	fi
+
+	while read filepath sig; do
+		[ -e "${target}${filepath}" ] || continue
+		setfattr -n "$xattr" -v "${sig#*:}" "${target}${filepath}" 2>/dev/null
+	done < "$manifest"
+}
+
 setup_integrity() {
 
 	root_dev="$1"
+
+	# Restore IMA/EVM signatures on initramfs file path so that :
+	# switch_root binary does not break signature verification
+	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/bin/busybox.nosuid"
+	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/bin/busybox.nosuid"
+	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/ld-linux-aarch64.so.1"
+	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/ld-linux-aarch64.so.1"  
+	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/libm.so.6"
+	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/libm.so.6"
+	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/libc.so.6"
+	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/libc.so.6"
 
 	# Import IMA/EVM X509
 	if [ ! -f "$IMA_X509" ] || [ ! -f "$EVM_X509" ]; then
@@ -222,19 +242,24 @@ setup_integrity() {
 #   $ rpi-fw-crypto genkey --key-id 1 --alg ec
 # then lock raw key readout in config.txt:
 #   lock_device_private_key=1
-get_key() {
+#
+# The derived key hex is cached in ENC_KEY_HEX so the expensive
+# derivation (OTP HMAC / block-device-id) runs only once per boot.
+derive_key() {
 
 	[ -e "$HW_SERIAL" ] || fatal "Hardware serial not found at $HW_SERIAL"
+
+	CID=$(block-device-id "/dev/$BASE_DEV" 2>/dev/null) \
+		|| klog "cannot read CID from /dev/$BASE_DEV"
 
 	# Try hardware-bound key via OTP HMAC
 	if rpi-fw-crypto pubkey --key-id "$OTP_KEY_ID" --out /dev/null 2>/dev/null; then
 		if [ -n "$CID" ]; then
-			hex=$(printf '%s' "$CID" | rpi-fw-crypto hmac --in /proc/self/fd/0 --key-id "$OTP_KEY_ID" --outform hex 2>/dev/null)
+			ENC_KEY_HEX=$(printf '%s' "$CID" | rpi-fw-crypto hmac --in /proc/self/fd/0 --key-id "$OTP_KEY_ID" --outform hex 2>/dev/null)
 		else
-			hex=$(rpi-fw-crypto hmac --in "$HW_SERIAL" --key-id "$OTP_KEY_ID" --outform hex 2>/dev/null)
+			ENC_KEY_HEX=$(rpi-fw-crypto hmac --in "$HW_SERIAL" --key-id "$OTP_KEY_ID" --outform hex 2>/dev/null)
 		fi
-		if [ -n "$hex" ]; then
-			hex2bin "$hex"
+		if [ -n "$ENC_KEY_HEX" ]; then
 			return 0
 		fi
 		klog "WARNING: OTP HMAC failed, falling back to serial-based key" >&2
@@ -243,11 +268,15 @@ get_key() {
 	fi
 
 	if [ -n "$CID" ]; then
-		hex=$(printf '%s' "$CID" | sha256sum | cut -d' ' -f1)
+		ENC_KEY_HEX=$(printf '%s' "$CID" | sha256sum | cut -d' ' -f1)
 	else
-		hex=$(cat "$HW_SERIAL" | tr -d '\0' | sha256sum | cut -d' ' -f1)
+		ENC_KEY_HEX=$(tr -d '\0' < "$HW_SERIAL" | sha256sum | cut -d' ' -f1)
 	fi
-	hex2bin "$hex"
+}
+
+inject_key() {
+
+	hex2bin "$ENC_KEY_HEX"
 }
 
 #############################################################################
@@ -273,7 +302,6 @@ encrypt_rootfs() {
 	klog "First-boot rootfs encryption: migrating plain rootfs to dm-crypt LUKS..."
 	enc_start=$(date +%s)
 
-
 	# Detect filesystem type
 	fstype=$(blkid -s TYPE -o value "$update_dev" 2>/dev/null) \
 		|| fatal "cannot detect root filesystem type"
@@ -287,9 +315,9 @@ encrypt_rootfs() {
 	fi
 
 	# Format root partition as LUKS, copy from update
-	get_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$root_dev" \
+	inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$root_dev" \
 		|| fatal "cannot format root $root_dev as LUKS"
-	get_key | cryptsetup luksOpen --key-file=- "$root_dev" "$root_dm" \
+	inject_key | cryptsetup luksOpen --key-file=- "$root_dev" "$root_dm" \
 		|| fatal "cannot open root LUKS $root_dev"
 
 	# Copy filesystem from update partition (already pre-built by wic)
@@ -305,9 +333,9 @@ encrypt_rootfs() {
 	fi
 
 	# Format update partition as LUKS
-	get_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$update_dev" \
+	inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$update_dev" \
 		|| fatal "cannot format update $update_dev as LUKS"
-	get_key | cryptsetup luksOpen --key-file=- "$update_dev" "$update_dm" \
+	inject_key | cryptsetup luksOpen --key-file=- "$update_dev" "$update_dm" \
 		|| fatal "cannot open update LUKS $update_dev"
 
 	enc_end=$(date +%s)
@@ -333,16 +361,16 @@ mount_data_luks() {
 	if ! cryptsetup isLuks "$dev" 2>/dev/null; then
 		fmt_start=$(date +%s)
 		klog "Formatting $dev as LUKS2 for $dm_name..."
-		get_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$dev" \
+		inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$dev" \
 			|| fatal "cannot format $dev as LUKS"
-		get_key | cryptsetup luksOpen --key-file=- "$dev" "$dm_name" \
+		inject_key | cryptsetup luksOpen --key-file=- "$dev" "$dm_name" \
 			|| fatal "cannot open LUKS device $dev"
 		mkfs.ext4 -L "$label" "/dev/mapper/$dm_name" > /dev/null 2>&1 \
 			|| fatal "cannot create filesystem on $dm_name"
 		fmt_end=$(date +%s)
 		klog "LUKS+ext4 setup of $dev completed in $((fmt_end - fmt_start))s"
 	else
-		get_key | cryptsetup luksOpen --key-file=- "$dev" "$dm_name" \
+		inject_key | cryptsetup luksOpen --key-file=- "$dev" "$dm_name" \
 			|| fatal "cannot open LUKS device $dev"
 	fi
 
@@ -361,17 +389,21 @@ if [ -z "$ROOT_DEV" ]; then
 	fatal "cannot get root device"
 fi
 
+# wait for slow block devices (USB...)
 await_blockdev "$ROOT_DEV"
 
 # Required to make pipe work in shell
 ln -s /proc/self/fd /dev/fd
 
+# Derive and cache the LUKS key once
+derive_key
+
 if ! cryptsetup isLuks "$ROOT_DEV" 2>/dev/null; then
 	encrypt_rootfs "$ROOT_DEV" "$UPDATE_DEV" "$ROOT_DM_NAME" "$UPDATE_DM_NAME"
 else
-	get_key | cryptsetup luksOpen --key-file=- "$ROOT_DEV" "$ROOT_DM_NAME" \
+	inject_key | cryptsetup luksOpen --key-file=- "$ROOT_DEV" "$ROOT_DM_NAME" \
 		|| fatal "cannot open root LUKS device $ROOT_DEV"
-	get_key | cryptsetup luksOpen --key-file=- "$UPDATE_DEV" "$UPDATE_DM_NAME" \
+	inject_key | cryptsetup luksOpen --key-file=- "$UPDATE_DEV" "$UPDATE_DM_NAME" \
 		|| fatal "cannot open update LUKS device $UPDATE_DEV"
 fi
 
@@ -389,15 +421,20 @@ mount_data_luks "$DATA_DEV" "$DATA_DM_NAME" "data" "$ROOT_MNT$DATA_MNT" "$OPT_PA
 # Mount backups partition
 mount_data_luks "$BACKUPS_DEV" "$BACKUPS_DM_NAME" "backups" "$ROOT_MNT$BACKUPS_MNT" "$OPT_PART"
 
+# Clear cached key
+unset ENC_KEY_HEX
+
 mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 	|| fatal "cannot mount boot device $BOOT_DEV"
+
+
+# Derive Machine ID from HW_SERIAL
+MACHINE_ID="$(tr -d '\0\n' < "$HW_SERIAL" | sha256sum | cut -c1-32)"
 
 # Setup IMA/EVM
 setup_integrity "/dev/mapper/$ROOT_DM_NAME"
 
-# Setup persistent Machine-id
-setup_machine_id
-
 # Switch to real root
 klog "Switch to real root..."
-exec switch_root $ROOT_MNT $INIT || fatal "cannot switch_root to real root"
+exec switch_root $ROOT_MNT $INIT --machine-id="$MACHINE_ID" \
+	|| fatal "cannot switch_root to real root"

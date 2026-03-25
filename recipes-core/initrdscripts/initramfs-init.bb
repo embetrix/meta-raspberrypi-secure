@@ -5,19 +5,22 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-3.0-or-lat
 SRC_URI = "file://initramfs-init.sh"
 
 RDEPENDS:${PN}:append = " \
-                        busybox \
-                        util-linux-mount \
-                        util-linux-blkid \
-                        e2fsprogs-mke2fs \
-                        e2fsprogs-e2fsck \
-                        e2fsprogs-resize2fs \
-                        cryptsetup \
-                        raspi-utils \
-                        block-device-id \
-                        keyutils \
-                        ima-policy-appraise-sb \
-                        ima-evm-keys \
-                        "
+                busybox \
+                util-linux-mount \
+                util-linux-blkid \
+                e2fsprogs-mke2fs \
+                e2fsprogs-e2fsck \
+                e2fsprogs-resize2fs \
+                cryptsetup \
+                raspi-utils-rpifwcrypto \
+                raspi-utils-rpieepromab \
+                block-device-id \
+                keyutils \
+                attr \
+                ima-evm-utils \
+                ima-policy-appraise-sb \
+                ima-evm-keys \
+                "
 
 S = "${WORKDIR}"
 
