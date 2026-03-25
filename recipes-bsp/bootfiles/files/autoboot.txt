@@ -1,0 +1,7 @@
+[tryboot]
+# If the tryboot flag is set boot from the second boot partition (Slot B)
+boot_partition=3
+
+[all]
+# By default boot from the first boot partition (Slot A)
+boot_partition=2
