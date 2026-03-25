@@ -72,6 +72,7 @@ IMAGE_BOOT_PARTITION_FILES = "autoboot.txt"
 MACHINE_FEATURES += "tpm"
 ENABLE_TPM_SLB9670   = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
 ENABLE_TPM_ST        = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
+MACHINE_EXTRA_RRECOMMENDS      += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'packagegroup-security-tpm2', '', d)}"
 RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'overlays/tpm-stm.dtbo overlays/tpm-slb9670.dtbo', '', d)}"
 
 # Device Tree Hardening
