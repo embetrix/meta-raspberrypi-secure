@@ -1,33 +1,15 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+#
 # IMA/EVM extended secure boot appraise policy
 # Extends the hardware secure boot chain into the Linux by
-# enforcing signature verification on :
-# executables, libraries, kernel modules and firmware on all filesystems.
-# Additionally appraises all files on the root filesystem
-# 
-# LICENSE = "GPL-3.0-or-later"
+# enforcing ima/evm signatures verification on :
+# executables, libraries, kernel modules, ima policy and firmware on all filesystems.
+# Additionally appraises all files on the root filesystem (fsuuid based)
 #
 # Documentation: https://ima-doc.readthedocs.io/en/latest/policy-syntax.html
 #
 
-# Skip pseudo filesystems
-## PROC_SUPER_MAGIC
-# dont_appraise fsmagic=0x9fa0
-## SYSFS_MAGIC
-# dont_appraise fsmagic=0x62656572
-## DEBUGFS_MAGIC
-# dont_appraise fsmagic=0x64626720
-## DEVPTS_SUPER_MAGIC
-# dont_appraise fsmagic=0x1cd1
-## SECURITYFS_MAGIC
-# dont_appraise fsmagic=0x73636673
-# CGROUP_SUPER_MAGIC
-# dont_appraise fsmagic=0x27e0eb
-# CGROUP2_SUPER_MAGIC
-# dont_appraise fsmagic=0x63677270
-## TMPFS_MAGIC
-dont_appraise fsmagic=0x01021994
-## RAMFS_MAGIC
-dont_appraise fsmagic=0x858458f6
 
 # Enforce signature checks for :
 
