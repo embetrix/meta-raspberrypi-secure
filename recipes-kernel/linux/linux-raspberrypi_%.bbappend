@@ -16,9 +16,6 @@ SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '', 'file://no-wifi
 SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', '', 'file://no-bluetooth.cfg', d)}"
 
 # TPM support 
-TPM_SRC_URI = "file://tpm.cfg \
-               file://tpm-stm-overlay.dts;subdir=git/arch/${ARCH}/boot/dts/overlays \
-               "
-SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '${TPM_SRC_URI}', '', d)}"
+SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'file://tpm.cfg', '', d)}"
 
 SRC_URI += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.cfg', '', d)}"

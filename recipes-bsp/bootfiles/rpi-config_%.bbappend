@@ -7,7 +7,6 @@ ENABLE_USB_MAX_CURRENT ??= ""
 ENABLE_TRYBOOT_AB ??= ""
 LOCK_DEVICE_KEY ??= ""
 ENABLE_TPM_SLB9670  ??= ""
-ENABLE_TPM_STM  ??= ""
 
 do_deploy:append() {
 
@@ -30,14 +29,7 @@ do_deploy:append() {
 
     if [ "${ENABLE_TPM_SLB9670}" = "1" ]; then
         echo "# Enable TPM SLB9670 support" >>$CONFIG
-        echo "dtparam=spi=on" >>$CONFIG
         echo "dtoverlay=tpm-slb9670" >>$CONFIG
-    fi
-
-    if [ "${ENABLE_TPM_STM}" = "1" ]; then
-        echo "# Enable TPM STM support" >>$CONFIG
-        echo "dtparam=spi=on" >>$CONFIG
-        echo "dtoverlay=tpm-stm" >>$CONFIG
     fi
 
     if [ "${LOCK_DEVICE_KEY}" = "1" ]; then
