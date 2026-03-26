@@ -20,4 +20,5 @@ RDEPENDS:packagegroup-dev = " \
 	opensc \
 	curl \
 	htop \
+    raspi-utils \
     "
