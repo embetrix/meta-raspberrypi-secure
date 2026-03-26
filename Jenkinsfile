@@ -7,7 +7,7 @@ pipeline {
     parameters {
         gitParameter branchFilter: 'origin/(.*)', defaultValue: 'scarthgap', selectedValue: 'DEFAULT', name: 'BRANCH', type: 'PT_BRANCH', description: 'branch to build'
         choice choices: ['raspberrypi5', 'raspberrypi4-64' ], description: 'select machine', name: 'MACHINE'
-        choice choices: ['rpi-secure-image'], description: 'select image', name: 'IMAGE'
+        choice choices: ['rpi-secure-image-base'], description: 'select image', name: 'IMAGE'
         choice choices: ['dev', 'prod'], description: 'select security profile', name: 'SECURITY_PROFILE'
         choice choices: ['no', 'yes'], description: 'clean workspace', name: 'CLEAN'
     }
