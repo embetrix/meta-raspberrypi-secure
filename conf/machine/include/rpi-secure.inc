@@ -7,15 +7,14 @@
 RPI_SECURITY_PROFILE ?= "dev"
 
 # Firmware
+# check for more options in
+# https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
 ENABLE_WATCHDOG         = "1"
 ENABLE_USB_MAX_CURRENT  = "1"
+ENABLE_TRYBOOT_AB       = "1"
 LOCK_DEVICE_KEY         = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 ENABLE_UART             = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '1', d)}"
 DISABLE_SPLASH          = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
-#ENABLE_TRYBOOT_AB       = "1"
-# check for more options in
-# https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
-
 
 # TPM support
 MACHINE_FEATURES += "tpm"
