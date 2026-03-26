@@ -6,6 +6,11 @@ inherit core-image extrausers
 
 IMAGE_FEATURES:append = " read-only-rootfs ssh-server-openssh"
 
+# save IMA/EVM signatures as fingerints for rootfs
+REQUIRED_DISTRO_FEATURES += "ima"
+IMA_FILE_SIGNATURES_FILE = "etc/ima-signatures.manifest"
+EVM_FILE_SIGNATURES_FILE = "etc/evm-signatures.manifest"
+
 #
 # Generate your password hash(es) with: 
 # $ openssl passwd -5 -salt "$(openssl rand -hex 8)" 'some_very_secure_password' | sed 's/\$/\\$/g'
@@ -30,19 +35,7 @@ IMAGE_INSTALL:append = " \
 	raspi-utils \
 	raspi-utils-rpieepromab \
 	raspi-utils-rpifwcrypto \
-	rng-tools-service \
+	rng-tools \
 	"
 
-DEV_PACKAGES = "\
-	packagegroup-core-full-cmdline \
-    tcpdump \
-    gdbserver \
-    strace \
-    curl \
-	opensc \
-	nginx \
-	curl \
-	htop \
-	"
-
-IMAGE_INSTALL:append = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', " ${DEV_PACKAGES}", '', d)}"
+IMAGE_INSTALL:append = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', " packagegroup-dev", '', d)}"
