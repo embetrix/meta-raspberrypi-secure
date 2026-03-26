@@ -7,22 +7,15 @@
 RPI_SECURITY_PROFILE ?= "dev"
 
 # Firmware
-ENABLE_WATCHDOG         = "1"
-ENABLE_USB_MAX_CURRENT  = "1"
-LOCK_DEVICE_KEY         = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
+#ENABLE_WATCHDOG         = "1"
+#ENABLE_USB_MAX_CURRENT  = "1"
+#ENABLE_TRYBOOT_AB       = "1"
+#LOCK_DEVICE_KEY         = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 ENABLE_UART             = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '1', d)}"
 DISABLE_SPLASH          = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
-#ENABLE_TRYBOOT_AB      = "1"
 # check for more options in
 # https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
 
-# TPM support
-MACHINE_FEATURES += "tpm"
-ENABLE_SPI_BUS       = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
-ENABLE_I2C           = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
-ENABLE_TPM_SLB9670   = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
-MACHINE_EXTRA_RRECOMMENDS      += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'packagegroup-security-tpm2', '', d)}"
-RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'overlays/tpm-slb9670.dtbo', '', d)}"
 
 # Console disable serial console login in production
 SERIAL_CONSOLES_DEFAULT := "${SERIAL_CONSOLES}"
@@ -34,7 +27,7 @@ CONSOLE_SELECT   = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '${CONS
 # Kernel Command Line
 CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
-CMDLINE        += "${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE}"
+CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE}"
 
 # Remove debug-tweaks in production
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
@@ -45,7 +38,7 @@ INITRAMFS_IMAGE_NAME   ?= "rpi-secure-initramfs-image-${MACHINE}.rootfs"
 INITRAMFS_IMAGE_BUNDLE  = "1"
 
 # Ship the bundled kernel+initramfs image as the firmware-loaded kernel
-IMAGE_BOOT_FILES += "${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERNELIMAGE}"
+IMAGE_BOOT_FILES:append = " ${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERNELIMAGE}"
 
 # No kernel image inside the rootfs
 RDEPENDS:${KERNEL_PACKAGE_NAME}-base = ""
@@ -54,7 +47,7 @@ RDEPENDS:${KERNEL_PACKAGE_NAME}-base = ""
 RPI_SECURE_BOOT_SIGN = "1"
 IMAGE_CLASSES += "rpi-secure-boot"
 INHERIT += "rpi-signing-keys"
-IMAGE_BOOT_FILES += " boot.img boot.sig"
+IMAGE_BOOT_FILES:append = " boot.img boot.sig"
 
 # IMA/EVM Rootfs Signing
 INHERIT += "ima-evm-rootfs"
@@ -65,17 +58,25 @@ MACHINE_EXTRA_RRECOMMENDS += " \
                         raspi-utils-rpifwcrypto \
                         "
 
+# CVE checks
+INHERIT += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'cve-check', '', d)}"
+include conf/distro/include/cve-extra-exclusions.inc
+
 # WKS file
 WKS_FILES = "raspberrypi-secure.wks.in"
 ROOTFS_TYPE="${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'erofs', 'ext4', d)}"
 
 # Files for the boot partition selector
-WICVARS += "IMAGE_BOOT_PARTITION_FILES"
+WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
 IMAGE_BOOT_PARTITION_FILES = "autoboot.txt"
 
-# CVE checks
-INHERIT += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'cve-check', '', d)}"
-include conf/distro/include/cve-extra-exclusions.inc
+# TPM support
+MACHINE_FEATURES += "tpm"
+ENABLE_SPI_BUS       = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
+ENABLE_I2C           = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
+ENABLE_TPM_SLB9670   = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
+MACHINE_EXTRA_RRECOMMENDS      += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'packagegroup-security-tpm2', '', d)}"
+RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'overlays/tpm-slb9670.dtbo', '', d)}"
 
 # Device Tree Hardening
 # Keep only the DTB and overlays required by the actual hardware
