@@ -18,8 +18,11 @@ pipeline {
     stages {
 
         stage('Setup') {
+            when {
+                expression { params.SECURITY_PROFILE == 'prod' }
+            }
             steps {
-                sh "git describe --tags --always --dirty"
+                sh "scripts/genkey-helper.sh build/prod-keys"
             }
         }
 
@@ -34,7 +37,14 @@ pipeline {
 
         stage('Build-Image') {
             steps {
-                sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} SECURITY_PROFILE=${params.SECURITY_PROFILE} kas build --force-checkout --update kas-rpi-secure.yml"
+                script {
+                    def kasConfig = 'kas-rpi-secure.yml'
+                    if (params.SECURITY_PROFILE == 'prod') {
+                        kasConfig = "${kasConfig}:kas-signing-keys.yml"
+                    }
+
+                    sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} SECURITY_PROFILE=${params.SECURITY_PROFILE} kas build --force-checkout --update ${kasConfig}"
+                }
                 archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-*" ,
                                              followSymlinks: false,
                                              fingerprint: true,

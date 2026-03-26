@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libssl-dev \
     locales \
     nano \
+    openssh-client \
     pylint \
     python3 \
     python3-pexpect \
