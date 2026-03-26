@@ -62,6 +62,8 @@ INHERIT += "ima-evm-rootfs"
 
 # Extra Runtime Packages
 MACHINE_EXTRA_RRECOMMENDS += " \
+                        raspi-utils \
+                        raspi-utils-raspinfo \
                         raspi-utils-rpieepromab \
                         raspi-utils-rpifwcrypto \
                         "
