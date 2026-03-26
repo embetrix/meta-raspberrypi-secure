@@ -1,3 +1,3 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-RDEPENDS:${PN}-service += "${PN}"
+RDEPENDS:${PN} += "${PN}-service"
