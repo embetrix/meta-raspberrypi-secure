@@ -72,7 +72,10 @@ SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
 KAS_FRAGMENT="$TOP_LAYER_DIR/kas-signing-keys.yml"
 echo "  Generating SSH CA key pair (ed25519) ..."
-ssh-keygen -t ed25519 -f "$SSH_CA_KEY" -N "" -C "$ORG SSH CA" -q
+# ssh-keygen requires a valid passwd entry:
+# create a temporary one in CI for the current uid if missing
+getent passwd "$(id -u)" >/dev/null 2>&1 || echo "build:x:$(id -u):$(id -g)::/tmp:/sbin/nologin" >> /etc/passwd
+HOME=/tmp ssh-keygen -t ed25519 -f "$SSH_CA_KEY" -N "" -C "$ORG SSH CA" -q
 chmod 600 "$SSH_CA_KEY"
 chmod 644 "$SSH_CA_PUB"
 

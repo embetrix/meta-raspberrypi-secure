@@ -75,6 +75,9 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 RUN id $USER 2>/dev/null || useradd --create-home $USER
 RUN echo "$USER ALL=(ALL) NOPASSWD: ALL" | tee -a /etc/sudoers
 
+# Allow arbitrary UIDs (e.g. Jenkins) to add themselves to /etc/passwd at runtime
+RUN chmod a+w /etc/passwd
+
 USER $USER
 RUN sudo chown -R $USER:$USER /home/$USER
 
