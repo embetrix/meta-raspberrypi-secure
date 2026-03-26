@@ -5,7 +5,8 @@ AVOID_OVERLAYFS = "1"
 VOLATILE_BINDS += "\
                 /var/data/etc/certs            /etc/certs\n\
                 /var/data/etc/ssh/keys         /etc/ssh/keys\n\
-                /var/data/etc/systemd/network/ /etc/systemd/network/\n"
+                /var/data/etc/systemd/network/ /etc/systemd/network/\n\
+                /var/data/etc/systemd/journal-upload.conf /etc/systemd/journal-upload.conf\n"
 
 # Persist logs when volatile log directory is disabled
 VOLATILE_BINDS:append = "${@'/var/data/var/log /var/log\\n' if d.getVar('VOLATILE_LOG_DIR') == 'no' else ''}"
