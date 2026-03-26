@@ -33,6 +33,9 @@ inherit image_types signing
 RPI_SECURE_BOOT_SIGN ?= "0"
 RPI_SECURE_BOOT_SIGN_KEY ?= ""
 
+# Fixed signing timestamp in epoch for reproducible builds
+RPI_SECURE_BOOT_SIGN_TIMESTAMP ?= "${SOURCE_DATE_EPOCH}"
+
 # Space-separated list of files to remove from boot.img after it is populated
 SECURE_BOOT_FILES_EXCLUDE ?= ""
 
@@ -119,9 +122,11 @@ IMAGE_CMD:rpi-secure-boot () {
         SIGN_KEY="${RPI_SECURE_BOOT_SIGN_KEY}"
 
         if [ -f "${SIGN_KEY}" ]; then
+            SIGN_TS="${RPI_SECURE_BOOT_SIGN_TIMESTAMP}"
+            [ -z "$SIGN_TS" ] && SIGN_TS=$(date +%s)
             {
                 openssl dgst -sha256 ${RPI_SECURE_BOOTIMG} | awk '{print $2}'
-                echo "ts: $(date +%s)"
+                echo "ts: $SIGN_TS"
                 printf "rsa2048: "
                 openssl dgst -sha256 -sign ${SIGN_KEY} ${RPI_SECURE_BOOTIMG} \
                 | hexdump -v -e '1/1 "%02x"'; echo
