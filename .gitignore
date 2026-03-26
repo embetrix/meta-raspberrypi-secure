@@ -1,2 +1,5 @@
-build/*
-layers/*
+build/
+layers/
+__pycache__/
+*.pyc
+.vscode/
