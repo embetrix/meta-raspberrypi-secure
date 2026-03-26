@@ -31,10 +31,6 @@ IMAGE_INSTALL:append = " \
 	auditd   \      
 	iptables \
 	usbguard \
-	rpi-eeprom \
-	raspi-utils \
-	raspi-utils-rpieepromab \
-	raspi-utils-rpifwcrypto \
 	rng-tools \
 	"
 

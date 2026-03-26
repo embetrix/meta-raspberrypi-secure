@@ -53,8 +53,10 @@ IMAGE_BOOT_FILES:append = " boot.img boot.sig"
 INHERIT += "ima-evm-rootfs"
 
 # Extra Runtime Packages
-# MACHINE_EXTRA_RRECOMMENDS += " \"
-#
+MACHINE_EXTRA_RRECOMMENDS += " \
+                        raspi-utils-rpieepromab \
+                        raspi-utils-rpifwcrypto \
+                        "
 
 # CVE checks
 INHERIT += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'cve-check', '', d)}"
