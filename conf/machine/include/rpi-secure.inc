@@ -33,8 +33,8 @@ CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE}"
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
 
 # Initramfs Bundle
-INITRAMFS_IMAGE        ?= "initramfs-image"
-INITRAMFS_IMAGE_NAME   ?= "initramfs-image-${MACHINE}.rootfs"
+INITRAMFS_IMAGE        ?= "rpi-secure-initramfs-image"
+INITRAMFS_IMAGE_NAME   ?= "rpi-secure-initramfs-image-${MACHINE}.rootfs"
 INITRAMFS_IMAGE_BUNDLE  = "1"
 
 # Ship the bundled kernel+initramfs image as the firmware-loaded kernel

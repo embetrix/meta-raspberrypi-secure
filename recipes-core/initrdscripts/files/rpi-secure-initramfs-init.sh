@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
-# initramfs init script:
+# rpi secure initramfs init script:
 #   mount_early_fs   - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
 #   get_boot_slot    - Detect A/B boot slot from device tree
 #   inject_key       - Derive LUKS key from OTP HMAC or serial fallback
@@ -38,8 +38,8 @@ OPT_PART="noexec,nodev,nosuid"
 IMA_POLICY="/etc/ima/ima-policy"
 IMA_X509="/etc/keys/x509_ima.der"
 EVM_X509="/etc/keys/x509_evm.der"
-IMA_MANIFEST="/etc/ima/ima-signatures.manifest"
-EVM_MANIFEST="/etc/ima/evm-signatures.manifest"
+IMA_MANIFEST="/etc/ima-signatures.manifest"
+EVM_MANIFEST="/etc/evm-signatures.manifest"
 
 BOOT_SLOT="/proc/device-tree/chosen/bootloader/partition"
 BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
