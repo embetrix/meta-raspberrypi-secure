@@ -1,20 +1,32 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI += "file://autoboot.txt"
+SRC_URI += "file://autoboot.txt \
+            file://bootconf.txt"
 
 ENABLE_WATCHDOG ??= ""
 ENABLE_USB_MAX_CURRENT ??= ""
 ENABLE_TRYBOOT_AB ??= ""
 LOCK_DEVICE_KEY ??= ""
 ENABLE_TPM_SLB9670  ??= ""
+PROGRAM_PUBLIC_KEY ??= ""
+PROGRAM_JTAG_LOCK ??= ""
 
 do_deploy:append() {
 
     install -m 0644 ${WORKDIR}/autoboot.txt ${DEPLOYDIR}/autoboot.txt
+    install -m 0644 ${WORKDIR}/boot.conf    ${DEPLOYDIR}/bootconf.txt
+    # Disable BOOT_UART in production profile
+    if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then
+        sed -i 's/^BOOT_UART=.*/BOOT_UART=0/' ${DEPLOYDIR}/bootconf.txt
+    fi
 
     if [ "${ENABLE_WATCHDOG}" = "1" ]; then
         echo "# Enable watchdog"   >>$CONFIG
-        echo "dtparam=watchdog=on" >>$CONFIG
+        # dtparam=watchdog is only recognized on RPi4 (BCM2711)
+        # On RPi5 (BCM2712) is enabled by default
+        case "${MACHINE}" in
+            raspberrypi4*) echo "dtparam=watchdog=on" >>$CONFIG ;;
+        esac
     fi
 
     if [ "${ENABLE_USB_MAX_CURRENT}" = "1" ]; then
@@ -35,5 +47,15 @@ do_deploy:append() {
     if [ "${LOCK_DEVICE_KEY}" = "1" ]; then
         echo "# Lock device private key in OTP" >>$CONFIG
         echo "lock_device_private_key=1" >>$CONFIG
+    fi
+
+    if [ "${PROGRAM_PUBLIC_KEY}" = "1" ]; then
+        echo "# Program public key in OTP" >>$CONFIG
+        echo "program_public_key=1" >>$CONFIG
+    fi
+
+    if [ "${PROGRAM_JTAG_LOCK}" = "1" ]; then
+        echo "# Program JTAG lock in OTP" >>$CONFIG
+        echo "program_jtag_lock=1" >>$CONFIG
     fi
 }
