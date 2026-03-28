@@ -21,4 +21,5 @@ RDEPENDS:packagegroup-dev = " \
 	curl \
 	htop \
     rpi-eeprom \
+    rpi-secureboot \
     "

@@ -18,6 +18,14 @@ IMPORTANT: These procedures only work if the OTP fuses have not been
 programmed (PROGRAM_PUBLIC_KEY was not set to 1). Once the public key is
 burned into OTP, secure boot is permanently enabled and cannot be disabled.
 
+Use the rpi-secureboot helper script instead of manual steps:
+  rpi-secureboot status   - show current secure boot status
+  rpi-secureboot enable   - enable secure boot and reboot
+  rpi-secureboot disable  - disable secure boot and reboot
+
+Manual Procedure
+================
+
 Enable Secure Boot
 ------------------
 1. Copy the signed EEPROM and recovery bootloader into place:
