@@ -33,9 +33,6 @@ inherit image_types signing
 RPI_SECURE_BOOT_SIGN ?= "0"
 RPI_SECURE_BOOT_SIGN_KEY ?= ""
 
-# Fixed signing timestamp in epoch for reproducible builds
-RPI_SECURE_BOOT_SIGN_TIMESTAMP ?= "${SOURCE_DATE_EPOCH}"
-
 # Space-separated list of files to remove from boot.img after it is populated
 SECURE_BOOT_FILES_EXCLUDE ?= ""
 
