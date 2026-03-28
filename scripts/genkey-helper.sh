@@ -5,8 +5,9 @@
 # Generate all signing keys for meta-raspberrypi-secure and print the
 # corresponding BitBake variables to set in local.conf or kas header
 #
-# Usage: genkey-helper.sh [KEY_DIR]
-#   KEY_DIR  directory to store generated keys (default: /tmp/rpi-secure-keys)
+# Usage: genkey-helper.sh [KEY_DIR] [KAS_FRAGMENT]
+#   KEY_DIR       directory to store generated keys (default: /tmp/rpi-secure-keys)
+#   KAS_FRAGMENT  path to kas fragment to generate (default: kas-signing-keys.yml)
 
 set -e
 
@@ -70,7 +71,7 @@ chmod 644 "$MODSIGN_X509"
 # SSH CA key pair (ed25519)
 SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
-KAS_FRAGMENT="$TOP_LAYER_DIR/kas-signing-keys.yml"
+KAS_FRAGMENT="${2:-$TOP_LAYER_DIR/kas-signing-keys.yml}"
 echo "  Generating SSH CA key pair (ed25519) ..."
 # ssh-keygen requires a valid passwd entry:
 # create a temporary one in CI for the current uid if missing
