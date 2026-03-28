@@ -1,11 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-#
-#  Override in local.conf for production:
-#  OPENSSH_CA_PUBKEY = "/path/to/prod_ssh_ca.pub"
-#
-OPENSSH_CA_PUBKEY ??= "${OPENSSH_CA_PUBKEY_DEFAULT}"
-OPENSSH_CA_PUBKEY_DEFAULT := "${THISDIR}/${PN}/ssh_ca_dev.pub"
+OPENSSH_CA_PUBKEY ??= ""
 
 SRC_URI += "file://sshd-time-sync.conf"
 
@@ -14,20 +9,20 @@ PACKAGECONFIG:append = " systemd-sshd-service-mode"
 
 do_install:append () {
 
-	for cfg in ${D}${sysconfdir}/ssh/sshd_config ${D}${sysconfdir}/ssh/sshd_config_readonly; do
-		[ -e "$cfg" ] || continue
-		if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then
-			sed -i -e 's:#AllowTcpForwarding yes:AllowTcpForwarding no:' $cfg
-			sed -i -e 's:ClientAliveCountMax 4:ClientAliveCountMax 2:' $cfg
-			sed -i -e 's:#LogLevel INFO:LogLevel VERBOSE:' $cfg
-			sed -i -e 's:#MaxSessions.*:MaxSessions 2:' $cfg
-			sed -i -e 's:#TCPKeepAlive yes:TCPKeepAlive no:' $cfg
-			sed -i -e 's:#AllowAgentForwarding yes:AllowAgentForwarding no:' $cfg
-			sed -i -e 's:#PasswordAuthentication yes:PasswordAuthentication no:' $cfg
-			sed -i -e 's:#PermitRootLogin.*:PermitRootLogin prohibit-password:' $cfg
-			echo 'TrustedUserCAKeys /etc/ssh/certs/ssh_ca.pub' >> $cfg
-		fi
-	done
+	if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then
+		for cfg in ${D}${sysconfdir}/ssh/sshd_config ${D}${sysconfdir}/ssh/sshd_config_readonly; do
+			[ -e "$cfg" ] || continue
+				sed -i -e 's:#AllowTcpForwarding yes:AllowTcpForwarding no:' $cfg
+				sed -i -e 's:ClientAliveCountMax 4:ClientAliveCountMax 2:' $cfg
+				sed -i -e 's:#LogLevel INFO:LogLevel VERBOSE:' $cfg
+				sed -i -e 's:#MaxSessions.*:MaxSessions 2:' $cfg
+				sed -i -e 's:#TCPKeepAlive yes:TCPKeepAlive no:' $cfg
+				sed -i -e 's:#AllowAgentForwarding yes:AllowAgentForwarding no:' $cfg
+				sed -i -e 's:#PasswordAuthentication yes:PasswordAuthentication no:' $cfg
+				sed -i -e 's:#PermitRootLogin.*:PermitRootLogin prohibit-password:' $cfg
+				echo 'TrustedUserCAKeys /etc/ssh/certs/ssh_ca.pub' >> $cfg
+		done
+	fi
 
     # Keep generated host keys persistent on /etc/ssh/keys
 	# bind-mounted from /var/data/etc/ssh/keys
@@ -36,9 +31,11 @@ do_install:append () {
 	sed -i 's|HostKey /var/run/ssh|HostKey /etc/ssh/keys|g' ${D}${sysconfdir}/ssh/sshd_config_readonly
 
     install -d ${D}${sysconfdir}/ssh/certs
-	install -m 0644 ${OPENSSH_CA_PUBKEY} ${D}${sysconfdir}/ssh/certs/ssh_ca.pub
-	if [ "${RPI_SECURITY_PROFILE}" = "prod" ] && echo "${OPENSSH_CA_PUBKEY}" | grep -q "ssh_ca_dev\.pub$"; then
-		bbfatal "!!!! Production build is using the dev SSH CA public key : set OPENSSH_CA_PUBKEY to a production key !!!!!"
+	if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then
+		if [ -z "${OPENSSH_CA_PUBKEY}" ] || [ ! -f "${OPENSSH_CA_PUBKEY}" ]; then
+			bbfatal "Production build requires OPENSSH_CA_PUBKEY to be set to a valid SSH CA public key"
+		fi
+		install -m 0644 ${OPENSSH_CA_PUBKEY} ${D}${sysconfdir}/ssh/certs/ssh_ca.pub
 	fi
 
 	# Drop-in: start sshd after NTP sync (certificate validity needs correct time)
