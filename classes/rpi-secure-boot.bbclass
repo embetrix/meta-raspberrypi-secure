@@ -178,5 +178,16 @@ IMAGE_CMD:rpi-secure-boot () {
                           -i ${RPI_SECURE_BOOT_EEPROM} \
                           -o ${RPI_SECURE_BOOT_EEPROM_SIG} \
                         || bbfatal "Failed to generate signature for ${RPI_SECURE_BOOT_EEPROM}"
+
+        # Sanity checks
+        rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOTIMG} -v ${RPI_SECURE_BOOTIMG_SIG} \
+                        || bbfatal "Signature verification failed for ${RPI_SECURE_BOOTIMG}"
+
+        rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOT_CONFIG} -v ${RPI_SECURE_BOOT_CONFIG_SIG} \
+                        || bbfatal "Signature verification failed for ${RPI_SECURE_BOOT_CONFIG}"
+
+        rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOT_EEPROM} -v ${RPI_SECURE_BOOT_EEPROM_SIG} \
+                        || bbfatal "Signature verification failed for ${RPI_SECURE_BOOT_EEPROM}"
+
     fi
 }
