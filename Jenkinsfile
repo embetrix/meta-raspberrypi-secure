@@ -18,11 +18,12 @@ pipeline {
     stages {
 
         stage('Setup') {
-            when {
-                expression { params.SECURITY_PROFILE == 'prod' }
-            }
             steps {
-                sh "scripts/genkey-helper.sh build/prod-keys"
+                script {
+                    def keyDir = "build/${params.SECURITY_PROFILE}-keys"
+                    def kasFragment = "kas-${params.SECURITY_PROFILE}-signing-keys.yml"
+                    sh "scripts/genkey-helper.sh ${keyDir} ${kasFragment}"
+                }
             }
         }
 
@@ -38,10 +39,8 @@ pipeline {
         stage('Build-Image') {
             steps {
                 script {
-                    def kasConfig = 'kas-rpi-secure.yml'
-                    if (params.SECURITY_PROFILE == 'prod') {
-                        kasConfig = "${kasConfig}:kas-signing-keys.yml"
-                    }
+                    def kasFragment = "kas-${params.SECURITY_PROFILE}-signing-keys.yml"
+                    def kasConfig = "kas-rpi-secure.yml:${kasFragment}"
 
                     sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} SECURITY_PROFILE=${params.SECURITY_PROFILE} kas build --force-checkout --update ${kasConfig}"
                 }
