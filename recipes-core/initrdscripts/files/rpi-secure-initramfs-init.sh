@@ -186,6 +186,7 @@ restore_ima_evm_signatures() {
 setup_integrity() {
 
 	root_dev="$1"
+	klog "Setting up IMA/EVM Integrity..."
 
 	# Restore IMA/EVM signatures on initramfs file path so that :
 	# switch_root binary does not break signature verification
@@ -412,6 +413,7 @@ fstype=$(blkid -s TYPE -o value "/dev/mapper/$ROOT_DM_NAME" 2>/dev/null) \
 	|| fatal "cannot detect root filesystem type"
 mkdir -p "$ROOT_MNT"
 # Mount encrypted root filesystem
+klog "Mounting encrypted root filesystem $fstype on /dev/mapper/$ROOT_DM_NAME..."
 mount -t "$fstype" -o "$OPT_ROOT" "/dev/mapper/$ROOT_DM_NAME" "$ROOT_MNT" \
 	|| fatal "cannot mount root partition"
 
