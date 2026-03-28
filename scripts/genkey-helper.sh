@@ -25,60 +25,84 @@ echo "Generating signing keys in: $KEY_DIR:"
 
 # Secure-boot signing private key (RSA 2048) 
 SECBOOT_KEY="$KEY_DIR/privkey_secure-bootsign.pem"
-echo "  Generating secure-boot signing key (RSA-2048) ..."
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
-    -out "$SECBOOT_KEY" 2>/dev/null
-chmod 600 "$SECBOOT_KEY"
+if [ -f "$SECBOOT_KEY" ]; then
+    echo "  Skipping secure-boot signing key (already exists)"
+else
+    echo "  Generating secure-boot signing key (RSA-2048) ..."
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+        -out "$SECBOOT_KEY" 2>/dev/null
+    chmod 600 "$SECBOOT_KEY"
+fi
 
 # IMA/EVM private key (EC prime256v1)
 IMA_PRIVKEY="$KEY_DIR/privkey_ima.pem"
-echo "  Generating IMA/EVM private key ..."
-openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 \
-    -out "$IMA_PRIVKEY" 2>/dev/null
-chmod 600 "$IMA_PRIVKEY"
+if [ -f "$IMA_PRIVKEY" ]; then
+    echo "  Skipping IMA/EVM private key (already exists)"
+else
+    echo "  Generating IMA/EVM private key ..."
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 \
+        -out "$IMA_PRIVKEY" 2>/dev/null
+    chmod 600 "$IMA_PRIVKEY"
+fi
 
 # IMA/EVM x509 certificate (DER)
 IMA_X509="$KEY_DIR/x509_ima.der"
-echo "  Generating IMA/EVM x509 certificate (DER) ..."
-openssl req -new -x509 -sha256 -days "$DAYS" -batch \
-    -subj "/CN=$CN-imaevm dev/O=$ORG" \
-    -addext "basicConstraints=critical,CA:FALSE" \
-    -addext "keyUsage=digitalSignature" \
-    -addext "extendedKeyUsage=critical,codeSigning" \
-    -addext "subjectKeyIdentifier=hash" \
-    -key "$IMA_PRIVKEY" -outform DER -out "$IMA_X509" 2>/dev/null
-chmod 644 "$IMA_X509"
+if [ -f "$IMA_X509" ]; then
+    echo "  Skipping IMA/EVM x509 certificate (already exists)"
+else
+    echo "  Generating IMA/EVM x509 certificate (DER) ..."
+    openssl req -new -x509 -sha256 -days "$DAYS" -batch \
+        -subj "/CN=$CN-imaevm dev/O=$ORG" \
+        -addext "basicConstraints=critical,CA:FALSE" \
+        -addext "keyUsage=digitalSignature" \
+        -addext "extendedKeyUsage=critical,codeSigning" \
+        -addext "subjectKeyIdentifier=hash" \
+        -key "$IMA_PRIVKEY" -outform DER -out "$IMA_X509" 2>/dev/null
+    chmod 644 "$IMA_X509"
+fi
 
 # Kernel module signing private key (EC prime256v1) 
 MODSIGN_PRIVKEY="$KEY_DIR/privkey_modsign.pem"
-echo "  Generating kernel module signing private key ..."
-openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 \
-    -out "$MODSIGN_PRIVKEY" 2>/dev/null
-chmod 600 "$MODSIGN_PRIVKEY"
+if [ -f "$MODSIGN_PRIVKEY" ]; then
+    echo "  Skipping kernel module signing private key (already exists)"
+else
+    echo "  Generating kernel module signing private key ..."
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 \
+        -out "$MODSIGN_PRIVKEY" 2>/dev/null
+    chmod 600 "$MODSIGN_PRIVKEY"
+fi
 
 # Kernel module signing x509 certificate (PEM)
 MODSIGN_X509="$KEY_DIR/x509_modsign.pem"
-echo "  Generating kernel module signing x509 certificate (PEM) ..."
-openssl req -new -x509 -sha256 -days "$DAYS" -batch \
-    -subj "/CN=$CN-modsign dev/O=$ORG" \
-    -addext "basicConstraints=critical,CA:FALSE" \
-    -addext "keyUsage=digitalSignature" \
-    -addext "extendedKeyUsage=critical,codeSigning" \
-    -addext "subjectKeyIdentifier=hash" \
-    -key "$MODSIGN_PRIVKEY" -outform PEM -out "$MODSIGN_X509" 2>/dev/null
-chmod 644 "$MODSIGN_X509"
+if [ -f "$MODSIGN_X509" ]; then
+    echo "  Skipping kernel module signing x509 certificate (already exists)"
+else
+    echo "  Generating kernel module signing x509 certificate (PEM) ..."
+    openssl req -new -x509 -sha256 -days "$DAYS" -batch \
+        -subj "/CN=$CN-modsign dev/O=$ORG" \
+        -addext "basicConstraints=critical,CA:FALSE" \
+        -addext "keyUsage=digitalSignature" \
+        -addext "extendedKeyUsage=critical,codeSigning" \
+        -addext "subjectKeyIdentifier=hash" \
+        -key "$MODSIGN_PRIVKEY" -outform PEM -out "$MODSIGN_X509" 2>/dev/null
+    chmod 644 "$MODSIGN_X509"
+fi
 
 # SSH CA key pair (ed25519)
 SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
 KAS_FRAGMENT="${2:-$TOP_LAYER_DIR/kas-signing-keys.yml}"
-echo "  Generating SSH CA key pair (ed25519) ..."
-# ssh-keygen requires a valid passwd entry:
-# create a temporary one in CI for the current uid if missing
-getent passwd "$(id -u)" >/dev/null 2>&1 || echo "build:x:$(id -u):$(id -g)::/tmp:/sbin/nologin" >> /etc/passwd
-HOME=/tmp ssh-keygen -t ed25519 -f "$SSH_CA_KEY" -N "" -C "$ORG SSH CA" -q
-chmod 600 "$SSH_CA_KEY"
-chmod 644 "$SSH_CA_PUB"
+if [ -f "$SSH_CA_KEY" ]; then
+    echo "  Skipping SSH CA key pair (already exists)"
+else
+    echo "  Generating SSH CA key pair (ed25519) ..."
+    # ssh-keygen requires a valid passwd entry:
+    # create a temporary one in CI for the current uid if missing
+    getent passwd "$(id -u)" >/dev/null 2>&1 || echo "build:x:$(id -u):$(id -g)::/tmp:/sbin/nologin" >> /etc/passwd
+    HOME=/tmp ssh-keygen -t ed25519 -f "$SSH_CA_KEY" -N "" -C "$ORG SSH CA" -q
+    chmod 600 "$SSH_CA_KEY"
+    chmod 644 "$SSH_CA_PUB"
+fi
 
 # Auto-generate a ready-to-use kas fragment with resolved key paths.
 cat > "$KAS_FRAGMENT" <<EOF
