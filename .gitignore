@@ -3,3 +3,5 @@ layers/
 __pycache__/
 *.pyc
 .vscode/
+rpi-secure-keys/
+kas-signing-keys.yml
