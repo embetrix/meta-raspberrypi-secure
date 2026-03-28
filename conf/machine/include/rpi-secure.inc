@@ -60,9 +60,17 @@ RPI_SECURE_BOOT_SIGN = "1"
 IMAGE_CLASSES += "rpi-secure-boot"
 INHERIT += "rpi-signing-keys"
 IMAGE_BOOT_FILES_DEFAULT := "${IMAGE_BOOT_FILES}"
-IMAGE_BOOT_FILES_SECURE_BOOT = "boot.img boot.sig recovery.bin pieeprom.bin.signed;pieeprom.upd"
-IMAGE_BOOT_FILES ="${@bb.utils.contains('RPI_SECURE_BOOT_SIGN', '1', \
-                    '${IMAGE_BOOT_FILES_SECURE_BOOT}', '${IMAGE_BOOT_FILES_DEFAULT}', d)}"
+IMAGE_BOOT_FILES_SECURE_BOOT = "boot.img boot.sig"
+
+# Boot files selection:
+#   dev  + secure boot: DEFAULT + SECURE_BOOT (all files for fallback when secure boot is disabled using recovery)
+#   prod + secure boot: SECURE_BOOT only (boot.img, boot.sig, EEPROM, recovery)
+#   secure boot off:    DEFAULT only
+IMAGE_BOOT_FILES = "${@bb.utils.contains('RPI_SECURE_BOOT_SIGN', '1', \
+                    bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', \
+                        '${IMAGE_BOOT_FILES_SECURE_BOOT}', \
+                        '${IMAGE_BOOT_FILES_DEFAULT} ${IMAGE_BOOT_FILES_SECURE_BOOT}', d), \
+                    '${IMAGE_BOOT_FILES_DEFAULT}', d)}"
 
 # IMA/EVM Rootfs Signing
 INHERIT += "ima-evm-rootfs"
@@ -85,7 +93,13 @@ ROOTFS_TYPE="${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'erofs', 'ext4
 
 # Files for the boot partition selector
 WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
-IMAGE_BOOT_PARTITION_FILES = "autoboot.txt"
+IMAGE_BOOT_PARTITION_FILES = "autoboot.txt \
+                              recovery.bin;_recovery.bin_ \
+                              pieeprom-recovery.bin;_pieeprom.bin_ \
+                              pieeprom-recovery.sig;_pieeprom.sig_ \
+                              pieeprom.bin.signed;_pieeprom.upd_ \
+                              pieeprom.upd.hashsig;_pieeprom.upd.sig_ \
+                              readme.txt"
 
 # Device Tree Hardening
 # Keep only the DTB and overlays required by the actual hardware

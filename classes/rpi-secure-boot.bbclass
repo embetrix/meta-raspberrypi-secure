@@ -47,8 +47,17 @@ RPI_SECURE_BOOTIMG_SIG = "${DEPLOY_DIR_IMAGE}/boot.sig"
 RPI_SECURE_BOOT_CONFIG = "${DEPLOY_DIR_IMAGE}/bootconf.txt"
 RPI_SECURE_BOOT_CONFIG_SIG = "${DEPLOY_DIR_IMAGE}/bootconf.sig"
 RPI_SECURE_BOOT_EEPROM = "${DEPLOY_DIR_IMAGE}/pieeprom.bin"
-RPI_SECURE_BOOT_EEPROM_SIG = "${DEPLOY_DIR_IMAGE}/pieeprom.bin.sig"
 RPI_SECURE_BOOT_EEPROM_SIGNED = "${DEPLOY_DIR_IMAGE}/pieeprom.bin.signed"
+RPI_SECURE_BOOT_EEPROM_SIG = "${DEPLOY_DIR_IMAGE}/pieeprom.upd.sig"
+RPI_SECURE_BOOT_EEPROM_RECOVERY = "${DEPLOY_DIR_IMAGE}/pieeprom-recovery.bin"
+RPI_SECURE_BOOT_EEPROM_RECOVERY_SIG = "${DEPLOY_DIR_IMAGE}/pieeprom-recovery.sig"
+RPI_SECURE_BOOT_RECOVERY_CONFIG = "${DEPLOY_DIR_IMAGE}/bootconf-recovery.txt"
+
+# Hash-only (no RSA) signatures for partition 1 recovery deployment.
+# These allow recovery.bin to verify the EEPROM image regardless of
+# whether secure boot is currently enabled or disabled.
+RPI_SECURE_BOOT_EEPROM_HASHSIG = "${DEPLOY_DIR_IMAGE}/pieeprom.upd.hashsig"
+RPI_SECURE_BOOT_EEPROM_RECOVERY_HASHSIG = "${DEPLOY_DIR_IMAGE}/pieeprom-recovery.hashsig"
 
 do_image_rpi_secure_boot[depends] = " \
     mtools-native:do_populate_sysroot \
@@ -61,7 +70,7 @@ do_image_rpi_secure_boot[depends] = " \
     ${@bb.utils.contains('MACHINE_FEATURES', 'armstub', 'armstubs:do_deploy', '' ,d)} \
     ${@bb.utils.contains('RPI_USE_U_BOOT', '1', 'u-boot:do_deploy', '',d)} \
     ${@bb.utils.contains('RPI_USE_U_BOOT', '1', 'u-boot-default-script:do_deploy', '',d)} \
-"
+    "
 
 do_image_rpi_secure_boot[recrdeps] = "do_build"
 
@@ -173,11 +182,34 @@ IMAGE_CMD:rpi-secure-boot () {
                                    ${RPI_SECURE_BOOT_EEPROM} \
                         || bbfatal "Failed to generate signed EEPROM firmware ${RPI_SECURE_BOOT_EEPROM_SIGNED}"
 
-        # Generate detached signature for the signed EEPROM binary
+        # Generate pieeprom.sig for the signed EEPROM (required by recovery.bin and self-update)
         rpi-eeprom-digest -k ${RPI_SECURE_BOOT_SIGN_KEY} \
-                          -i ${RPI_SECURE_BOOT_EEPROM} \
+                          -i ${RPI_SECURE_BOOT_EEPROM_SIGNED} \
                           -o ${RPI_SECURE_BOOT_EEPROM_SIG} \
-                        || bbfatal "Failed to generate signature for ${RPI_SECURE_BOOT_EEPROM}"
+                        || bbfatal "Failed to generate signature for ${RPI_SECURE_BOOT_EEPROM_SIGNED}"
+
+        # Generate recovery EEPROM (without public key to disable secure boot)
+        rpi-eeprom-config --config ${RPI_SECURE_BOOT_RECOVERY_CONFIG} \
+                          --out    ${RPI_SECURE_BOOT_EEPROM_RECOVERY} \
+                                   ${RPI_SECURE_BOOT_EEPROM} \
+                        || bbfatal "Failed to generate recovery EEPROM ${RPI_SECURE_BOOT_EEPROM_RECOVERY}"
+
+        # Generate pieeprom.sig for the recovery EEPROM
+        rpi-eeprom-digest -k ${RPI_SECURE_BOOT_SIGN_KEY} \
+                          -i ${RPI_SECURE_BOOT_EEPROM_RECOVERY} \
+                          -o ${RPI_SECURE_BOOT_EEPROM_RECOVERY_SIG} \
+                        || bbfatal "Failed to generate signature for ${RPI_SECURE_BOOT_EEPROM_RECOVERY}"
+
+        # Generate hash-only signatures for partition 1 recovery deployment
+        # These do not require RSA verification, so recovery.bin can use them
+        # regardless of whether secure boot is enabled or disabled.
+        rpi-eeprom-digest -i ${RPI_SECURE_BOOT_EEPROM_SIGNED} \
+                          -o ${RPI_SECURE_BOOT_EEPROM_HASHSIG} \
+                        || bbfatal "Failed to generate hash-only signature for ${RPI_SECURE_BOOT_EEPROM_SIGNED}"
+
+        rpi-eeprom-digest -i ${RPI_SECURE_BOOT_EEPROM_RECOVERY} \
+                          -o ${RPI_SECURE_BOOT_EEPROM_RECOVERY_HASHSIG} \
+                        || bbfatal "Failed to generate hash-only signature for ${RPI_SECURE_BOOT_EEPROM_RECOVERY}"
 
         # Sanity checks
         rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOTIMG} -v ${RPI_SECURE_BOOTIMG_SIG} \
@@ -186,8 +218,11 @@ IMAGE_CMD:rpi-secure-boot () {
         rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOT_CONFIG} -v ${RPI_SECURE_BOOT_CONFIG_SIG} \
                         || bbfatal "Signature verification failed for ${RPI_SECURE_BOOT_CONFIG}"
 
-        rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOT_EEPROM} -v ${RPI_SECURE_BOOT_EEPROM_SIG} \
-                        || bbfatal "Signature verification failed for ${RPI_SECURE_BOOT_EEPROM}"
+        rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOT_EEPROM_SIGNED} -v ${RPI_SECURE_BOOT_EEPROM_SIG} \
+                        || bbfatal "Signature verification failed for ${RPI_SECURE_BOOT_EEPROM_SIGNED}"
+
+        rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOT_EEPROM_RECOVERY} -v ${RPI_SECURE_BOOT_EEPROM_RECOVERY_SIG} \
+                        || bbfatal "Signature verification failed for ${RPI_SECURE_BOOT_EEPROM_RECOVERY}"
 
     fi
 }

@@ -1,0 +1,8 @@
+[all]
+# Try SD first (1), followed by USB (RP1), NVMe PCIe, then network
+#BOOT_ORDER=0xf2461
+
+# Enable UART for bootloader but can be disabled for production
+BOOT_UART=1
+
+#ENABLE_SELF_UPDATE=0
