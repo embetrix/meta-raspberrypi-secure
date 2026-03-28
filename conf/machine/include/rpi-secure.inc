@@ -5,20 +5,26 @@
 # Security profile "dev" or "prod"
 RPI_SECURITY_PROFILE ?= "dev"
 
-# Firmware
-# check for more options in
-# https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
+# Restrict to supported machines only
+INHERIT += "rpi-secure-machine-compat"
+
+# Bootloader configuration
 ENABLE_WATCHDOG         = "1"
 ENABLE_USB_MAX_CURRENT  = "1"
 ENABLE_TRYBOOT_AB       = "1"
+ENABLE_SPI_BUS          = "1"
+ENABLE_I2C              = "1"
 LOCK_DEVICE_KEY         = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 ENABLE_UART             = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '1', d)}"
 DISABLE_SPLASH          = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
+# On purpose not locking the device key in OTP This is a one-way operation and should be done with caution !!
+# check for more options in
+# https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
+PROGRAM_PUBLIC_KEY      = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
+PROGRAM_JTAG_LOCK       = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
 
 # TPM support
 MACHINE_FEATURES += "tpm"
-ENABLE_SPI_BUS       = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
-ENABLE_I2C           = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
 ENABLE_TPM_SLB9670   = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
 MACHINE_EXTRA_RRECOMMENDS      += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'packagegroup-security-tpm2', '', d)}"
 RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'overlays/tpm-slb9670.dtbo', '', d)}"
@@ -44,16 +50,19 @@ INITRAMFS_IMAGE_NAME   ?= "rpi-secure-initramfs-image-${MACHINE}.rootfs"
 INITRAMFS_IMAGE_BUNDLE  = "1"
 
 # Ship the bundled kernel+initramfs image as the firmware-loaded kernel
-IMAGE_BOOT_FILES:append = " ${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERNELIMAGE}"
+IMAGE_BOOT_FILES += "${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERNELIMAGE}"
 
 # No kernel image inside the rootfs
 RDEPENDS:${KERNEL_PACKAGE_NAME}-base = ""
 
-# Raspberry Pi Secure Boot
+# Raspberry Pi Secure Boot configuration
 RPI_SECURE_BOOT_SIGN = "1"
 IMAGE_CLASSES += "rpi-secure-boot"
 INHERIT += "rpi-signing-keys"
-IMAGE_BOOT_FILES:append = " boot.img boot.sig"
+IMAGE_BOOT_FILES_DEFAULT := "${IMAGE_BOOT_FILES}"
+IMAGE_BOOT_FILES_SECURE_BOOT = "boot.img boot.sig recovery.bin pieeprom.bin.signed;pieeprom.upd"
+IMAGE_BOOT_FILES ="${@bb.utils.contains('RPI_SECURE_BOOT_SIGN', '1', \
+                    '${IMAGE_BOOT_FILES_SECURE_BOOT}', '${IMAGE_BOOT_FILES_DEFAULT}', d)}"
 
 # IMA/EVM Rootfs Signing
 INHERIT += "ima-evm-rootfs"
