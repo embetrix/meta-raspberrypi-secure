@@ -8,7 +8,11 @@
 # instead of a full SD card image with rootfs partition.
 # It creates a standalone bootable FAT32 partition image containing
 # bootloader files, kernel, device trees, and overlays.
-# When secure boot is enabled, it also generates a signature file boot.sig along side with boot.img
+# When secure boot is enabled, it also generates:
+#   - boot.sig: RSA signature for boot.img
+#   - pieeprom.bin.signed: EEPROM firmware with SIGNED_BOOT=1 and embedded public key
+#   - pieeprom-recovery.bin: EEPROM firmware without SIGNED_BOOT (for disabling secure boot)
+#   - RSA-signed and hash-only signatures for EEPROM recovery
 #
 # Usage:
 #   To enable this class add in distro config or local.conf:
@@ -17,7 +21,7 @@
 #   RPI_SECURE_BOOT_SIGN = "1"
 #   RPI_SECURE_BOOT_SIGN_KEY = "/path/to/keys/secure-boot-sign.key"
 #
-#   Key generation for dev builds is handled by the rpi-signing-keys class.
+#   Keys can be generated with scripts/genkey-helper.sh
 #
 #   To deploy boot.img/boot.sig to the boot partition via wic add:
 #   IMAGE_BOOT_FILES += "boot.img boot.sig"
@@ -39,7 +43,7 @@ SECURE_BOOT_FILES_EXCLUDE ?= ""
 # Boot FAT size in KiB for the standalone boot.img.
 # Keep this larger than the sdcard_image-rpi default to leave room for
 # bundled initramfs kernels and Raspberry Pi firmware files.
-RPI_SECURE_BOOT_SPACE ?= "131072"
+RPI_SECURE_BOOT_SPACE_MAX ?= "131072"
 
 # Boot image/signature name
 RPI_SECURE_BOOTIMG = "${DEPLOY_DIR_IMAGE}/boot.img"
@@ -137,11 +141,11 @@ IMAGE_CMD:rpi-secure-boot () {
     fi
     # Align to 1 MiB
     BOOT_SIZE_KB=$(expr \( $BOOT_SIZE_KB + 1023 \) / 1024 \* 1024)
-    # Cap to RPI_SECURE_BOOT_SPACE
-    if [ ${BOOT_SIZE_KB} -gt ${RPI_SECURE_BOOT_SPACE} ]; then
-        bbfatal "Boot content (${BOOT_SIZE_KB} KiB) exceeds RPI_SECURE_BOOT_SPACE (${RPI_SECURE_BOOT_SPACE} KiB)"
+    # Cap to RPI_SECURE_BOOT_SPACE_MAX
+    if [ ${BOOT_SIZE_KB} -gt ${RPI_SECURE_BOOT_SPACE_MAX} ]; then
+        bbfatal "Boot content (${BOOT_SIZE_KB} KiB) exceeds RPI_SECURE_BOOT_SPACE_MAX (${RPI_SECURE_BOOT_SPACE_MAX} KiB)"
     fi
-    bbnote "Creating boot.img: ${BOOT_SIZE_KB} KiB (content: ${NEEDED_KB} KiB, max: ${RPI_SECURE_BOOT_SPACE} KiB)"
+    bbnote "Creating boot.img: ${BOOT_SIZE_KB} KiB (content: ${NEEDED_KB} KiB, max: ${RPI_SECURE_BOOT_SPACE_MAX} KiB)"
 
     # Create and populate boot.img
     rm -f ${WORKDIR}/boot.img
