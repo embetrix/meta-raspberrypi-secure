@@ -20,8 +20,11 @@ pipeline {
         stage('Setup') {
             steps {
                 script {
-                    def keyDir = "build/${params.SECURITY_PROFILE}-keys"
-                    def kasFragment = "kas-${params.SECURITY_PROFILE}-signing-keys.yml"
+                    def keyDir = "${env.WORKSPACE}/rpi-secure-keys"
+                    def kasFragment = "kas-signing-keys.yml"
+                    withCredentials([file(credentialsId: 'fd6cfa4d-679d-4d04-9e6a-74073de43385', variable: 'KEYS_TARBALL')]) {
+                        sh "tar xzf \$KEYS_TARBALL -C ${env.WORKSPACE}"
+                    }
                     sh "scripts/genkey-helper.sh ${keyDir} ${kasFragment}"
                 }
             }
@@ -39,8 +42,7 @@ pipeline {
         stage('Build-Image') {
             steps {
                 script {
-                    def kasFragment = "kas-${params.SECURITY_PROFILE}-signing-keys.yml"
-                    def kasConfig = "kas-rpi-secure.yml:${kasFragment}"
+                    def kasConfig = "kas-rpi-secure.yml:kas-signing-keys.yml"
 
                     sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} SECURITY_PROFILE=${params.SECURITY_PROFILE} kas build --force-checkout --update ${kasConfig}"
                 }
