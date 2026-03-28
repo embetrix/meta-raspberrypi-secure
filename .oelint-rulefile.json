@@ -1,0 +1,12 @@
+{
+    "oelint.bbclass.underscores": "warning",
+    "oelint.vars.noncoreoverride": "warning",
+    "oelint.append.protvars": "warning",
+    "oelint.append.protvars.SRCREV": "warning",
+    "oelint.append.protvars.PV": "warning",
+    "oelint.vars.mispell.unknown": "warning",
+    "oelint.vars.mispell": "warning",
+    "oelint.task.dash": "warning",
+    "oelint.vars.specific": "warning",
+    "oelint.task.noanonpython": "warning"
+}

@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [ "scarthgap" ]
+  pull_request:
+    branches: [ "scarthgap" ]
+
+jobs:
+  oelint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install oelint-adv
+        run: pip install oelint-adv
+
+      - name: OE Recipe Lint
+        run: |
+          oelint-adv --exit-zero --rulefile .oelint-rulefile.json --release scarthgap \
+            $(find . -name '*.bb' -o -name '*.bbappend' -o -name '*.bbclass' -o -name '*.inc' | grep -v /layers/)

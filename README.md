@@ -1,5 +1,7 @@
 # meta-raspberrypi-secure
 
+[![CI](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml/badge.svg?branch=scarthgap)](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml)
+
 A Yocto layer for building security-hardened Raspberry Pi images. It provides
 full-disk encryption, verified boot, integrity measurement, and
 defense-in-depth configurations on top of `meta-raspberrypi`.
