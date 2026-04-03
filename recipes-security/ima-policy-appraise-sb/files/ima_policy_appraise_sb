@@ -4,8 +4,7 @@
 # IMA/EVM extended secure boot appraise policy
 # Extends the hardware secure boot chain into the Linux by
 # enforcing ima/evm signatures verification on :
-# executables, libraries, kernel modules, ima policy and firmware on all filesystems.
-# Additionally appraises all files on the root filesystem (fsuuid based)
+# executables, libraries, kernel modules, ima policy and firmware on all filesystems
 #
 # Documentation: https://ima-doc.readthedocs.io/en/latest/policy-syntax.html
 #
@@ -27,6 +26,3 @@ appraise func=MODULE_CHECK appraise_type=imasig
 
 ## IMA Policy itself 
 appraise func=POLICY_CHECK appraise_type=imasig
-
-## All opened files from filesystem specified with __FSUUID__
-appraise func=FILE_CHECK mask=^MAY_READ fsuuid=__FSUUID__ appraise_type=imasig
