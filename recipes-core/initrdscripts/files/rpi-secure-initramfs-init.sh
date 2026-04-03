@@ -5,8 +5,8 @@
 # rpi secure initramfs init script:
 #   mount_early_fs     - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
 #   get_boot_slot      - Detect A/B boot slot from device tree
-#   derive_key         - Derive LUKS key from OTP HMAC or serial fallback
-#   encrypt_rootfs     - First-boot rootfs encryption (plain → LUKS)
+#   derive_key         - Derive LUKS2 key from OTP HMAC or serial fallback
+#   encrypt_rootfs     - First-boot rootfs encryption (plain to LUKS2)
 #   setup_avb_verity   - AVB signature verification and dm-verity setup
 #   mount_data_luks    - First-boot data partitions encryption
 #   setup_integrity    - Import IMA/EVM keys and load appraise policy
@@ -227,7 +227,7 @@ setup_integrity() {
 	echo "0x80000002" > /sys/kernel/security/integrity/evm/evm
 }
 
-# Derive LUKS encryption key from secure storage:
+# Derive LUKS2 encryption key from secure storage:
 # Uses rpi-fw-crypto HMAC-SHA256 with the OTP device key
 # The HMAC input is the storage device CID (if available) which
 # binds the key to the specific eMMC/SD/NVMe hardware preventing
@@ -279,14 +279,14 @@ inject_key() {
 #############################################################################
 # Encrypt rootfs on first boot using the update partition.
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# WARNING: This operation is NOT power-safe. 
+# WARNING: This operation is NOT power-safe
 # Power loss mid-migration can leave both root partitions unrecoverable
 # should ideally be performed during manufacturing or 
 # initial provisioning and not in the field
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Flow:
-#   Format root partition as LUKS, copy from update (plain) into it
-#   then format update partition as LUKS
+#   Format root partition as LUKS2, copy from update (plain) into it
+#   then format update partition as LUKS2
 #############################################################################
 encrypt_rootfs() {
 
@@ -296,7 +296,7 @@ encrypt_rootfs() {
 	update_dm="$4"
 	luks_opts="--type luks2 --key-size 256"
 
-	klog "First-boot rootfs encryption: migrating plain rootfs to dm-crypt LUKS..."
+	klog "First-boot rootfs encryption: migrating plain rootfs to dm-crypt LUKS2..."
 	enc_start=$(date +%s)
 
 	# Detect filesystem type
@@ -304,32 +304,32 @@ encrypt_rootfs() {
 		|| fatal "cannot detect root filesystem type"
 	klog "Update partition filesystem: $fstype"
 
-	# Format root partition as LUKS, copy from update
+	# Format root partition as LUKS2, copy from update
 	inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$root_dev" \
-		|| fatal "cannot format root $root_dev as LUKS"
+		|| fatal "cannot format root $root_dev as LUKS2"
 	inject_key | cryptsetup luksOpen --key-file=- "$root_dev" "$root_dm" \
-		|| fatal "cannot open root LUKS $root_dev"
+		|| fatal "cannot open root LUKS2 $root_dev"
 
 	# Copy the entire AVB image (filesystem + hashtree + footer)
-	# from the update partition into the LUKS container.
+	# from the update partition into the LUKS2 container.
 	# Do NOT shrink or expand the filesystem the AVB hashtree
 	# must remain intact for dm-verity verification.
 	klog "Copying image from $update_dev to encrypted root volume..."
 	dd if="$update_dev" of="/dev/mapper/$root_dm" bs=4M 2>/dev/null
 	sync
 
-	# Format update partition as LUKS
+	# Format update partition as LUKS2
 	inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$update_dev" \
-		|| fatal "cannot format update $update_dev as LUKS"
+		|| fatal "cannot format update $update_dev as LUKS2"
 	inject_key | cryptsetup luksOpen --key-file=- "$update_dev" "$update_dm" \
-		|| fatal "cannot open update LUKS $update_dev"
+		|| fatal "cannot open update LUKS2 $update_dev"
 
 	enc_end=$(date +%s)
 	klog "Rootfs encryption complete in $((enc_end - enc_start))s"
 }
 
 # Verify AVB signature and set up dm-verity on the decrypted root device.
-# The AVB footer (with hashtree) lives inside the LUKS container.
+# The AVB footer (with hashtree) lives inside the LUKS2 container.
 # Usage: setup_avb_verity <luks_dm_name> <verity_dm_name>
 setup_avb_verity() {
 
@@ -354,7 +354,7 @@ setup_avb_verity() {
 	klog "dm-verity $verity_name active on $luks_dev"
 }
 
-# Mount a data partition with LUKS encryption.
+# Mount a data partition with LUKS2 encryption.
 # First boot: luksFormat + mkfs.ext4 + mount
 # Normal boot: luksOpen + mount
 # Usage: mount_data_luks <device> <dm_name> <label> <mountpoint> [mount_opts]
@@ -374,16 +374,16 @@ mount_data_luks() {
 		fmt_start=$(date +%s)
 		klog "Formatting $dev as LUKS2 for $dm_name..."
 		inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$dev" \
-			|| fatal "cannot format $dev as LUKS"
+			|| fatal "cannot format $dev as LUKS2"
 		inject_key | cryptsetup luksOpen --key-file=- "$dev" "$dm_name" \
-			|| fatal "cannot open LUKS device $dev"
+			|| fatal "cannot open LUKS2 device $dev"
 		mkfs.ext4 -L "$label" "/dev/mapper/$dm_name" > /dev/null 2>&1 \
 			|| fatal "cannot create filesystem on $dm_name"
 		fmt_end=$(date +%s)
-		klog "LUKS+ext4 setup of $dev completed in $((fmt_end - fmt_start))s"
+		klog "LUKS2+ext4 setup of $dev completed in $((fmt_end - fmt_start))s"
 	else
 		inject_key | cryptsetup luksOpen --key-file=- "$dev" "$dm_name" \
-			|| fatal "cannot open LUKS device $dev"
+			|| fatal "cannot open LUKS2 device $dev"
 	fi
 
 	mkdir -p "$mnt"
@@ -407,19 +407,19 @@ await_blockdev "$ROOT_DEV"
 # Required to make pipe work in shell
 ln -s /proc/self/fd /dev/fd
 
-# Derive and cache the LUKS key once
+# Derive and cache the LUKS2 key once
 derive_key
 
 if ! cryptsetup isLuks "$ROOT_DEV" 2>/dev/null; then
 	encrypt_rootfs "$ROOT_DEV" "$UPDATE_DEV" "$ROOT_DM_NAME" "$UPDATE_DM_NAME"
 else
 	inject_key | cryptsetup luksOpen --key-file=- "$ROOT_DEV" "$ROOT_DM_NAME" \
-		|| fatal "cannot open root LUKS device $ROOT_DEV"
+		|| fatal "cannot open root LUKS2 device $ROOT_DEV"
 	inject_key | cryptsetup luksOpen --key-file=- "$UPDATE_DEV" "$UPDATE_DM_NAME" \
-		|| fatal "cannot open update LUKS device $UPDATE_DEV"
+		|| fatal "cannot open update LUKS2 device $UPDATE_DEV"
 fi
 
-# Probe filesystem type on LUKS device before dm-verity
+# Probe filesystem type on LUKS2 device before dm-verity
 fstype=$(blkid -s TYPE -o value "/dev/mapper/$ROOT_DM_NAME" 2>/dev/null) \
 	|| fatal "cannot detect root filesystem type"
 
