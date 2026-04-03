@@ -2,6 +2,7 @@
 PACKAGECONFIG = " \
     keyring \
     cryptsetup \
+    veritysetup \
     luks2-reencryption \
     integritysetup \
     kernel_crypto \
