@@ -88,6 +88,17 @@ else
     chmod 644 "$MODSIGN_X509"
 fi
 
+# AVB signing private key (RSA 4096)
+AVB_SIGN_KEY="$KEY_DIR/privkey_avb.pem"
+if [ -f "$AVB_SIGN_KEY" ]; then
+    echo "  Skipping AVB signing key (already exists)"
+else
+    echo "  Generating AVB signing key (RSA-4096) ..."
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 \
+        -out "$AVB_SIGN_KEY" 2>/dev/null
+    chmod 600 "$AVB_SIGN_KEY"
+fi
+
 # SSH CA key pair (ed25519)
 SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
@@ -118,6 +129,7 @@ local_conf_header:
         IMA_EVM_X509             = "$IMA_X509"
         MODSIGN_PRIVKEY          = "$MODSIGN_PRIVKEY"
         MODSIGN_X509             = "$MODSIGN_X509"
+        AVB_SIGN_KEY             = "$AVB_SIGN_KEY"
         OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
 EOF
 chmod 600 "$KAS_FRAGMENT"
@@ -135,6 +147,7 @@ IMA_EVM_PRIVKEY          = "$IMA_PRIVKEY"
 IMA_EVM_X509             = "$IMA_X509"
 MODSIGN_PRIVKEY          = "$MODSIGN_PRIVKEY"
 MODSIGN_X509             = "$MODSIGN_X509"
+AVB_SIGN_KEY             = "$AVB_SIGN_KEY"
 OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
 EOF
 echo "#######################################################"
