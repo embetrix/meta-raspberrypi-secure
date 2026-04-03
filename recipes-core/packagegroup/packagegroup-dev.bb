@@ -12,14 +12,14 @@ PACKAGES = "${PN}"
 SUMMARY:packagegroup-dev = "Development support"
 
 RDEPENDS:packagegroup-dev = " \
-	packagegroup-core-full-cmdline \
+    packagegroup-core-full-cmdline \
     tcpdump \
     gdbserver \
     strace \
     curl \
-	opensc \
-	curl \
-	htop \
+    opensc \
+    curl \
+    htop \
     rpi-eeprom \
     rpi-secureboot \
     "

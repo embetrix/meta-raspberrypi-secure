@@ -27,11 +27,8 @@ EXTRA_USERS_PARAMS = " \
     usermod -p '\$5\$8fe9b3c5b1479874\$kZwSJoxUOIHpuJRVts0Th4ueQPEJ2A0T7o3a3Fn92a4'  root; \
     "
 
-IMAGE_INSTALL:append = " \
-	auditd   \      
-	iptables \
-	usbguard \
-	rng-tools \
+IMAGE_INSTALL += " \
+	packagegroup-security-base \
 	"
 
-IMAGE_INSTALL:append = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', " packagegroup-dev", '', d)}"
+IMAGE_INSTALL += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', " packagegroup-dev", '', d)}"
