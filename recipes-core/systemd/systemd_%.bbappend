@@ -13,11 +13,11 @@ RRECOMMENDS:${PN} += "${PN}-journal-upload ${PN}-crypt ${PN}-container"
 
 do_install:append() {
 
-	if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then
+    if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then
         # Harden systemd defaults to disable coredumps
         sed -i '/#DumpCore=/c\\DumpCore=no'                ${D}${sysconfdir}/systemd/system.conf
         sed -i '/#DefaultLimitCORE=/c\\DefaultLimitCORE=0' ${D}${sysconfdir}/systemd/system.conf
-	fi
+    fi
 
     # Enable hardware watchdog and reboot if systemd hangs for 15s
     sed -i '/#RuntimeWatchdogSec=/c\\RuntimeWatchdogSec=15'  ${D}${sysconfdir}/systemd/system.conf
