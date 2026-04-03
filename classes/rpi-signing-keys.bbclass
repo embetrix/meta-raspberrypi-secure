@@ -13,6 +13,7 @@ MODSIGN_X509             ?= "${RPI_SIGNING_KEYS_DIR}/x509_modsign.pem"
 IMA_EVM_PRIVKEY          ?= "${RPI_SIGNING_KEYS_DIR}/privkey_ima.pem"
 IMA_EVM_X509             ?= "${RPI_SIGNING_KEYS_DIR}/x509_ima.der"
 RPI_SECURE_BOOT_SIGN_KEY ?= "${RPI_SIGNING_KEYS_DIR}/privkey_secure-bootsign.pem"
+AVB_SIGN_KEY             ?= "${RPI_SIGNING_KEYS_DIR}/privkey_avb.pem"
 
 addhandler rpi_check_signing_keys
 rpi_check_signing_keys[eventmask] = "bb.event.BuildStarted"
@@ -24,13 +25,13 @@ python rpi_check_signing_keys() {
     d = e.data
 
     key_defs = [
+        ('RPI_SECURE_BOOT_SIGN_KEY', 'private key'),
         ('IMA_EVM_PRIVKEY',  'private key'),
         ('IMA_EVM_X509',     'certificate'),
         ('MODSIGN_PRIVKEY',  'private key'),
         ('MODSIGN_X509',     'certificate'),
+        ('AVB_SIGN_KEY',     'private key'),
     ]
-    if d.getVar('RPI_SECURE_BOOT_SIGN') == '1':
-        key_defs.append(('RPI_SECURE_BOOT_SIGN_KEY', 'private key'))
 
     errors = []
     for name, desc in key_defs:

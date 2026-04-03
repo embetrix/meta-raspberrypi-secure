@@ -75,6 +75,10 @@ IMAGE_BOOT_FILES = "${@bb.utils.contains('RPI_SECURE_BOOT_SIGN', '1', \
 # IMA/EVM Rootfs Signing
 INHERIT += "ima-evm-rootfs"
 
+# AVB/DM-Verity configuration
+IMAGE_CLASSES += "avb-verity"
+IMAGE_FSTYPES += " ${ROOTFS_TYPE}.avbverity.gz"
+
 # Extra Runtime Packages
 MACHINE_EXTRA_RRECOMMENDS += " \
                         raspi-utils \
@@ -89,7 +93,7 @@ include conf/distro/include/cve-extra-exclusions.inc
 
 # WKS file
 WKS_FILES = "raspberrypi-secure.wks.in"
-ROOTFS_TYPE="${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'erofs', 'ext4', d)}"
+ROOTFS_TYPE="erofs"
 
 # Files for the boot partition selector
 WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
