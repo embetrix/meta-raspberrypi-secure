@@ -20,6 +20,7 @@ RDEPENDS:${PN}:append = " \
                 ima-evm-utils \
                 ima-policy-appraise-sb \
                 ima-evm-keys \
+                avb-verify \
                 "
 
 S = "${WORKDIR}"

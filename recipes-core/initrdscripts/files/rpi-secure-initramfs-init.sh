@@ -3,13 +3,14 @@
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
 # rpi secure initramfs init script:
-#   mount_early_fs   - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
-#   get_boot_slot    - Detect A/B boot slot from device tree
-#   inject_key       - Derive LUKS key from OTP HMAC or serial fallback
-#   encrypt_rootfs   - First-boot rootfs encryption
-#   mount_data_luks  - First-boot data partitions encryption
-#   setup_integrity  - Import IMA/EVM keys and load secure boot policy
-#   switch_root      - Switch to the real root filesystem
+#   mount_early_fs     - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
+#   get_boot_slot      - Detect A/B boot slot from device tree
+#   derive_key         - Derive LUKS key from OTP HMAC or serial fallback
+#   encrypt_rootfs     - First-boot rootfs encryption (plain → LUKS)
+#   setup_avb_verity   - AVB signature verification and dm-verity setup
+#   mount_data_luks    - First-boot data partitions encryption
+#   setup_integrity    - Import IMA/EVM keys and load appraise policy
+#   switch_root        - Switch to the real root filesystem
 #
 
 #set -x
@@ -26,6 +27,7 @@ ROOT_DM_NAME="root"
 UPDATE_DM_NAME="update"
 DATA_DM_NAME="data"
 BACKUPS_DM_NAME="backups"
+VERITY_DM_NAME="verity-root"
 
 ROOT_MNT="/root"
 BOOT_MNT="/boot"
@@ -67,6 +69,8 @@ OTP_KEY_ID=1
 # to enable block-level tamper detection
 # Disable for better RW performance
 DM_INTEGRITY=""
+
+AVB_PUBKEY="/etc/avb/avb_pubkey.bin"
 
 # Init
 INIT="/sbin/init"
@@ -185,7 +189,6 @@ restore_ima_evm_signatures() {
 
 setup_integrity() {
 
-	root_dev="$1"
 	klog "Setting up IMA/EVM Integrity..."
 
 	# Restore IMA/EVM signatures on initramfs file path so that :
@@ -215,14 +218,7 @@ setup_integrity() {
 		fatal "IMA policy not found!"
 	fi
 
-	# Get root filesystem UUID
-	FSUUID=$(blkid $root_dev -s UUID -o value)
-	if [ -z "$FSUUID" ]; then
-		fatal "cannot get filesystem UUID for $root_dev"
-	fi
-
-	# Replace placeholder in IMA policy before loading it
-	sed "s|__FSUUID__|$FSUUID|g" "$IMA_POLICY"       \
+	cat "$IMA_POLICY" \
 		 > /sys/kernel/security/integrity/ima/policy \
 		|| fatal "cannot load IMA policy"
 
@@ -298,7 +294,7 @@ encrypt_rootfs() {
 	update_dev="$2"
 	root_dm="$3"
 	update_dm="$4"
-	luks_opts="--key-size 256"
+	luks_opts="--type luks2 --key-size 256"
 
 	klog "First-boot rootfs encryption: migrating plain rootfs to dm-crypt LUKS..."
 	enc_start=$(date +%s)
@@ -308,30 +304,19 @@ encrypt_rootfs() {
 		|| fatal "cannot detect root filesystem type"
 	klog "Update partition filesystem: $fstype"
 
-	# Shrink ext4 to minimum before copying to save space in LUKS header
-	if [ "$fstype" = "ext4" ]; then
-		klog "Shrinking ext4 to minimum..."
-		e2fsck -fy "$update_dev" > /dev/null 2>&1
-		resize2fs -M "$update_dev" > /dev/null 2>&1
-	fi
-
 	# Format root partition as LUKS, copy from update
 	inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$root_dev" \
 		|| fatal "cannot format root $root_dev as LUKS"
 	inject_key | cryptsetup luksOpen --key-file=- "$root_dev" "$root_dm" \
 		|| fatal "cannot open root LUKS $root_dev"
 
-	# Copy filesystem from update partition (already pre-built by wic)
-	klog "Copying $fstype filesystem from $update_dev to encrypted root volume..."
+	# Copy the entire AVB image (filesystem + hashtree + footer)
+	# from the update partition into the LUKS container.
+	# Do NOT shrink or expand the filesystem the AVB hashtree
+	# must remain intact for dm-verity verification.
+	klog "Copying image from $update_dev to encrypted root volume..."
 	dd if="$update_dev" of="/dev/mapper/$root_dm" bs=4M 2>/dev/null
 	sync
-
-	# Expand ext4 to fill entire LUKS root container
-	if [ "$fstype" = "ext4" ]; then
-		klog "Expanding ext4 to fill LUKS container..."
-		e2fsck -fy "/dev/mapper/$root_dm" > /dev/null 2>&1
-		resize2fs "/dev/mapper/$root_dm" > /dev/null 2>&1
-	fi
 
 	# Format update partition as LUKS
 	inject_key | cryptsetup luksFormat $luks_opts -q --key-file=- "$update_dev" \
@@ -341,6 +326,32 @@ encrypt_rootfs() {
 
 	enc_end=$(date +%s)
 	klog "Rootfs encryption complete in $((enc_end - enc_start))s"
+}
+
+# Verify AVB signature and set up dm-verity on the decrypted root device.
+# The AVB footer (with hashtree) lives inside the LUKS container.
+# Usage: setup_avb_verity <luks_dm_name> <verity_dm_name>
+setup_avb_verity() {
+
+	luks_dev="/dev/mapper/$1"
+	verity_name="$2"
+
+	if [ ! -f "$AVB_PUBKEY" ]; then
+		fatal "AVB public key not found at $AVB_PUBKEY"
+	fi
+
+	klog "Verifying AVB signature on $luks_dev..."
+	dm_table=$(avb_verify --dm-table "$luks_dev" "$AVB_PUBKEY") \
+		|| fatal "AVB verification failed on $luks_dev"
+
+	klog "Setting up dm-verity as $verity_name..."
+	echo "$dm_table" | dmsetup create --readonly "$verity_name" \
+		|| fatal "cannot create dm-verity device $verity_name"
+
+	# No udev in initramfs so create the device node manually
+	dmsetup mknodes "$verity_name"
+
+	klog "dm-verity $verity_name active on $luks_dev"
 }
 
 # Mount a data partition with LUKS encryption.
@@ -354,7 +365,7 @@ mount_data_luks() {
 	label="$3"
 	mnt="$4"
 	mnt_opts="${5:-$OPT_PART}"
-	luks_opts="--key-size 256"
+	luks_opts="--type luks2 --key-size 256"
 
 	[ -n "$dev" ] || return 0
 	[ -n "$DM_INTEGRITY" ] && luks_opts="$luks_opts --integrity $DM_INTEGRITY"
@@ -408,13 +419,18 @@ else
 		|| fatal "cannot open update LUKS device $UPDATE_DEV"
 fi
 
-# Probe and validate root filesystem type
+# Probe filesystem type on LUKS device before dm-verity
 fstype=$(blkid -s TYPE -o value "/dev/mapper/$ROOT_DM_NAME" 2>/dev/null) \
 	|| fatal "cannot detect root filesystem type"
+
+# Set up dm-verity on the decrypted root device
+setup_avb_verity "$ROOT_DM_NAME" "$VERITY_DM_NAME"
+ROOT_BLOCK_DEV="/dev/mapper/$VERITY_DM_NAME"
+
 mkdir -p "$ROOT_MNT"
 # Mount encrypted root filesystem
-klog "Mounting encrypted root filesystem $fstype on /dev/mapper/$ROOT_DM_NAME..."
-mount -t "$fstype" -o "$OPT_ROOT" "/dev/mapper/$ROOT_DM_NAME" "$ROOT_MNT" \
+klog "Mounting encrypted root filesystem $fstype on $ROOT_BLOCK_DEV..."
+mount -t "$fstype" -o "$OPT_ROOT" "$ROOT_BLOCK_DEV" "$ROOT_MNT" \
 	|| fatal "cannot mount root partition"
 
 # Mount data partition
@@ -426,6 +442,7 @@ mount_data_luks "$BACKUPS_DEV" "$BACKUPS_DM_NAME" "backups" "$ROOT_MNT$BACKUPS_M
 # Clear cached key
 unset ENC_KEY_HEX
 
+mkdir -p "$ROOT_MNT$BOOT_MNT"
 mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 	|| fatal "cannot mount boot device $BOOT_DEV"
 
@@ -434,7 +451,7 @@ mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 MACHINE_ID="$(tr -d '\0\n' < "$HW_SERIAL" | sha256sum | cut -c1-32)"
 
 # Setup IMA/EVM
-setup_integrity "/dev/mapper/$ROOT_DM_NAME"
+setup_integrity
 
 # Switch to real root
 klog "Switch to real root..."
