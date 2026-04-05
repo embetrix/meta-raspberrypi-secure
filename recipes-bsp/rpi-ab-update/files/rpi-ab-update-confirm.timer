@@ -1,0 +1,8 @@
+[Unit]
+Description=Confirm A/B tryboot slot after 5 minutes
+
+[Timer]
+OnBootSec=5min
+
+[Install]
+WantedBy=timers.target

@@ -5,7 +5,7 @@
 # rpi-ab-update.sh: update the inactive A/B boot and root partitions
 #
 # Usage:
-#   rpi-ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img>
+#   rpi-ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img> [-R]
 #   rpi-ab-update.sh -c
 #   rpi-ab-update.sh -t
 #
@@ -42,6 +42,7 @@ BOOT_SIG=""
 ROOTFS_IMG=""
 CONFIRM=0
 STATUS=0
+REBOOT=0
 
 die() {
 
@@ -51,12 +52,13 @@ die() {
 
 usage() {
 
-    echo "Usage: $0 -b <boot.img> -s <boot.sig> -r <rootfs.img>"
+    echo "Usage: $0 -b <boot.img> -s <boot.sig> -r <rootfs.img> [-R]"
     echo "       $0 -c"
     echo "       $0 -t"
     echo "  -b <boot.img>    Boot image to write to inactive boot partition"
     echo "  -s <boot.sig>    Boot signature to write to inactive boot partition"
     echo "  -r <rootfs.img>  Rootfs image to write to inactive root partition"
+    echo "  -R               Reboot into tryboot after update"
     echo "  -c               Confirm: make the current tryboot slot the new default"
     echo "  -t               Check if currently running in tryboot mode"
     exit 1
@@ -158,6 +160,11 @@ EOF
     cp "$tmpfile" "$AUTOBOOT_TXT" || die "Failed to update $AUTOBOOT_TXT"
     sync
     rm -f "$tmpfile"
+
+    # Remove tryboot files from the now-confirmed active boot partition
+    rm -f "$BOOT_ACTIVE_MNT/tryboot.img" "$BOOT_ACTIVE_MNT/tryboot.sig"
+    sync
+
     echo "Slot $ACTIVE_SLOT is now the permanent default."
 }
 
@@ -168,11 +175,12 @@ set_tryboot() {
     echo "After verifying, run '$0 -c' to make it permanent."
 }
 
-while getopts "b:s:r:cth" opt; do
+while getopts "b:s:r:Rcth" opt; do
     case "$opt" in
         b) BOOT_IMG="$OPTARG" ;;
         s) BOOT_SIG="$OPTARG" ;;
         r) ROOTFS_IMG="$OPTARG" ;;
+        R) REBOOT=1 ;;
         c) CONFIRM=1 ;;
         t) STATUS=1 ;;
         h) usage ;;
@@ -225,5 +233,10 @@ if [ "$CONFIRM" -eq 1 ]; then
     is_tryboot || die "Not in tryboot mode, nothing to confirm"
     confirm_update
 else
-    set_tryboot
+    if [ "$REBOOT" -eq 1 ]; then
+        echo "Rebooting into tryboot..."
+        reboot '0 tryboot'
+    else
+        set_tryboot
+    fi
 fi
