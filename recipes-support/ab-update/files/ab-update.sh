@@ -109,6 +109,7 @@ is_tryboot() {
     default_part=$(sed -n '/^\[all\]/,/^\[/{/^boot_partition=/s/.*=//p}' "$AUTOBOOT_TXT")
     [ -n "$default_part" ] || die "Cannot read default boot_partition from $AUTOBOOT_TXT"
 
+    echo "  is_tryboot: active=$ACTIVE_PART default=$default_part"
     if [ "$ACTIVE_PART" != "$default_part" ]; then
         return 0
     fi
@@ -158,6 +159,7 @@ update_root() {
 confirm_update() {
 
     echo "Confirming slot $ACTIVE_SLOT as permanent default..."
+    echo "  Mounting active boot partition $ACTIVE_BOOT_DEV ..."
 
     # Mount the active boot partition to rename tryboot files
     mnt=$(mktemp -d) || die "Failed to create temp mount point"
@@ -176,16 +178,17 @@ confirm_update() {
     sync
     umount "$mnt"
     rmdir "$mnt"
+    echo "  Boot files renamed on $ACTIVE_BOOT_DEV"
 
     # Update autoboot.txt
     tmpfile=$(mktemp) || die "Failed to create temp file"
 
     cat > "$tmpfile" <<EOF
-[tryboot]
-boot_partition=$INACTIVE_PART
-
 [all]
 boot_partition=$ACTIVE_PART
+
+[tryboot]
+boot_partition=$INACTIVE_PART
 EOF
 
     cp "$tmpfile" "$AUTOBOOT_TXT" || die "Failed to update $AUTOBOOT_TXT"
@@ -234,6 +237,9 @@ fi
 
 detect_slot
 echo "Active slot: $ACTIVE_SLOT"
+echo "  Boot device: $ACTIVE_BOOT_DEV"
+echo "  Active partition: $ACTIVE_PART  Inactive partition: $INACTIVE_PART"
+echo "  autoboot.txt: $(cat "$AUTOBOOT_TXT" 2>/dev/null | tr '\n' ' ')"
 
 if [ "$STATUS" -eq 1 ]; then
     if is_tryboot; then
