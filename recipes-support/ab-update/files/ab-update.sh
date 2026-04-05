@@ -7,6 +7,7 @@
 # Usage:
 #   ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img>
 #   ab-update.sh -c
+#   ab-update.sh -t
 #
 # The script detects the current active boot slot from the device tree,
 # writes the provided images to the inactive (redundant) slot, and
@@ -38,6 +39,7 @@ BOOT_IMG=""
 BOOT_SIG=""
 ROOTFS_IMG=""
 CONFIRM=0
+STATUS=0
 
 die() {
 
@@ -49,10 +51,12 @@ usage() {
 
     echo "Usage: $0 -b <boot.img> -s <boot.sig> -r <rootfs.img>"
     echo "       $0 -c"
+    echo "       $0 -t"
     echo "  -b <boot.img>    Boot image to write to inactive boot partition"
     echo "  -s <boot.sig>    Boot signature to write to inactive boot partition"
     echo "  -r <rootfs.img>  Rootfs image to write to inactive root partition"
     echo "  -c               Confirm: make the current tryboot slot the new default"
+    echo "  -t               Check if currently running in tryboot mode"
     exit 1
 }
 
@@ -76,6 +80,22 @@ detect_slot() {
             ;;
         *) die "Unknown boot slot: $boot_hex" ;;
     esac
+}
+
+# Check if the system booted via tryboot by comparing the DT boot
+# partition with the default in autoboot.txt.
+# Returns 0 if tryboot, 1 if normal boot.
+is_tryboot() {
+
+    [ -f "$AUTOBOOT_TXT" ] || die "autoboot.txt not found at $AUTOBOOT_TXT"
+
+    default_part=$(sed -n '/^\[all\]/,/^\[/{/^boot_partition=/s/.*=//p}' "$AUTOBOOT_TXT")
+    [ -n "$default_part" ] || die "Cannot read default boot_partition from $AUTOBOOT_TXT"
+
+    if [ "$ACTIVE_PART" != "$default_part" ]; then
+        return 0
+    fi
+    return 1
 }
 
 update_boot() {
@@ -155,18 +175,19 @@ set_tryboot() {
     echo "After verifying, run '$0 -c' to make it permanent."
 }
 
-while getopts "b:s:r:ch" opt; do
+while getopts "b:s:r:cth" opt; do
     case "$opt" in
         b) BOOT_IMG="$OPTARG" ;;
         s) BOOT_SIG="$OPTARG" ;;
         r) ROOTFS_IMG="$OPTARG" ;;
         c) CONFIRM=1 ;;
+        t) STATUS=1 ;;
         h) usage ;;
         *) usage ;;
     esac
 done
 
-if [ "$CONFIRM" -eq 0 ]; then
+if [ "$CONFIRM" -eq 0 ] && [ "$STATUS" -eq 0 ]; then
     if [ -z "$BOOT_IMG" ] || [ -z "$BOOT_SIG" ] || [ -z "$ROOTFS_IMG" ]; then
         usage
     fi
@@ -188,6 +209,15 @@ fi
 detect_slot
 echo "Active slot: $ACTIVE_SLOT"
 
+if [ "$STATUS" -eq 1 ]; then
+    if is_tryboot; then
+        echo "Tryboot active (slot $ACTIVE_SLOT). Run '$0 -c' to confirm."
+    else
+        echo "Normal boot (slot $ACTIVE_SLOT)."
+    fi
+    exit 0
+fi
+
 if [ -n "$BOOT_IMG" ]; then
     update_boot "$BOOT_IMG"
 fi
@@ -197,6 +227,7 @@ if [ -n "$ROOTFS_IMG" ]; then
 fi
 
 if [ "$CONFIRM" -eq 1 ]; then
+    is_tryboot || die "Not in tryboot mode, nothing to confirm"
     confirm_update
 else
     set_tryboot
