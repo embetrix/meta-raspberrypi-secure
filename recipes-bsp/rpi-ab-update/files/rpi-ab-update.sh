@@ -24,6 +24,7 @@ set -e
 
 BOOT_SLOT_DT="/proc/device-tree/chosen/bootloader/partition"
 TRYBOOT_DT="/proc/device-tree/chosen/bootloader/tryboot"
+SIGNED_DT="/proc/device-tree/chosen/bootloader/signed"
 
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
@@ -64,6 +65,16 @@ usage() {
     exit 1
 }
 
+check_secure_boot() {
+
+    [ -e "$SIGNED_DT" ] || die "Signed DT node not available"
+
+    signed_hex=$(hexdump -v -e '/1 "%02x"' "$SIGNED_DT" 2>/dev/null) || true
+    [ -n "$signed_hex" ] || die "Failed to read secure boot status"
+
+    [ "$signed_hex" != "00000000" ] || die "Secure boot is not enabled"
+}
+
 detect_slot() {
 
     [ -e "$BOOT_SLOT_DT" ] || die "Boot slot DT node not available"
@@ -101,6 +112,8 @@ is_tryboot() {
 update_boot() {
 
     img="$1"
+
+    check_secure_boot
 
     echo "Updating boot image on inactive partition at $BOOT_UPDATE_MNT ..."
 
