@@ -18,6 +18,7 @@
 export PATH=$PATH:/sbin:/usr/sbin
 
 BOOT_DEV=""
+BOOTUPDATE_DEV=""
 ROOT_DEV=""
 UPDATE_DEV=""
 DATA_DEV=""
@@ -31,6 +32,7 @@ VERITY_DM_NAME="verity-root"
 
 ROOT_MNT="/root"
 BOOT_MNT="/boot"
+BOOTUPDATE_MNT="/boot-update"
 DATA_MNT="/var/data"
 BACKUPS_MNT="/var/backups"
 
@@ -130,11 +132,13 @@ get_boot_slot() {
 	case "$boot_hex" in
 		00000002)
 			klog "Boot Slot A"
+			BOOTUPDATE_DEV="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_B}"
 			ROOT_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_A}"
 			UPDATE_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_B}"
 			;;
 		00000003)
 			klog "Boot Slot B"
+			BOOTUPDATE_DEV="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_A}"
 			ROOT_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_B}"
 			UPDATE_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_A}"
 			;;
@@ -445,6 +449,8 @@ mkdir -p "$ROOT_MNT$BOOT_MNT"
 mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 	|| fatal "cannot mount boot device $BOOT_DEV"
 
+mount -t vfat -o $OPT_PART $BOOTUPDATE_DEV "$ROOT_MNT$BOOTUPDATE_MNT" \
+	|| fatal "cannot mount boot update device $BOOTUPDATE_DEV"
 
 # Derive Machine ID from HW_SERIAL
 MACHINE_ID="$(tr -d '\0\n' < "$HW_SERIAL" | sha256sum | cut -c1-32)"
