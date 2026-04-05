@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions
 #
-# ab-update.sh: update the inactive A/B boot and root partitions
+# rpi-ab-update.sh: update the inactive A/B boot and root partitions
 #
 # Usage:
-#   ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img>
-#   ab-update.sh -c
-#   ab-update.sh -t
+#   rpi-ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img>
+#   rpi-ab-update.sh -c
+#   rpi-ab-update.sh -t
 #
 # The script detects the current active boot slot from the device tree,
 # writes the provided images to the inactive (redundant) slot, and
