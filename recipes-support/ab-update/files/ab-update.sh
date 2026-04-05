@@ -124,10 +124,14 @@ update_boot() {
 
     cp "$img" "$BOOT_UPDATE_MNT/tryboot.img" \
         || die "Failed to copy tryboot.img to $BOOT_UPDATE_MNT"
+    cp "$img" "$BOOT_UPDATE_MNT/boot.img" \
+        || die "Failed to copy boot.img to $BOOT_UPDATE_MNT"
 
     if [ -n "$BOOT_SIG" ]; then
         cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/tryboot.sig" \
             || die "Failed to copy tryboot.sig to $BOOT_UPDATE_MNT"
+        cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/boot.sig" \
+            || die "Failed to copy boot.sig to $BOOT_UPDATE_MNT"
     fi
 
     sync
@@ -152,33 +156,13 @@ update_root() {
     echo "Root partition updated."
 }
 
-# Make the current active slot the permanent default by:
-# 1. Mounting the active boot partition and renaming tryboot.img -> boot.img
-# 2. Rewriting autoboot.txt on the boot selector partition (partition 1)
-# The active boot partition is not mounted by initramfs so we mount it here.
+# Make the current active slot the permanent default by rewriting
+# autoboot.txt on the boot selector partition (partition 1).
+# Both boot.img and tryboot.img were written during update, so no
+# rename is needed — only the tiny autoboot.txt switch.
 confirm_update() {
 
     echo "Confirming slot $ACTIVE_SLOT as permanent default..."
-    echo "  Mounting active boot partition $ACTIVE_BOOT_DEV ..."
-
-    # Mount the active boot partition to rename tryboot files
-    mnt=$(mktemp -d) || die "Failed to create temp mount point"
-    mount -t vfat "$ACTIVE_BOOT_DEV" "$mnt" \
-        || die "Failed to mount active boot partition $ACTIVE_BOOT_DEV"
-
-    if [ -f "$mnt/tryboot.img" ]; then
-        mv "$mnt/tryboot.img" "$mnt/boot.img" \
-            || { umount "$mnt"; rmdir "$mnt"; die "Failed to rename tryboot.img"; }
-    fi
-    if [ -f "$mnt/tryboot.sig" ]; then
-        mv "$mnt/tryboot.sig" "$mnt/boot.sig" \
-            || { umount "$mnt"; rmdir "$mnt"; die "Failed to rename tryboot.sig"; }
-    fi
-
-    sync
-    umount "$mnt"
-    rmdir "$mnt"
-    echo "  Boot files renamed on $ACTIVE_BOOT_DEV"
 
     # Update autoboot.txt
     tmpfile=$(mktemp) || die "Failed to create temp file"
