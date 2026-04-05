@@ -23,6 +23,7 @@
 set -e
 
 BOOT_SLOT_DT="/proc/device-tree/chosen/bootloader/partition"
+BOOT_MODE_DT="/proc/device-tree/chosen/bootloader/boot-mode"
 
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
@@ -63,6 +64,20 @@ usage() {
 detect_slot() {
 
     [ -e "$BOOT_SLOT_DT" ] || die "Boot slot DT node not available"
+    [ -e "$BOOT_MODE_DT" ] || die "Boot mode DT node not available"
+
+    mode_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_MODE_DT" 2>/dev/null) || true
+    case "$mode_hex" in
+        00000001) BASE_DEV="mmcblk0" ;;
+        00000004) BASE_DEV="sda" ;;
+        00000006) BASE_DEV="nvme0n1" ;;
+        *)        die "Unknown boot mode: $mode_hex" ;;
+    esac
+
+    case "$BASE_DEV" in
+        sd*) SEP="" ;;
+        *)   SEP="p" ;;
+    esac
 
     boot_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_SLOT_DT" 2>/dev/null) || true
     [ -n "$boot_hex" ] || die "Failed to read boot slot"
@@ -80,6 +95,8 @@ detect_slot() {
             ;;
         *) die "Unknown boot slot: $boot_hex" ;;
     esac
+
+    ACTIVE_BOOT_DEV="/dev/${BASE_DEV}${SEP}${ACTIVE_PART}"
 }
 
 # Check if the system booted via tryboot by comparing the DT boot
@@ -135,21 +152,30 @@ update_root() {
 }
 
 # Make the current active slot the permanent default by:
-# 1. Renaming tryboot.img -> boot.img on the active boot partition (/boot)
-# 2. Rewriting autoboot.txt on the boot selector partition
+# 1. Mounting the active boot partition and renaming tryboot.img -> boot.img
+# 2. Rewriting autoboot.txt on the boot selector partition (partition 1)
+# The active boot partition is not mounted by initramfs so we mount it here.
 confirm_update() {
 
     echo "Confirming slot $ACTIVE_SLOT as permanent default..."
 
-    # Rename tryboot files to boot on the active boot partition
-    if [ -f "$BOOT_MNT/tryboot.img" ]; then
-        mv "$BOOT_MNT/tryboot.img" "$BOOT_MNT/boot.img" \
-            || die "Failed to rename tryboot.img"
+    # Mount the active boot partition to rename tryboot files
+    mnt=$(mktemp -d) || die "Failed to create temp mount point"
+    mount -t vfat "$ACTIVE_BOOT_DEV" "$mnt" \
+        || die "Failed to mount active boot partition $ACTIVE_BOOT_DEV"
+
+    if [ -f "$mnt/tryboot.img" ]; then
+        mv "$mnt/tryboot.img" "$mnt/boot.img" \
+            || { umount "$mnt"; rmdir "$mnt"; die "Failed to rename tryboot.img"; }
     fi
-    if [ -f "$BOOT_MNT/tryboot.sig" ]; then
-        mv "$BOOT_MNT/tryboot.sig" "$BOOT_MNT/boot.sig" \
-            || die "Failed to rename tryboot.sig"
+    if [ -f "$mnt/tryboot.sig" ]; then
+        mv "$mnt/tryboot.sig" "$mnt/boot.sig" \
+            || { umount "$mnt"; rmdir "$mnt"; die "Failed to rename tryboot.sig"; }
     fi
+
+    sync
+    umount "$mnt"
+    rmdir "$mnt"
 
     # Update autoboot.txt
     tmpfile=$(mktemp) || die "Failed to create temp file"
