@@ -5,8 +5,8 @@
 # ab-update.sh — Update the inactive A/B boot and root partitions
 #
 # Usage:
-#   ab-update.sh -b <boot.img> -r <rootfs.img>
-#   ab-update.sh -b <boot.img>
+#   ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img>
+#   ab-update.sh -b <boot.img> -s <boot.sig>
 #   ab-update.sh -r <rootfs.img>
 #
 # The script detects the current active boot slot from the device tree,
@@ -32,6 +32,7 @@ BOOT_SLOT_B=3
 UPDATE_DM="/dev/mapper/update"
 
 BOOT_IMG=""
+BOOT_SIG=""
 ROOTFS_IMG=""
 
 die() {
@@ -42,8 +43,9 @@ die() {
 
 usage() {
 
-    echo "Usage: $0 -b <boot.img> -r <rootfs.img>"
+    echo "Usage: $0 -b <boot.img> -s <boot.sig> -r <rootfs.img>"
     echo "  -b <boot.img>    Boot image to write to inactive boot partition"
+    echo "  -s <boot.sig>    Boot signature to write to inactive boot partition"
     echo "  -r <rootfs.img>  Rootfs image to write to inactive root partition"
     echo "At least one of -b or -r must be specified."
     exit 1
@@ -96,6 +98,11 @@ update_boot() {
     cp "$img" "$mnt/boot.img" \
         || { umount "$mnt"; rmdir "$mnt"; die "Failed to copy boot image to $INACTIVE_BOOT"; }
 
+    if [ -n "$BOOT_SIG" ]; then
+        cp "$BOOT_SIG" "$mnt/boot.sig" \
+            || { umount "$mnt"; rmdir "$mnt"; die "Failed to copy boot.sig to $INACTIVE_BOOT"; }
+    fi
+
     sync
     umount "$mnt"
     rmdir "$mnt"
@@ -109,7 +116,13 @@ update_root() {
     [ -b "$UPDATE_DM" ] || die "Update dm device $UPDATE_DM not available (LUKS not opened by initramfs?)"
 
     echo "Writing rootfs image to $UPDATE_DM ..."
-    dd if="$img" of="$UPDATE_DM" bs=4M conv=fsync 2>/dev/null \
+    case "$img" in
+        *.gz)  gzip  -dc "$img" ;;
+        *.xz)  xz    -dc "$img" ;;
+        *.zst) zstd  -dc "$img" ;;
+        *.bz2) bzip2 -dc "$img" ;;
+        *)     cat "$img" ;;
+    esac | dd of="$UPDATE_DM" bs=4M conv=fsync 2>/dev/null \
         || die "Failed to write rootfs to $UPDATE_DM"
     echo "Root partition updated."
 }
@@ -120,9 +133,10 @@ set_tryboot() {
     echo "  reboot '0 tryboot'"
 }
 
-while getopts "b:r:h" opt; do
+while getopts "b:s:r:h" opt; do
     case "$opt" in
         b) BOOT_IMG="$OPTARG" ;;
+        s) BOOT_SIG="$OPTARG" ;;
         r) ROOTFS_IMG="$OPTARG" ;;
         h) usage ;;
         *) usage ;;
@@ -135,6 +149,10 @@ fi
 
 if [ -n "$BOOT_IMG" ] && [ ! -f "$BOOT_IMG" ]; then
     die "Boot image not found: $BOOT_IMG"
+fi
+
+if [ -n "$BOOT_SIG" ] && [ ! -f "$BOOT_SIG" ]; then
+    die "Boot signature not found: $BOOT_SIG"
 fi
 
 if [ -n "$ROOTFS_IMG" ] && [ ! -f "$ROOTFS_IMG" ]; then
