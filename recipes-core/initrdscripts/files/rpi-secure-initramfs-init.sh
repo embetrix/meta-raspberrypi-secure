@@ -54,6 +54,7 @@ MACHINE_ID=""
 
 # Partition numbers for A/B slots, data and backups
 # following wic configuration in rpi-secure.wks
+BOOT=1
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
 ROOT_SLOT_A=4
@@ -129,19 +130,17 @@ get_boot_slot() {
 	case "$boot_hex" in
 		00000002)
 			klog "Boot Slot A"
-			BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_A}"
 			ROOT_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_A}"
 			UPDATE_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_B}"
 			;;
 		00000003)
 			klog "Boot Slot B"
-			BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_B}"
 			ROOT_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_B}"
 			UPDATE_DEV="/dev/${BASE_DEV}${SEP}${ROOT_SLOT_A}"
 			;;
 		*) fatal "Unknown boot slot: $boot_hex" ;;
 	esac
-
+	BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT}"
 	DATA_DEV="/dev/${BASE_DEV}${SEP}${DATA_PART}"
 	BACKUPS_DEV="/dev/${BASE_DEV}${SEP}${BACKUPS_PART}"
 }
