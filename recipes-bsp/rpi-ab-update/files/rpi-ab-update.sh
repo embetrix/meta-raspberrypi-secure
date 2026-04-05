@@ -23,6 +23,7 @@
 set -e
 
 BOOT_SLOT_DT="/proc/device-tree/chosen/bootloader/partition"
+TRYBOOT_DT="/proc/device-tree/chosen/bootloader/tryboot"
 
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
@@ -83,21 +84,16 @@ detect_slot() {
     esac
 }
 
-# Check if the system booted via tryboot by comparing the DT boot
-# partition with the default in autoboot.txt.
+# Check if the system booted via tryboot using the firmware DT node.
 # Returns 0 if tryboot, 1 if normal boot.
 is_tryboot() {
 
-    [ -f "$AUTOBOOT_TXT" ] || die "autoboot.txt not found at $AUTOBOOT_TXT"
+    [ -e "$TRYBOOT_DT" ] || die "Tryboot DT node not available"
 
-    default_part=$(sed -n '/^\[all\]/,/^\[/{/^boot_partition=/s/.*=//p}' "$AUTOBOOT_TXT")
-    [ -n "$default_part" ] || die "Cannot read default boot_partition from $AUTOBOOT_TXT"
+    tryboot_hex=$(hexdump -v -e '/1 "%02x"' "$TRYBOOT_DT" 2>/dev/null) || true
+    [ -n "$tryboot_hex" ] || die "Failed to read tryboot status"
 
-    echo "  is_tryboot: active=$ACTIVE_PART default=$default_part"
-    if [ "$ACTIVE_PART" != "$default_part" ]; then
-        return 0
-    fi
-    return 1
+    [ "$tryboot_hex" = "00000001" ]
 }
 
 update_boot() {
