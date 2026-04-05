@@ -23,7 +23,6 @@
 set -e
 
 BOOT_SLOT_DT="/proc/device-tree/chosen/bootloader/partition"
-BOOT_MODE_DT="/proc/device-tree/chosen/bootloader/boot-mode"
 
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
@@ -33,6 +32,7 @@ UPDATE_DM="/dev/mapper/update"
 
 # Boot partitions mounted by initramfs
 BOOT_MNT="/boot"
+BOOT_ACTIVE_MNT="/boot-active"
 BOOT_UPDATE_MNT="/boot-update"
 AUTOBOOT_TXT="${BOOT_MNT}/autoboot.txt"
 
@@ -64,20 +64,6 @@ usage() {
 detect_slot() {
 
     [ -e "$BOOT_SLOT_DT" ] || die "Boot slot DT node not available"
-    [ -e "$BOOT_MODE_DT" ] || die "Boot mode DT node not available"
-
-    mode_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_MODE_DT" 2>/dev/null) || true
-    case "$mode_hex" in
-        00000001) BASE_DEV="mmcblk0" ;;
-        00000004) BASE_DEV="sda" ;;
-        00000006) BASE_DEV="nvme0n1" ;;
-        *)        die "Unknown boot mode: $mode_hex" ;;
-    esac
-
-    case "$BASE_DEV" in
-        sd*) SEP="" ;;
-        *)   SEP="p" ;;
-    esac
 
     boot_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_SLOT_DT" 2>/dev/null) || true
     [ -n "$boot_hex" ] || die "Failed to read boot slot"
@@ -95,8 +81,6 @@ detect_slot() {
             ;;
         *) die "Unknown boot slot: $boot_hex" ;;
     esac
-
-    ACTIVE_BOOT_DEV="/dev/${BASE_DEV}${SEP}${ACTIVE_PART}"
 }
 
 # Check if the system booted via tryboot by comparing the DT boot
@@ -221,7 +205,6 @@ fi
 
 detect_slot
 echo "Active slot: $ACTIVE_SLOT"
-echo "  Boot device: $ACTIVE_BOOT_DEV"
 echo "  Active partition: $ACTIVE_PART  Inactive partition: $INACTIVE_PART"
 echo "  autoboot.txt: $(cat "$AUTOBOOT_TXT" 2>/dev/null | tr '\n' ' ')"
 
