@@ -6,8 +6,6 @@
 #
 # Usage:
 #   ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img>
-#   ab-update.sh -b <boot.img> -s <boot.sig>
-#   ab-update.sh -r <rootfs.img>
 #   ab-update.sh -c
 #
 # The script detects the current active boot slot from the device tree,
@@ -24,7 +22,6 @@
 set -e
 
 BOOT_SLOT_DT="/proc/device-tree/chosen/bootloader/partition"
-BOOT_MODE_DT="/proc/device-tree/chosen/bootloader/boot-mode"
 
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
@@ -32,8 +29,10 @@ BOOT_SLOT_B=3
 # The initramfs opens the inactive root LUKS2 as /dev/mapper/update
 UPDATE_DM="/dev/mapper/update"
 
-# autoboot.txt on the boot selector partition (mounted at /boot by initramfs)
-AUTOBOOT_TXT="/boot/autoboot.txt"
+# Boot partitions mounted by initramfs
+BOOT_MNT="/boot"
+BOOT_UPDATE_MNT="/boot-update"
+AUTOBOOT_TXT="${BOOT_MNT}/autoboot.txt"
 
 BOOT_IMG=""
 BOOT_SIG=""
@@ -48,32 +47,18 @@ die() {
 
 usage() {
 
-    echo "Usage: $0 [-b <boot.img>] [-s <boot.sig>] [-r <rootfs.img>] [-c]"
+    echo "Usage: $0 -b <boot.img> -s <boot.sig> -r <rootfs.img>"
+    echo "       $0 -c"
     echo "  -b <boot.img>    Boot image to write to inactive boot partition"
     echo "  -s <boot.sig>    Boot signature to write to inactive boot partition"
     echo "  -r <rootfs.img>  Rootfs image to write to inactive root partition"
     echo "  -c               Confirm: make the current tryboot slot the new default"
-    echo "At least one of -b, -r, or -c must be specified."
     exit 1
 }
 
 detect_slot() {
 
     [ -e "$BOOT_SLOT_DT" ] || die "Boot slot DT node not available"
-    [ -e "$BOOT_MODE_DT" ] || die "Boot mode DT node not available"
-
-    mode_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_MODE_DT" 2>/dev/null) || true
-    case "$mode_hex" in
-        00000001) BASE_DEV="mmcblk0" ;;
-        00000004) BASE_DEV="sda" ;;
-        00000006) BASE_DEV="nvme0n1" ;;
-        *)        die "Unknown boot mode: $mode_hex" ;;
-    esac
-
-    case "$BASE_DEV" in
-        sd*) SEP="" ;;
-        *)   SEP="p" ;;
-    esac
 
     boot_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_SLOT_DT" 2>/dev/null) || true
     [ -n "$boot_hex" ] || die "Failed to read boot slot"
@@ -82,13 +67,11 @@ detect_slot() {
         00000002)
             ACTIVE_SLOT="A"
             ACTIVE_PART=$BOOT_SLOT_A
-            INACTIVE_BOOT="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_B}"
             INACTIVE_PART=$BOOT_SLOT_B
             ;;
         00000003)
             ACTIVE_SLOT="B"
             ACTIVE_PART=$BOOT_SLOT_B
-            INACTIVE_BOOT="/dev/${BASE_DEV}${SEP}${BOOT_SLOT_A}"
             INACTIVE_PART=$BOOT_SLOT_A
             ;;
         *) die "Unknown boot slot: $boot_hex" ;;
@@ -98,23 +81,18 @@ detect_slot() {
 update_boot() {
 
     img="$1"
-    mnt=$(mktemp -d) || die "Failed to create temp mount point"
 
-    echo "Updating boot image on inactive partition $INACTIVE_BOOT ..."
-    mount -t vfat "$INACTIVE_BOOT" "$mnt" \
-        || die "Failed to mount $INACTIVE_BOOT"
+    echo "Updating boot image on inactive partition at $BOOT_UPDATE_MNT ..."
 
-    cp "$img" "$mnt/tryboot.img" \
-        || { umount "$mnt"; rmdir "$mnt"; die "Failed to copy tryboot.img to $INACTIVE_BOOT"; }
+    cp "$img" "$BOOT_UPDATE_MNT/tryboot.img" \
+        || die "Failed to copy tryboot.img to $BOOT_UPDATE_MNT"
 
     if [ -n "$BOOT_SIG" ]; then
-        cp "$BOOT_SIG" "$mnt/tryboot.sig" \
-            || { umount "$mnt"; rmdir "$mnt"; die "Failed to copy tryboot.sig to $INACTIVE_BOOT"; }
+        cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/tryboot.sig" \
+            || die "Failed to copy tryboot.sig to $BOOT_UPDATE_MNT"
     fi
 
     sync
-    umount "$mnt"
-    rmdir "$mnt"
     echo "Boot partition updated."
 }
 
@@ -137,31 +115,21 @@ update_root() {
 }
 
 # Make the current active slot the permanent default by:
-# 1. Renaming tryboot.img -> boot.img on the active boot partition
+# 1. Renaming tryboot.img -> boot.img on the active boot partition (/boot)
 # 2. Rewriting autoboot.txt on the boot selector partition
 confirm_update() {
 
     echo "Confirming slot $ACTIVE_SLOT as permanent default..."
 
     # Rename tryboot files to boot on the active boot partition
-    active_boot="/dev/${BASE_DEV}${SEP}${ACTIVE_PART}"
-    mnt=$(mktemp -d) || die "Failed to create temp mount point"
-
-    mount -t vfat "$active_boot" "$mnt" \
-        || die "Failed to mount $active_boot"
-
-    if [ -f "$mnt/tryboot.img" ]; then
-        mv "$mnt/tryboot.img" "$mnt/boot.img" \
-            || { umount "$mnt"; rmdir "$mnt"; die "Failed to rename tryboot.img"; }
+    if [ -f "$BOOT_MNT/tryboot.img" ]; then
+        mv "$BOOT_MNT/tryboot.img" "$BOOT_MNT/boot.img" \
+            || die "Failed to rename tryboot.img"
     fi
-    if [ -f "$mnt/tryboot.sig" ]; then
-        mv "$mnt/tryboot.sig" "$mnt/boot.sig" \
-            || { umount "$mnt"; rmdir "$mnt"; die "Failed to rename tryboot.sig"; }
+    if [ -f "$BOOT_MNT/tryboot.sig" ]; then
+        mv "$BOOT_MNT/tryboot.sig" "$BOOT_MNT/boot.sig" \
+            || die "Failed to rename tryboot.sig"
     fi
-
-    sync
-    umount "$mnt"
-    rmdir "$mnt"
 
     # Update autoboot.txt
     tmpfile=$(mktemp) || die "Failed to create temp file"
@@ -198,8 +166,10 @@ while getopts "b:s:r:ch" opt; do
     esac
 done
 
-if [ -z "$BOOT_IMG" ] && [ -z "$ROOTFS_IMG" ] && [ "$CONFIRM" -eq 0 ]; then
-    usage
+if [ "$CONFIRM" -eq 0 ]; then
+    if [ -z "$BOOT_IMG" ] || [ -z "$BOOT_SIG" ] || [ -z "$ROOTFS_IMG" ]; then
+        usage
+    fi
 fi
 
 if [ -n "$BOOT_IMG" ] && [ ! -f "$BOOT_IMG" ]; then
@@ -217,8 +187,6 @@ fi
 
 detect_slot
 echo "Active slot: $ACTIVE_SLOT"
-echo "Inactive boot partition: $INACTIVE_BOOT"
-echo "Inactive root partition: $UPDATE_DM"
 
 if [ -n "$BOOT_IMG" ]; then
     update_boot "$BOOT_IMG"
