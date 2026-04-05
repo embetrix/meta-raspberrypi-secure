@@ -46,7 +46,9 @@ pipeline {
 
                     sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} SECURITY_PROFILE=${params.SECURITY_PROFILE} kas build --force-checkout --update ${kasConfig}"
                 }
-                archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-*" ,
+                archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-*," +
+                                             "build/tmp/deploy/images/${params.MACHINE}/boot.img," +
+                                             "build/tmp/deploy/images/${params.MACHINE}/boot.sig",
                                              followSymlinks: false,
                                              fingerprint: true,
                                              onlyIfSuccessful: true
