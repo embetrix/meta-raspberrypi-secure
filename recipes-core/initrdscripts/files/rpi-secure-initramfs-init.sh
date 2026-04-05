@@ -341,7 +341,7 @@ setup_avb_verity() {
 	fi
 
 	klog "Verifying AVB signature on $luks_dev..."
-	dm_table=$(avb_verify --dm-table "$luks_dev" "$AVB_PUBKEY") \
+	dm_table=$(avb_verify --dm-table -d "$luks_dev" -k "$AVB_PUBKEY") \
 		|| fatal "AVB verification failed on $luks_dev"
 
 	klog "Setting up dm-verity as $verity_name..."
