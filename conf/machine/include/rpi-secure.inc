@@ -93,7 +93,7 @@ include conf/distro/include/cve-extra-exclusions.inc
 
 # WKS file
 WKS_FILES = "raspberrypi-secure.wks.in"
-ROOTFS_TYPE="erofs"
+ROOTFS_TYPE ?= "erofs"
 
 # Files for the boot partition selector
 WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
