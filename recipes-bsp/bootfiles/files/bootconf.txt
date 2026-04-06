@@ -7,4 +7,10 @@ SIGNED_BOOT=1
 # Enable UART for bootloader but can be disabled for production
 BOOT_UART=1
 
+# Reset if OS not started within 30s
+BOOT_WATCHDOG_TIMEOUT=30
+
+# Walk partitions if autoboot.txt is corrupt/missing
+PARTITION_WALK=1
+
 #ENABLE_SELF_UPDATE=0
