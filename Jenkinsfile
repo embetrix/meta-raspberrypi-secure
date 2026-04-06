@@ -45,6 +45,9 @@ pipeline {
                     def kasConfig = "kas-rpi-secure.yml:kas-signing-keys.yml"
 
                     sh "KAS_MACHINE=${params.MACHINE} KAS_TARGET=${params.IMAGE} SECURITY_PROFILE=${params.SECURITY_PROFILE} kas build --force-checkout --update ${kasConfig}"
+
+                    // Remove files larger than 350MB to avoid archiving oversized artifacts
+                    sh "find build/tmp/deploy/images/${params.MACHINE}/ -size +350M -delete"
                 }
                 archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-*," +
                                              "build/tmp/deploy/images/${params.MACHINE}/boot.img," +
