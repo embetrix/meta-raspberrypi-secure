@@ -8,6 +8,32 @@ set -e
 
 BOOT_MNT="/boot"
 
+# Detect SoC and check OTP rows for the secure-boot public key hash.
+#   BCM2711 (RPi 4): rows 47-54 (SHA256 of RSA public key)
+#   BCM2712 (RPi 5): secure-boot key OTP rows are not publicly documented
+check_pubkey_otp() {
+
+    SOC=$(awk -F, '/^brcm/{print $2}' /proc/device-tree/compatible 2>/dev/null | tr -d '\0' || true)
+    case "$SOC" in
+        bcm2711)
+            PUBKEY_OTP=$(vcgencmd otp_dump | awk -F: '/^(4[7-9]|5[0-4]):/{print $2}' | grep -v '^00000000$' || true)
+            OTP_ROWS="47-54"
+            ;;
+        bcm2712)
+            echo "Warning: BCM2712 secure-boot key OTP rows are not publicly documented" >&2
+            PUBKEY_OTP=""
+            OTP_ROWS="unknown"
+            return 1
+            ;;
+        *)
+            echo "Warning: unknown SoC '$SOC', cannot check OTP fuses" >&2
+            PUBKEY_OTP=""
+            OTP_ROWS="unknown"
+            return 1
+            ;;
+    esac
+}
+
 usage() {
 
     echo "Usage: $(basename "$0") {status|enable|disable}"
@@ -34,11 +60,12 @@ do_status() {
 
     echo ""
     echo "=== OTP Secure Boot Fuses ==="
-    REVKEY=$(vcgencmd otp_dump | grep "^90:" | cut -d: -f2 || true)
-    if [ -n "$REVKEY" ] && [ "$REVKEY" != "00000000" ]; then
-        echo "OTP revkey fuses: PROGRAMMED (secure boot is permanent)"
-    else
-        echo "OTP revkey fuses: NOT programmed (secure boot can be toggled)"
+    if check_pubkey_otp; then
+        if [ -n "$PUBKEY_OTP" ]; then
+            echo "OTP pubkey fuses (rows $OTP_ROWS): PROGRAMMED (secure boot is permanent)"
+        else
+            echo "OTP pubkey fuses (rows $OTP_ROWS): NOT programmed (secure boot can be toggled)"
+        fi
     fi
 }
 
@@ -84,9 +111,8 @@ do_disable() {
         exit 0
     fi
 
-    # Check OTP fuses
-    REVKEY=$(vcgencmd otp_dump | grep "^90:" | cut -d: -f2 || true)
-    if [ -n "$REVKEY" ] && [ "$REVKEY" != "00000000" ]; then
+    # Check OTP fuses for programmed public key
+    if check_pubkey_otp && [ -n "$PUBKEY_OTP" ]; then
         echo "Error: OTP fuses are programmed. Secure boot cannot be disabled." >&2
         exit 1
     fi
