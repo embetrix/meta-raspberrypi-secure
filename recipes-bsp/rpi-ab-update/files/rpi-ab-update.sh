@@ -1,8 +1,11 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright 2026 Embetrix Embedded Systems Solutions
+# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
 # rpi-ab-update.sh: update the inactive A/B boot and root partitions
+#
+# Documentation:
+# https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/config_txt/autoboot.adoc
 #
 # Usage:
 #   rpi-ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img> [-R]
@@ -117,14 +120,10 @@ update_boot() {
 
     echo "Updating boot image on inactive partition at $BOOT_UPDATE_MNT ..."
 
-    cp "$img" "$BOOT_UPDATE_MNT/tryboot.img" \
-        || die "Failed to copy tryboot.img to $BOOT_UPDATE_MNT"
     cp "$img" "$BOOT_UPDATE_MNT/boot.img" \
         || die "Failed to copy boot.img to $BOOT_UPDATE_MNT"
 
     if [ -n "$BOOT_SIG" ]; then
-        cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/tryboot.sig" \
-            || die "Failed to copy tryboot.sig to $BOOT_UPDATE_MNT"
         cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/boot.sig" \
             || die "Failed to copy boot.sig to $BOOT_UPDATE_MNT"
     fi
@@ -153,8 +152,8 @@ update_root() {
 
 # Make the current active slot the permanent default by rewriting
 # autoboot.txt on the boot selector partition (partition 1).
-# Both boot.img and tryboot.img were written during update, so no
-# rename is needed — only the tiny autoboot.txt switch.
+# boot.img is written during update, so no
+# rename is needed only the tiny autoboot.txt switch.
 confirm_update() {
 
     echo "Confirming slot $ACTIVE_SLOT as permanent default..."
@@ -164,6 +163,7 @@ confirm_update() {
 
     cat > "$tmpfile" <<EOF
 [all]
+tryboot_a_b=1
 boot_partition=$ACTIVE_PART
 
 [tryboot]
@@ -173,10 +173,6 @@ EOF
     cp "$tmpfile" "$AUTOBOOT_TXT" || die "Failed to update $AUTOBOOT_TXT"
     sync
     rm -f "$tmpfile"
-
-    # Remove tryboot files from the now-confirmed active boot partition
-    rm -f "$BOOT_ACTIVE_MNT/tryboot.img" "$BOOT_ACTIVE_MNT/tryboot.sig"
-    sync
 
     echo "Slot $ACTIVE_SLOT is now the permanent default."
 }

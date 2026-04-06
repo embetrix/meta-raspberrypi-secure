@@ -1,4 +1,5 @@
 [all]
+tryboot_a_b=1
 # By default boot from the first boot partition (Slot A)
 boot_partition=2
 
