@@ -9,6 +9,22 @@
 # Documentation: https://ima-doc.readthedocs.io/en/latest/policy-syntax.html
 #
 
+# Exclude pseudo filesystems from measurement
+dont_measure fsmagic=0x9fa0     # procfs
+dont_measure fsmagic=0x62656572 # sysfs
+dont_measure fsmagic=0x01021994 # tmpfs
+dont_measure fsmagic=0x64626720 # debugfs
+dont_measure fsmagic=0x73636673 # securityfs
+dont_measure fsmagic=0x858458f6 # ramfs
+dont_measure fsmagic=0x1cd1     # devpts
+
+# Measure into TPM PCR 10 (default) and if no TPM is present measurements
+# are recorded in the IMA log only without PCR extension
+measure func=BPRM_CHECK               # Executables
+measure func=MMAP_CHECK mask=MAY_EXEC # Shared Libraries
+measure func=MODULE_CHECK             # Kernel Modules
+measure func=FIRMWARE_CHECK           # Firmware
+measure func=POLICY_CHECK             # IMA Policy
 
 # Enforce signature checks for :
 
