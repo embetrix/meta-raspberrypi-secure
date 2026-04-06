@@ -9,36 +9,30 @@
 # Documentation: https://ima-doc.readthedocs.io/en/latest/policy-syntax.html
 #
 
-# Exclude pseudo filesystems from measurement
-dont_measure fsmagic=0x9fa0     # procfs
-dont_measure fsmagic=0x62656572 # sysfs
-dont_measure fsmagic=0x01021994 # tmpfs
-dont_measure fsmagic=0x64626720 # debugfs
-dont_measure fsmagic=0x73636673 # securityfs
-dont_measure fsmagic=0x858458f6 # ramfs
-dont_measure fsmagic=0x1cd1     # devpts
+# Exclude pseudo filesystems from measurement:
+# procfs (0x9fa0), sysfs (0x62656572), tmpfs (0x01021994),
+# debugfs (0x64626720), securityfs (0x73636673), ramfs (0x858458f6),
+# devpts (0x1cd1)
+dont_measure fsmagic=0x9fa0
+dont_measure fsmagic=0x62656572
+dont_measure fsmagic=0x01021994
+dont_measure fsmagic=0x64626720
+dont_measure fsmagic=0x73636673
+dont_measure fsmagic=0x858458f6
+dont_measure fsmagic=0x1cd1
 
 # Measure into TPM PCR 10 (default) and if no TPM is present measurements
 # are recorded in the IMA log only without PCR extension
-measure func=BPRM_CHECK               # Executables
-measure func=MMAP_CHECK mask=MAY_EXEC # Shared Libraries
-measure func=MODULE_CHECK             # Kernel Modules
-measure func=FIRMWARE_CHECK           # Firmware
-measure func=POLICY_CHECK             # IMA Policy
+measure func=BPRM_CHECK
+measure func=MMAP_CHECK mask=MAY_EXEC
+measure func=MODULE_CHECK
+measure func=FIRMWARE_CHECK
+measure func=POLICY_CHECK
 
-# Enforce signature checks for :
-
-## Executables
+# Enforce signature checks for executables, shared libraries,
+# firmware, kernel modules and IMA policy
 appraise func=BPRM_CHECK mask=MAY_EXEC appraise_type=imasig
-
-## Shared Libraries
 appraise func=MMAP_CHECK mask=MAY_EXEC appraise_type=imasig
-
-## Firmware
 appraise func=FIRMWARE_CHECK appraise_type=imasig
-
-## Kernel Modules
 appraise func=MODULE_CHECK appraise_type=imasig
-
-## IMA Policy itself 
 appraise func=POLICY_CHECK appraise_type=imasig
