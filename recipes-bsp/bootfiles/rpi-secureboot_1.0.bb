@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-3.0-or-later;md5=1c76c4cc35
 
 SRC_URI = "file://rpi-secureboot.sh"
 
-RDEPENDS:${PN} = "rpi-eeprom util-linux-findfs"
+RDEPENDS:${PN} = "raspi-utils"
 
 do_install() {
     install -d ${D}${sbindir}

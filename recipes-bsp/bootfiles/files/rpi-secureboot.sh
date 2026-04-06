@@ -6,7 +6,7 @@
 # via the EEPROM recovery mechanism on the boot selector partition
 set -e
 
-MNT="/mnt"
+BOOT_MNT="/boot"
 
 usage() {
 
@@ -18,23 +18,14 @@ usage() {
     exit 1
 }
 
-find_boot_part() {
-
-    BOOT_PART=$(findfs PARTLABEL=boot 2>/dev/null || true)
-    if [ -z "$BOOT_PART" ]; then
-        echo "Error: boot partition not found (PARTLABEL=boot)" >&2
-        exit 1
-    fi
-}
-
 do_status() {
 
     echo "=== EEPROM Bootloader Configuration ==="
-    rpi-eeprom-config
+    vcgencmd bootloader_config
 
     echo ""
     echo "=== Secure Boot Status ==="
-    SIGNED_BOOT=$(rpi-eeprom-config 2>/dev/null | grep -i "^SIGNED_BOOT=" | cut -d= -f2 || true)
+    SIGNED_BOOT=$(vcgencmd bootloader_config 2>/dev/null | grep -i "^SIGNED_BOOT=" | cut -d= -f2 || true)
     if [ "$SIGNED_BOOT" = "1" ]; then
         echo "Secure boot: ENABLED"
     else
@@ -43,39 +34,19 @@ do_status() {
 
     echo ""
     echo "=== OTP Secure Boot Fuses ==="
-    if command -v vcgencmd >/dev/null 2>&1; then
-        REVKEY=$(vcgencmd otp_dump | grep "^90:" | cut -d: -f2 || true)
-        if [ -n "$REVKEY" ] && [ "$REVKEY" != "00000000" ]; then
-            echo "OTP revkey fuses: PROGRAMMED (secure boot is permanent)"
-        else
-            echo "OTP revkey fuses: NOT programmed (secure boot can be toggled)"
-        fi
+    REVKEY=$(vcgencmd otp_dump | grep "^90:" | cut -d: -f2 || true)
+    if [ -n "$REVKEY" ] && [ "$REVKEY" != "00000000" ]; then
+        echo "OTP revkey fuses: PROGRAMMED (secure boot is permanent)"
     else
-        echo "vcgencmd not available, cannot check OTP fuses"
+        echo "OTP revkey fuses: NOT programmed (secure boot can be toggled)"
     fi
-}
-
-mount_boot() {
-
-    find_boot_part
-    if mountpoint -q "$MNT"; then
-        echo "Error: $MNT is already a mountpoint" >&2
-        exit 1
-    fi
-    mount "$BOOT_PART" "$MNT"
-}
-
-umount_boot() {
-
-    umount "$MNT"
 }
 
 check_recovery_files() {
 
     for f in "$@"; do
-        if [ ! -f "$MNT/$f" ]; then
-            echo "Error: required file $f not found on $BOOT_PART" >&2
-            umount_boot
+        if [ ! -f "$BOOT_MNT/$f" ]; then
+            echo "Error: required file $f not found on boot partition" >&2
             exit 1
         fi
     done
@@ -84,7 +55,7 @@ check_recovery_files() {
 do_enable() {
 
     echo "=== Checking current status ==="
-    SIGNED_BOOT=$(rpi-eeprom-config 2>/dev/null | grep -i "^SIGNED_BOOT=" | cut -d= -f2 || true)
+    SIGNED_BOOT=$(vcgencmd bootloader_config 2>/dev/null | grep -i "^SIGNED_BOOT=" | cut -d= -f2 || true)
     if [ "$SIGNED_BOOT" = "1" ]; then
         echo "Secure boot is already enabled."
         exit 0
@@ -93,14 +64,12 @@ do_enable() {
     echo "Secure boot is currently DISABLED, preparing to enable..."
     echo ""
 
-    mount_boot
     check_recovery_files "_recovery.bin_" "_pieeprom.upd_" "_pieeprom.upd.sig_"
 
-    cp "$MNT/_pieeprom.upd_" "$MNT/pieeprom.upd"
-    cp "$MNT/_pieeprom.upd.sig_" "$MNT/pieeprom.sig"
-    cp "$MNT/_recovery.bin_" "$MNT/recovery.bin"
+    cp "$BOOT_MNT/_pieeprom.upd_" "$BOOT_MNT/pieeprom.upd"
+    cp "$BOOT_MNT/_pieeprom.upd.sig_" "$BOOT_MNT/pieeprom.sig"
+    cp "$BOOT_MNT/_recovery.bin_" "$BOOT_MNT/recovery.bin"
     sync
-    umount_boot
 
     echo "Recovery files staged. Rebooting to flash EEPROM..."
     reboot
@@ -109,32 +78,28 @@ do_enable() {
 do_disable() {
 
     echo "=== Checking current status ==="
-    SIGNED_BOOT=$(rpi-eeprom-config 2>/dev/null | grep -i "^SIGNED_BOOT=" | cut -d= -f2 || true)
+    SIGNED_BOOT=$(vcgencmd bootloader_config 2>/dev/null | grep -i "^SIGNED_BOOT=" | cut -d= -f2 || true)
     if [ "$SIGNED_BOOT" != "1" ]; then
         echo "Secure boot is already disabled."
         exit 0
     fi
 
     # Check OTP fuses
-    if command -v vcgencmd >/dev/null 2>&1; then
-        REVKEY=$(vcgencmd otp_dump | grep "^90:" | cut -d: -f2 || true)
-        if [ -n "$REVKEY" ] && [ "$REVKEY" != "00000000" ]; then
-            echo "Error: OTP fuses are programmed. Secure boot cannot be disabled." >&2
-            exit 1
-        fi
+    REVKEY=$(vcgencmd otp_dump | grep "^90:" | cut -d: -f2 || true)
+    if [ -n "$REVKEY" ] && [ "$REVKEY" != "00000000" ]; then
+        echo "Error: OTP fuses are programmed. Secure boot cannot be disabled." >&2
+        exit 1
     fi
 
     echo "Secure boot is currently ENABLED, preparing to disable..."
     echo ""
 
-    mount_boot
     check_recovery_files "_recovery.bin_" "_pieeprom.bin_" "_pieeprom.sig_"
 
-    cp "$MNT/_pieeprom.bin_" "$MNT/pieeprom.upd"
-    cp "$MNT/_pieeprom.sig_" "$MNT/pieeprom.sig"
-    cp "$MNT/_recovery.bin_" "$MNT/recovery.bin"
+    cp "$BOOT_MNT/_pieeprom.bin_" "$BOOT_MNT/pieeprom.upd"
+    cp "$BOOT_MNT/_pieeprom.sig_" "$BOOT_MNT/pieeprom.sig"
+    cp "$BOOT_MNT/_recovery.bin_" "$BOOT_MNT/recovery.bin"
     sync
-    umount_boot
 
     echo "Recovery files staged. Rebooting to flash EEPROM..."
     reboot
