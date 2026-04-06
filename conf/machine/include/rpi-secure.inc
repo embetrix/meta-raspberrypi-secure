@@ -20,8 +20,8 @@ DISABLE_SPLASH          = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 
 # On purpose not locking the device key in OTP This is a one-way operation and should be done with caution !!
 # check for more options in
 # https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
-PROGRAM_PUBLIC_KEY      = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
-PROGRAM_JTAG_LOCK       = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
+PROGRAM_PUBLIC_KEY      ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
+PROGRAM_JTAG_LOCK       ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
 
 # TPM support
 MACHINE_FEATURES += "tpm"
@@ -31,7 +31,7 @@ RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm
 
 # Console disable serial console login in production
 SERIAL_CONSOLES_DEFAULT := "${SERIAL_CONSOLES}"
-CONSOLE_VERBOSE ?= "loglevel=7 systemd.journald.forward_to_console=1 systemd.journald.max_level_console=warning"
+CONSOLE_VERBOSE ?= "loglevel=7"
 CONSOLE_SILENT  ?= "console=null quiet loglevel=0"
 SERIAL_CONSOLES  = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '', '${SERIAL_CONSOLES_DEFAULT}', d)}"
 CONSOLE_SELECT   = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '${CONSOLE_SILENT}', '${CONSOLE_VERBOSE}', d)}"
