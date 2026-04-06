@@ -13,7 +13,7 @@ SRC_URI = "file://rpi-ab-update.sh \
 
 inherit systemd
 
-SYSTEMD_SERVICE:${PN} = "rpi-ab-update-confirm.timer"
+SYSTEMD_SERVICE:${PN} = "rpi-ab-update-confirm.timer rpi-ab-update-confirm.service"
 
 do_install() {
     install -d ${D}${sbindir}
