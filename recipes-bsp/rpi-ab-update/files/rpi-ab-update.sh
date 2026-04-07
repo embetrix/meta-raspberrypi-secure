@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
-# rpi-ab-update.sh: update the inactive A/B boot and root partitions
+# rpi-ab-update.sh:  helper script for updating the inactive A/B boot and root partitions
 #
 # Documentation:
 # https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/config_txt/autoboot.adoc#example-update-flow-for-ab-booting
 #
 # Usage:
-#   rpi-ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img> [-R]
+#   rpi-ab-update.sh -b <boot.img> [-s <boot.sig>] -r <rootfs.img> [-R]
 #   rpi-ab-update.sh -c
 #   rpi-ab-update.sh -t
 #
@@ -55,11 +55,11 @@ die() {
 
 usage() {
 
-    echo "Usage: $0 -b <boot.img> -s <boot.sig> -r <rootfs.img> [-R]"
+    echo "Usage: $0 -b <boot.img> [-s <boot.sig>] -r <rootfs.img> [-R]"
     echo "       $0 -c"
     echo "       $0 -t"
     echo "  -b <boot.img>    Boot image to write to inactive boot partition"
-    echo "  -s <boot.sig>    Boot signature to write to inactive boot partition"
+    echo "  -s <boot.sig>    Boot signature to write to inactive boot partition (required for secure boot)"
     echo "  -r <rootfs.img>  Rootfs image to write to inactive root partition"
     echo "  -R               Reboot into tryboot after update"
     echo "  -c               Confirm: make the current tryboot slot the new default"
@@ -118,13 +118,13 @@ update_boot() {
     echo "Updating boot image on inactive partition at $BOOT_UPDATE_MNT ..."
 
     if is_secure_boot; then
+        [ -n "$BOOT_SIG" ] || die "Secure boot is active, -s <boot.sig> is required"
+
         cp "$img" "$BOOT_UPDATE_MNT/boot.img" \
             || die "Failed to copy boot.img to $BOOT_UPDATE_MNT"
 
-        if [ -n "$BOOT_SIG" ]; then
-            cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/boot.sig" \
-                || die "Failed to copy boot.sig to $BOOT_UPDATE_MNT"
-        fi
+        cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/boot.sig" \
+            || die "Failed to copy boot.sig to $BOOT_UPDATE_MNT"
     else
         echo "Secure boot not enabled, extracting boot image contents..."
         tmp_mnt=$(mktemp -d) || die "Failed to create temp mount point"
@@ -204,7 +204,7 @@ while getopts "b:s:r:Rcth" opt; do
 done
 
 if [ "$CONFIRM" -eq 0 ] && [ "$STATUS" -eq 0 ]; then
-    if [ -z "$BOOT_IMG" ] || [ -z "$BOOT_SIG" ] || [ -z "$ROOTFS_IMG" ]; then
+    if [ -z "$BOOT_IMG" ] || [ -z "$ROOTFS_IMG" ]; then
         usage
     fi
 fi
