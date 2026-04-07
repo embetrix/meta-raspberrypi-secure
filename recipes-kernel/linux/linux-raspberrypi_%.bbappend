@@ -6,6 +6,7 @@ inherit kernel-modsign
 SRC_URI += "file://dm-crypt-verity.cfg \
             file://ext4.cfg \
             file://erofs.cfg \
+            file://squashfs.cfg \
             file://ima-evm.cfg \
             file://kmod-sign.cfg \
             file://hwrng.cfg \
