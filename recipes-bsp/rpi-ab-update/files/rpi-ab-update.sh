@@ -37,7 +37,6 @@ UPDATE_DM="/dev/mapper/update"
 
 # Boot partitions mounted by initramfs
 BOOT_MNT="/boot"
-BOOT_ACTIVE_MNT="/boot-active"
 BOOT_UPDATE_MNT="/boot-update"
 AUTOBOOT_TXT="${BOOT_MNT}/autoboot.txt"
 

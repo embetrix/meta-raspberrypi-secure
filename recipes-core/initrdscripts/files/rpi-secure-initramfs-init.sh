@@ -34,7 +34,6 @@ VERITY_DM_NAME="verity-root"
 ROOT_MNT="/root"
 BOOT_MNT="/boot"
 BOOTUPDATE_MNT="/boot-update"
-BOOTACTIVE_MNT="/boot-active"
 DATA_MNT="/var/data"
 BACKUPS_MNT="/var/backups"
 
@@ -451,8 +450,6 @@ unset ENC_KEY_HEX
 
 mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 	|| fatal "cannot mount boot device $BOOT_DEV"
-mount -t vfat -o $OPT_PART $BOOTACTIVE_DEV "$ROOT_MNT$BOOTACTIVE_MNT" \
-	|| fatal "cannot mount boot active device $BOOTACTIVE_DEV"
 mount -t vfat -o $OPT_PART $BOOTUPDATE_DEV "$ROOT_MNT$BOOTUPDATE_MNT" \
 	|| fatal "cannot mount boot update device $BOOTUPDATE_DEV"
 

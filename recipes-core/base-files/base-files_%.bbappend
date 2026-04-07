@@ -2,7 +2,6 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 # add mount points for boot (update/active) data/backups partitions
 dirs755 += " /boot-update \
-             /boot-active \
              ${localstatedir}/data     \
              ${localstatedir}/backups  \
             "
