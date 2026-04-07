@@ -5,7 +5,7 @@
 # rpi-ab-update.sh: update the inactive A/B boot and root partitions
 #
 # Documentation:
-# https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/config_txt/autoboot.adoc
+# https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/config_txt/autoboot.adoc#example-update-flow-for-ab-booting
 #
 # Usage:
 #   rpi-ab-update.sh -b <boot.img> -s <boot.sig> -r <rootfs.img> [-R]
@@ -68,14 +68,14 @@ usage() {
     exit 1
 }
 
-check_secure_boot() {
+is_secure_boot() {
 
-    [ -e "$SIGNED_DT" ] || die "Signed DT node not available"
+    [ -e "$SIGNED_DT" ] || return 1
 
-    signed_hex=$(hexdump -v -e '/1 "%02x"' "$SIGNED_DT" 2>/dev/null) || true
-    [ -n "$signed_hex" ] || die "Failed to read secure boot status"
+    signed_hex=$(hexdump -v -e '/1 "%02x"' "$SIGNED_DT" 2>/dev/null) || return 1
+    [ -n "$signed_hex" ] || return 1
 
-    [ "$signed_hex" != "00000000" ] || die "Secure boot is not enabled"
+    [ "$signed_hex" != "00000000" ]
 }
 
 detect_slot() {
@@ -116,16 +116,23 @@ update_boot() {
 
     img="$1"
 
-    check_secure_boot
-
     echo "Updating boot image on inactive partition at $BOOT_UPDATE_MNT ..."
 
-    cp "$img" "$BOOT_UPDATE_MNT/boot.img" \
-        || die "Failed to copy boot.img to $BOOT_UPDATE_MNT"
+    if is_secure_boot; then
+        cp "$img" "$BOOT_UPDATE_MNT/boot.img" \
+            || die "Failed to copy boot.img to $BOOT_UPDATE_MNT"
 
-    if [ -n "$BOOT_SIG" ]; then
-        cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/boot.sig" \
-            || die "Failed to copy boot.sig to $BOOT_UPDATE_MNT"
+        if [ -n "$BOOT_SIG" ]; then
+            cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/boot.sig" \
+                || die "Failed to copy boot.sig to $BOOT_UPDATE_MNT"
+        fi
+    else
+        echo "Secure boot not enabled, extracting boot image contents..."
+        tmp_mnt=$(mktemp -d) || die "Failed to create temp mount point"
+        mount -o loop,ro "$img" "$tmp_mnt" || die "Failed to mount boot image"
+        cp -a "$tmp_mnt"/. "$BOOT_UPDATE_MNT"/ || die "Failed to copy boot contents"
+        umount "$tmp_mnt"
+        rmdir "$tmp_mnt"
     fi
 
     sync
