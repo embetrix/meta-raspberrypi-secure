@@ -39,7 +39,8 @@ CONSOLE_SELECT   = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '${CONS
 # Kernel Command Line
 CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
-CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE}"
+EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
+CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE}"
 
 # Remove debug-tweaks in production
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
