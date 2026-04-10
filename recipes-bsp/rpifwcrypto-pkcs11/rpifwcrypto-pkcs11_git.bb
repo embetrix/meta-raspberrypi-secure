@@ -16,3 +16,5 @@ FILES:${PN} += "${libdir}/pkcs11 ${datadir}/p11-kit"
 INSANE_SKIP:${PN} += "dev-so"
 
 RRECOMMENDS:${PN} = "raspi-utils-rpifwcrypto pkcs11-provider libp11"
+
+COMPATIBLE_MACHINE = "raspberrypi4|raspberrypi4-64|raspberrypi5"

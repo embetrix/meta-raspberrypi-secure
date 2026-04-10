@@ -14,3 +14,5 @@ do_install() {
     install -d ${D}${sbindir}
     install -m 0755 ${WORKDIR}/rpi-secureboot.sh ${D}${sbindir}/rpi-secureboot
 }
+
+COMPATIBLE_MACHINE = "raspberrypi4|raspberrypi4-64|raspberrypi5"

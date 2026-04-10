@@ -23,3 +23,5 @@ do_install() {
     install -m 0644 ${WORKDIR}/rpi-ab-update-confirm.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${WORKDIR}/rpi-ab-update-confirm.timer ${D}${systemd_system_unitdir}/
 }
+
+COMPATIBLE_MACHINE = "raspberrypi4|raspberrypi4-64|raspberrypi5"
