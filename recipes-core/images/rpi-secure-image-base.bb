@@ -21,10 +21,13 @@ EVM_FILE_SIGNATURES_FILE = "etc/evm-signatures.manifest"
 # NOTE: On the 'prod' profile, SSH/Serial password login is disabled
 # Only certificate-based authentication is allowed over SSH
 #
+RPI_USER_PASSWD_HASH  ?= "\$5\$ae3c3495942cbc3b\$PKEnZIPY2QldtV2ExeTafSRpuMAgjLL4NEw74RPPxp/"
+ROOT_USER_PASSWD_HASH ?= "\$5\$8fe9b3c5b1479874\$kZwSJoxUOIHpuJRVts0Th4ueQPEJ2A0T7o3a3Fn92a4"
+
 EXTRA_USERS_PARAMS = " \
     useradd -m -s /bin/sh rpi; \
-    usermod -p '\$5\$ae3c3495942cbc3b\$PKEnZIPY2QldtV2ExeTafSRpuMAgjLL4NEw74RPPxp/'  rpi;  \
-    usermod -p '\$5\$8fe9b3c5b1479874\$kZwSJoxUOIHpuJRVts0Th4ueQPEJ2A0T7o3a3Fn92a4'  root; \
+    usermod -p '${RPI_USER_PASSWD_HASH}'  rpi;  \
+    usermod -p '${ROOT_USER_PASSWD_HASH}' root; \
     "
 
 IMAGE_INSTALL += " \
