@@ -40,7 +40,8 @@ CONSOLE_SELECT   = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '${CONS
 CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
 EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
-CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE}"
+VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
+CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} verity_mode=${VERITY_MODE}"
 
 # Remove debug-tweaks in production
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
@@ -94,7 +95,7 @@ include conf/distro/include/cve-extra-exclusions.inc
 
 # WKS file
 WKS_FILES = "raspberrypi-secure.wks.in"
-ROOTFS_TYPE ?= "erofs"
+ROOTFS_TYPE ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'erofs', 'ext4', d)}"
 
 # Files for the boot partition selector
 WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
