@@ -3,6 +3,9 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 # Enable Kernel modules signing
 inherit kernel-modsign
 
+# Stage IMA/EVM x509 for CONFIG_SYSTEM_TRUSTED_KEYS
+inherit kernel-trusted-keys
+
 SRC_URI += "file://dm-crypt-verity.cfg \
             file://ext4.cfg \
             file://erofs.cfg \

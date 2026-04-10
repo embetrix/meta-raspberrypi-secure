@@ -46,16 +46,17 @@ setup_integrity() {
 	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/libc.so.6"
 	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/libc.so.6"
 
-	# Import IMA/EVM X509
-	if [ ! -f "$IMA_X509" ] || [ ! -f "$EVM_X509" ]; then
-		fatal "IMA/EVM X509 certificates not found!"
-	fi
+    # Skip key importing IMA/EVM certificates now done in kernel via CONFIG_SYSTEM_TRUSTED_KEYS
+	# # Import IMA/EVM X509
+	# if [ ! -f "$IMA_X509" ] || [ ! -f "$EVM_X509" ]; then
+	# 	fatal "IMA/EVM X509 certificates not found!"
+	# fi
 
-	ima_id=$(keyctl newring _ima @u)
-	evmctl import "$IMA_X509" $ima_id > /dev/null 2>&1
+	# ima_id=$(keyctl newring _ima @u)
+	# evmctl import "$IMA_X509" $ima_id > /dev/null 2>&1
 
-	evm_id=$(keyctl newring _evm @u)
-	evmctl import "$EVM_X509" $evm_id > /dev/null 2>&1
+	# evm_id=$(keyctl newring _evm @u)
+	# evmctl import "$EVM_X509" $evm_id > /dev/null 2>&1
 
 	# Load IMA policy
 	if [ ! -f "$IMA_POLICY" ]; then
