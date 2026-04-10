@@ -99,6 +99,22 @@ else
     chmod 600 "$AVB_SIGN_KEY"
 fi
 
+# AVB self-signed x509 certificate (PEM)
+AVB_X509="$KEY_DIR/x509_avb.pem"
+if [ -f "$AVB_X509" ]; then
+    echo "  Skipping AVB x509 certificate (already exists)"
+else
+    echo "  Generating AVB x509 certificate (PEM) ..."
+    openssl req -new -x509 -sha256 -days "$DAYS" -batch \
+        -subj "/CN=$CN-avb dev/O=$ORG" \
+        -addext "basicConstraints=critical,CA:FALSE" \
+        -addext "keyUsage=digitalSignature" \
+        -addext "extendedKeyUsage=critical,codeSigning" \
+        -addext "subjectKeyIdentifier=hash" \
+        -key "$AVB_SIGN_KEY" -outform PEM -out "$AVB_X509" 2>/dev/null
+    chmod 644 "$AVB_X509"
+fi
+
 # SSH CA key pair (ed25519)
 SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
@@ -130,6 +146,7 @@ local_conf_header:
         MODSIGN_PRIVKEY          = "$MODSIGN_PRIVKEY"
         MODSIGN_X509             = "$MODSIGN_X509"
         AVB_SIGN_KEY             = "$AVB_SIGN_KEY"
+        AVB_X509                 = "$AVB_X509"
         OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
 EOF
 chmod 600 "$KAS_FRAGMENT"
@@ -148,6 +165,7 @@ IMA_EVM_X509             = "$IMA_X509"
 MODSIGN_PRIVKEY          = "$MODSIGN_PRIVKEY"
 MODSIGN_X509             = "$MODSIGN_X509"
 AVB_SIGN_KEY             = "$AVB_SIGN_KEY"
+AVB_X509                 = "$AVB_X509"
 OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
 EOF
 echo "#######################################################"

@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
-# Stage a bundled PEM (IMA/EVM x509 + module signing x509) into the kernel
-# build dir / shared-workdir so that CONFIG_SYSTEM_TRUSTED_KEYS="ima_evm_key.pem"
-# embeds both certs into the builtin trusted keyring at kernel build time
+# Stage a bundled PEM (IMA/EVM x509 + module signing x509 + AVB x509) into
+# the kernel build dir / shared-workdir so that
+# CONFIG_SYSTEM_TRUSTED_KEYS="trusted_keys.pem" embeds all three certs into
+# the builtin trusted keyring at kernel build time
 #
 # Rationale: when only the IMA cert was placed in CONFIG_SYSTEM_TRUSTED_KEYS,
 # kernel module signature verification broke in practice, so we bundle the
@@ -28,12 +29,18 @@ kernel_do_configure:prepend() {
         bberror "Module signing certificate not found: ${MODSIGN_X509}"
         exit 1
     fi
+    if [ ! -f "${AVB_X509}" ]; then
+        bberror "AVB signing certificate not found: ${AVB_X509}"
+        exit 1
+    fi
 
     # IMA/EVM cert is DER so convert to PEM so the bundle is a uniform
     openssl x509 -inform DER -in "${IMA_EVM_X509}" \
                  -outform PEM -out "${B}/trusted_keys.pem"
-    # Modsign cert is already PEM so append it directly to the bundle
-    cat "${MODSIGN_X509}" >> "${B}/trusted_keys.pem"
+
+    # Modsign and AVB certs are already PEM so append them directly
+    cat "${MODSIGN_X509}"  >> "${B}/trusted_keys.pem"
+    cat "${AVB_X509}" >> "${B}/trusted_keys.pem"
 }
 
 do_shared_workdir:append() {
