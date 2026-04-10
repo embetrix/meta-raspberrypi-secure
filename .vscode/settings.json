@@ -3,13 +3,17 @@
         "${workspaceFolder}/layers/bitbake/lib",
         "${workspaceFolder}/layers/meta/lib",
         "${workspaceFolder}/layers/poky/bitbake/lib",
-        "${workspaceFolder}/layers/poky/meta/lib"
+        "${workspaceFolder}/layers/poky/meta/lib",
+        "${workspaceFolder}/sources/poky/bitbake/lib",
+        "${workspaceFolder}/sources/poky/meta/lib"
     ],
     "python.analysis.extraPaths": [
         "${workspaceFolder}/layers/bitbake/lib",
         "${workspaceFolder}/layers/meta/lib",
         "${workspaceFolder}/layers/poky/bitbake/lib",
-        "${workspaceFolder}/layers/poky/meta/lib"
+        "${workspaceFolder}/layers/poky/meta/lib",
+        "${workspaceFolder}/sources/poky/bitbake/lib",
+        "${workspaceFolder}/sources/poky/meta/lib"
     ],
     "files.associations": {
         "*.conf": "bitbake",

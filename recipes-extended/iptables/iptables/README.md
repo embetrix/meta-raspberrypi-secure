@@ -14,6 +14,8 @@ All chains (INPUT, FORWARD, OUTPUT) default to **DROP**. Only explicitly allowed
 |----------|------|--------|------------|---------|
 | TCP | 22 (SSH) | any | 3/min, burst 5 | Remote management |
 | TCP | 443 (HTTPS) | private subnets only | 25/min, burst 50, max 30 concurrent | Application service |
+| TCP | 5252 | private subnets only | 10/min, burst 20, max 30 concurrent | Tailscale web management |
+| any | any | tailscale0 interface | none | Tailscale tunnel traffic |
 | ICMP echo-request |  NA | any | 1/sec | Ping |
 | UDP | 68 (DHCPv4) / 546 (DHCPv6) | DHCP server |  NA | Address assignment |
 
@@ -25,6 +27,8 @@ All chains (INPUT, FORWARD, OUTPUT) default to **DROP**. Only explicitly allowed
 | UDP | 123 | NTP time sync |
 | UDP+TCP | 53 | DNS resolution |
 | UDP | 67 (DHCPv4) / 547 (DHCPv6) | DHCP client requests |
+| any | any | tailscale0 tunnel traffic |
+| UDP | 41641 | WireGuard direct connections |
 | ICMP echo-request |  NA | Ping |
 
 ### IPv4-specific

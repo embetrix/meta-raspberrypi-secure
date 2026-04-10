@@ -16,4 +16,5 @@ RDEPENDS:packagegroup-security-base = " \
     iptables \
     usbguard \
     rng-tools \
+    tailscale \
     "

@@ -1,0 +1,18 @@
+[Unit]
+Description=Tailscale node agent
+Wants=network-pre.target
+After=network-pre.target
+
+[Service]
+Group=tailscale
+Environment=TS_PERMIT_CERT_UID=900
+ExecStart=/usr/sbin/tailscaled --statedir=/var/tailscale
+ExecStartPost=/usr/bin/tailscale set --operator=tailscale --ssh
+ExecStopPost=/usr/sbin/tailscaled --cleanup
+Restart=on-failure
+RuntimeDirectory=tailscale
+RuntimeDirectoryMode=0750
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target

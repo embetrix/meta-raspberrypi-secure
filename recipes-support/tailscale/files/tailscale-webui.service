@@ -1,0 +1,16 @@
+[Unit]
+Description=Tailscale Web UI
+After=tailscaled.service
+Requires=tailscaled.service
+
+[Service]
+DynamicUser=yes
+User=tailscale
+Group=tailscale
+ExecStart=/usr/bin/tailscale web --listen=0.0.0.0:5252
+ExecStopPost=-/usr/bin/tailscale serve off
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

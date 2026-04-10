@@ -47,6 +47,10 @@ repos:
     url: "https://git.yoctoproject.org/git/meta-selinux.git"
     branch: scarthgap
     path: "layers/meta-selinux"
+  meta-lts-mixins-go:
+    url: "https://git.yoctoproject.org/meta-lts-mixins"
+    branch: scarthgap/go
+    path: "layers/meta-lts-mixins-go"
 env:
   SECURITY_PROFILE: "dev"
 local_conf_header:

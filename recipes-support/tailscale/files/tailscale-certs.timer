@@ -1,0 +1,14 @@
+[Unit]
+Description=Renew Tailscale TLS certificates
+
+[Timer]
+# First attempt 60s after boot (handles not-yet-registered retry)
+OnBootSec=60
+# Then retry every 5 min until success, daily after that
+OnUnitActiveSec=5min
+# Once a cert exists, daily renewal is enough
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
