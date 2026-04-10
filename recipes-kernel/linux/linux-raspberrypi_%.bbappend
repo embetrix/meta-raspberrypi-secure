@@ -14,6 +14,7 @@ SRC_URI += "file://dm-crypt-verity.cfg \
             file://kmod-sign.cfg \
             file://hwrng.cfg \
             file://netfilter.cfg \
+            file://crypto.cfg \
             "
 
 SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '', 'file://no-wifi.cfg', d)}"
