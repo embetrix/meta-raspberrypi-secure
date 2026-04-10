@@ -245,7 +245,10 @@ if [ -n "$ROOTFS_IMG" ]; then
 fi
 
 if [ "$CONFIRM" -eq 1 ]; then
-    is_tryboot || die "Not in tryboot mode, nothing to confirm"
+    if ! is_tryboot; then
+        echo "Not in tryboot mode, nothing to confirm"
+        exit 0
+    fi
     confirm_update
 else
     if [ "$REBOOT" -eq 1 ]; then
