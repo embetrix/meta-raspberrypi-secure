@@ -11,5 +11,3 @@ tmpfs                /run                 tmpfs      mode=0755,nodev,noexec,nosu
 tmpfs                /var/volatile        tmpfs      noexec,nodev,nosuid                        0 0
 tmpfs                /tmp                 tmpfs      noexec,nodev,nosuid                        0 0
 tmpfs                /dev/shm             tmpfs      noexec,nodev,nosuid                        0 0
-/dev/mapper/data     /var/data            ext4       noexec,nodev,nosuid,x-systemd.before=local-fs.target  0 0
-/dev/mapper/backups  /var/backups         ext4       noexec,nodev,nosuid,x-systemd.before=local-fs.target  0 0
