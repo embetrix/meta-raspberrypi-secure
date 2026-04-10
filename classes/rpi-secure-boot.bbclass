@@ -63,6 +63,9 @@ RPI_SECURE_BOOT_RECOVERY_CONFIG = "${DEPLOY_DIR_IMAGE}/bootconf-recovery.txt"
 RPI_SECURE_BOOT_EEPROM_HASHSIG = "${DEPLOY_DIR_IMAGE}/pieeprom.upd.hashsig"
 RPI_SECURE_BOOT_EEPROM_RECOVERY_HASHSIG = "${DEPLOY_DIR_IMAGE}/pieeprom-recovery.hashsig"
 
+# ensure the value is always ≤11 characters to fit within the FAT32 volume label limit
+BOOTDD_VOLUME_ID = "${@d.getVar('MACHINE').replace('raspberrypi', 'rpi')[:11]}"
+
 do_image_rpi_secure_boot[depends] = " \
     mtools-native:do_populate_sysroot \
     dosfstools-native:do_populate_sysroot \
