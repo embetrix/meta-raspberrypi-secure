@@ -20,7 +20,7 @@ AVB_PARTITION_NAME ?= "rootfs"
 
 # Partition size for avbtool (bytes):  Default 0 = auto-size the partition
 # to fit the image + hashtree + footer exactly.  Override to set an explicit
-# fixed partition size (must be larger than the image).
+# fixed partition size (must be larger than the image)
 AVB_PARTITION_SIZE ?= "0"
 
 # dm-verity uses 4096-byte data blocks; the filesystem block size
@@ -28,12 +28,15 @@ AVB_PARTITION_SIZE ?= "0"
 EXTRA_IMAGECMD:ext4:append = " -b 4096"
 
 avb_verity_setup() {
-    local INPUT=$1
-    local OUTPUT=$2
 
-    cp $INPUT $OUTPUT
+    IMAGE_IN=$1
+    IMAGE_OUT=$2
+
+    # Backup the input image to the output location 
+    # before adding the AVB hashtree footer in-place
+    cp $IMAGE_IN $IMAGE_OUT
     avbtool add_hashtree_footer \
-        --image $OUTPUT \
+        --image $IMAGE_OUT \
         --partition_name ${AVB_PARTITION_NAME} \
         --partition_size ${AVB_PARTITION_SIZE} \
         --algorithm ${AVB_ALGORITHM} \
