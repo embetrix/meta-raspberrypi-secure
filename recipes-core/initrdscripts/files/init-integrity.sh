@@ -88,6 +88,14 @@ setup_avb_verity() {
 	dm_table=$(avb_verify --dm-table -d "$luks_dev" -k "$AVB_PUBKEY") \
 		|| fatal "AVB verification failed on $luks_dev"
 
+	# Apply dm-verity corruption behavior from kernel cmdline
+	# (prod=restart, dev=ignore)
+	case " $(cat /proc/cmdline) " in
+		*" verity_mode=ignore "*) dm_table="$dm_table 1 ignore_corruption" ;;
+		*" verity_mode=panic "*)  dm_table="$dm_table 1 panic_on_corruption" ;;
+		*)                        dm_table="$dm_table 1 restart_on_corruption" ;;
+	esac
+
 	klog "Setting up dm-verity as $verity_name..."
 	echo "$dm_table" | dmsetup create --readonly "$verity_name" \
 		|| fatal "cannot create dm-verity device $verity_name"
