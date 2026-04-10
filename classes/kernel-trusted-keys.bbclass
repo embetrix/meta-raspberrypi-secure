@@ -1,46 +1,52 @@
+
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
-# Stage a bundled PEM (IMA/EVM x509 + module signing x509 + AVB x509) into
-# the kernel build dir / shared-workdir so that
-# CONFIG_SYSTEM_TRUSTED_KEYS="trusted_keys.pem" embeds all three certs into
-# the builtin trusted keyring at kernel build time
+# BitBake class: kernel-trusted-keys.bbclass
 #
-# Rationale: when only the IMA cert was placed in CONFIG_SYSTEM_TRUSTED_KEYS,
-# kernel module signature verification broke in practice, so we bundle the
-# modsign cert into the same PEM to guarantee it ends up in .builtin_trusted_keys
+# Purpose:
+#   Bundle multiple X.509 certificates (IMA/EVM, module signing, AVB, etc.) into a single PEM file (trusted_keys.pem)
+#   for use with CONFIG_SYSTEM_TRUSTED_KEYS in the Linux kernel build. This ensures all required certificates are
+#   embedded in the kernel's builtin trusted keyring at build time.
 #
-# Note: unlike CONFIG_MODULE_SIG_KEY (which expects a PEM bundle containing the
-# private key), CONFIG_SYSTEM_TRUSTED_KEYS only needs certificates
+# Usage:
+#   - Set KERNEL_TRUSTED_KEYS to a space-separated list of certificate files (PEM or DER).
+#     Example:
+#       KERNEL_TRUSTED_KEYS = "${IMA_EVM_X509} ${MODSIGN_X509} ${AVB_X509}"
+#   - Inherit this class in your kernel recipe or .bbappend.
+#   - Set CONFIG_SYSTEM_TRUSTED_KEYS="trusted_keys.pem" in your kernel config.
 #
-# If a root CA model is ever adopted (IMA_EVM_ROOT_CA), bundle the CA here
-# instead of the leaf so only the CA is baked into .builtin_trusted_keys and
-# leaf certs can be rotated without rebuilding the kernel
+# Notes:
+#   - All certificates are converted to PEM if needed and concatenated.
+#   - Only public certificates are required (no private keys).
+#   - If a root CA model is adopted, bundle the CA cert here for easier leaf rotation.
+#   - If any certificate is missing or invalid, the build will fail
+
+
+KERNEL_TRUSTED_KEYS ?= "${IMA_EVM_X509} ${MODSIGN_X509} ${AVB_X509}"
 
 DEPENDS:append = " openssl-native"
 
 kernel_do_configure:prepend() {
 
-    if [ ! -f "${IMA_EVM_X509}" ]; then
-        bberror "IMA/EVM certificate not found: ${IMA_EVM_X509}"
-        exit 1
-    fi
-    if [ ! -f "${MODSIGN_X509}" ]; then
-        bberror "Module signing certificate not found: ${MODSIGN_X509}"
-        exit 1
-    fi
-    if [ ! -f "${AVB_X509}" ]; then
-        bberror "AVB signing certificate not found: ${AVB_X509}"
-        exit 1
-    fi
+    out="${B}/trusted_keys.pem"
+    rm -f "$out"
+    touch "$out"
 
-    # IMA/EVM cert is DER so convert to PEM so the bundle is a uniform
-    openssl x509 -inform DER -in "${IMA_EVM_X509}" \
-                 -outform PEM -out "${B}/trusted_keys.pem"
-
-    # Modsign and AVB certs are already PEM so append them directly
-    cat "${MODSIGN_X509}"  >> "${B}/trusted_keys.pem"
-    cat "${AVB_X509}" >> "${B}/trusted_keys.pem"
+    for cert in ${KERNEL_TRUSTED_KEYS}; do
+        if [ ! -f "$cert" ]; then
+            bbfatal "Trusted key certificate not found: ${cert}"
+        fi
+        # Detect format and always append as PEM
+        if openssl x509 -in "$cert" -inform PEM -noout >/dev/null 2>&1; then
+            cat "$cert" >> "$out"
+        elif openssl x509 -in "$cert" -inform DER -noout >/dev/null 2>&1; then
+            openssl x509 -in "$cert" -inform DER -outform PEM >> "$out" \
+                || bbfatal "Failed to convert DER certificate to PEM: ${cert}"
+        else
+            bbfatal "Unsupported or invalid certificate format: ${cert}"
+        fi
+    done
 }
 
 do_shared_workdir:append() {
