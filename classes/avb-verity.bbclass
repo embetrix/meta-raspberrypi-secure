@@ -32,6 +32,10 @@ avb_verity_setup() {
     IMAGE_IN=$1
     IMAGE_OUT=$2
 
+    if [ ! -f "${AVB_SIGN_KEY}" ]; then
+        bbfatal "AVB sign key not found: ${AVB_SIGN_KEY}"
+    fi
+
     # Backup the input image to the output location 
     # before adding the AVB hashtree footer in-place
     cp $IMAGE_IN $IMAGE_OUT
