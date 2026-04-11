@@ -12,7 +12,7 @@
 # Usage:
 #   - Set KERNEL_TRUSTED_KEYS to a space-separated list of certificate files (PEM or DER).
 #     Example:
-#       KERNEL_TRUSTED_KEYS = "${IMA_EVM_X509} ${MODSIGN_X509} ${AVB_X509}"
+#       KERNEL_TRUSTED_KEYS = "${AVB_X509} ${IMA_EVM_X509} ${MODSIGN_X509}"
 #   - Inherit this class in your kernel recipe or .bbappend.
 #   - Set CONFIG_SYSTEM_TRUSTED_KEYS="trusted_keys.pem" in your kernel config.
 #
@@ -23,7 +23,7 @@
 #   - If any certificate is missing or invalid, the build will fail
 
 
-KERNEL_TRUSTED_KEYS ?= "${IMA_EVM_X509} ${MODSIGN_X509} ${AVB_X509}"
+KERNEL_TRUSTED_KEYS ?= "${AVB_X509} ${IMA_EVM_X509} ${MODSIGN_X509}"
 
 DEPENDS:append = " openssl-native"
 
