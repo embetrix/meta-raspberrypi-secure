@@ -20,6 +20,7 @@ ENABLE_I2C              = "1"
 LOCK_DEVICE_KEY         = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 ENABLE_UART             = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '1', d)}"
 DISABLE_SPLASH          = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
+BOOT_DELAY              = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 # On purpose not locking the device key in OTP This is a one-way operation and should be done with caution !!
 # check for more options in
 # https://github.com/raspberrypi/usbboot/blob/master/secure-boot-recovery5/config.txt
