@@ -14,6 +14,7 @@ INHERIT += "image-buildinfo"
 # Bootloader configuration
 ENABLE_WATCHDOG         = "1"
 ENABLE_USB_MAX_CURRENT  = "1"
+ENABLE_PCIEX            = "1"
 ENABLE_TRYBOOT_AB       = "1"
 ENABLE_SPI_BUS          = "1"
 ENABLE_I2C              = "1"
@@ -45,7 +46,7 @@ CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
 EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
 VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
-CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} verity_mode=${VERITY_MODE}"
+CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} verity_mode=${VERITY_MODE} ${TRUSTED_KEY_SRC}"
 
 # Remove debug-tweaks in production
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
