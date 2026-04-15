@@ -7,6 +7,7 @@ SRC_URI += "file://autoboot.txt \
 
 ENABLE_WATCHDOG ??= ""
 ENABLE_USB_MAX_CURRENT ??= ""
+ENABLE_PCIEX ??= ""
 ENABLE_TRYBOOT_AB ??= ""
 LOCK_DEVICE_KEY ??= ""
 ENABLE_TPM_SLB9670  ??= ""
@@ -46,6 +47,13 @@ do_deploy:append() {
     if [ "${ENABLE_TPM_SLB9670}" = "1" ]; then
         echo "# Enable TPM SLB9670 support" >>$CONFIG
         echo "dtoverlay=tpm-slb9670" >>$CONFIG
+    fi
+
+    if [ "${ENABLE_PCIEX}" = "1" ]; then
+        echo "# Enable PCIe support" >>$CONFIG
+        case "${MACHINE}" in
+            raspberrypi5*) echo "dtparam=pciex1_gen=3" >>$CONFIG ;;
+        esac
     fi
 
     if [ "${LOCK_DEVICE_KEY}" = "1" ]; then
