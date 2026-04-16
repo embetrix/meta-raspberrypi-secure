@@ -14,7 +14,7 @@ BOOT_MNT="/boot"
 #   BCM2712 (RPi 5): /proc/device-tree/chosen/bootloader/signed Bit3 (1 = OTP programmed, 0 = not programmed)
 check_pubkey_otp() {
 
-    SOC=$(awk -F, '/^brcm/{print $2}' /proc/device-tree/compatible 2>/dev/null | tr -d '\0' || true)
+    SOC=$(tr '\0' '\n' < /proc/device-tree/compatible 2>/dev/null | awk -F, '/^brcm/{print $2}' || true)
     case "$SOC" in
         bcm2711)
             PUBKEY_OTP=$(vcgencmd otp_dump | awk -F: '/^(4[7-9]|5[0-4]):/{print $2}' | grep -v '^00000000$' || true)
