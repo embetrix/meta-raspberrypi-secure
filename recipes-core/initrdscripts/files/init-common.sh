@@ -7,8 +7,8 @@
 fatal() {
 
 	echo "FATAL: $1" >&2
-	#reboot -f
-	sh
+	reboot -f
+	#sh
 }
 
 klog() {
