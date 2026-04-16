@@ -6,6 +6,8 @@ inherit kernel-modsign
 # Stage IMA/EVM x509 for CONFIG_SYSTEM_TRUSTED_KEYS
 inherit kernel-trusted-keys
 
+SRC_URI += "file://0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch"
+
 SRC_URI += "file://dm-crypt-verity.cfg \
             file://ext4.cfg \
             file://erofs.cfg \
