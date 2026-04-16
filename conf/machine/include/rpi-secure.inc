@@ -20,6 +20,7 @@ ENABLE_SPI_BUS          = "1"
 ENABLE_I2C              = "1"
 LOCK_DEVICE_KEY         = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 ENABLE_UART             = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '1', d)}"
+ENABLE_UART_2NDSTAGE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '1', d)}"
 DISABLE_SPLASH          = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 BOOT_DELAY              = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 # On purpose not locking the device key in OTP This is a one-way operation and should be done with caution !!
@@ -46,6 +47,7 @@ CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
 EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
 VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
+TRUSTED_KEY_SRC ?= "trusted.source=rpifwcrypto"
 CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} verity_mode=${VERITY_MODE} ${TRUSTED_KEY_SRC}"
 
 # Remove debug-tweaks in production
@@ -100,7 +102,7 @@ include conf/distro/include/cve-extra-exclusions.inc
 
 # WKS file
 WKS_FILES = "raspberrypi-secure.wks.in"
-ROOTFS_TYPE ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'erofs', 'ext4', d)}"
+ROOTFS_TYPE ?= "erofs"
 
 # Files for the boot partition selector
 WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
