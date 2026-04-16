@@ -25,6 +25,10 @@ do_deploy:append() {
         sed -i 's/^BOOT_UART=.*/BOOT_UART=0/' ${DEPLOYDIR}/bootconf.txt
     fi
 
+    if [ "${ENABLE_UART_2NDSTAGE}" = "1" ]; then
+        echo "# Enable UART in 2nd stage" >>$CONFIG
+        echo "uart_2ndstage=1" >>$CONFIG
+    fi
     if [ "${ENABLE_WATCHDOG}" = "1" ]; then
         echo "# Enable watchdog"   >>$CONFIG
         # dtparam=watchdog is only recognized on RPi4 (BCM2711)
