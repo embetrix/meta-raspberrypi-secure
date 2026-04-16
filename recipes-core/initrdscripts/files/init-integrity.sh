@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
-# Integrity helpers: IMA/EVM signature restore, key import, AVB dm-verity setup
+# Integrity helpers: IMA/EVM and AVB dm-verity setup
 
 # Restore IMA/EVM xattrs from build-time manifest
 # cpio newc format does not preserve xattrs so we re-apply them
@@ -30,6 +30,38 @@ restore_ima_evm_signatures() {
 	done < "$manifest"
 }
 
+setup_ima() {
+
+	# Load IMA policy
+	if [ ! -f "$IMA_POLICY" ]; then
+		fatal "IMA policy not found!"
+	fi
+
+	cat "$IMA_POLICY" \
+		 > /sys/kernel/security/integrity/ima/policy \
+		|| fatal "cannot load IMA policy"
+}
+
+setup_evm() {
+
+	if [ ! -f "${KMK_BLOB}" ] || [ ! -f "${EVM_KEY_BLOB}" ]; then
+		keyctl add trusted kmk "new 32" @u || fatal "cannot create KMK" \
+			|| fatal "cannot export KMK to ${KMK_BLOB}"
+		keyctl pipe $(keyctl search @u trusted kmk) > ${KMK_BLOB} \
+			|| fatal "cannot export KMK to ${KMK_BLOB}"
+		keyctl add encrypted evm-key "new default trusted:kmk 32" @u \
+			|| fatal "cannot create EVM key"
+		keyctl pipe $(keyctl search @u encrypted evm-key) > ${EVM_KEY_BLOB} \
+			|| fatal "cannot export EVM key to ${EVM_KEY_BLOB}"
+		sync
+	else
+		keyctl add trusted kmk "load $(cat ${KMK_BLOB})" @u \
+			|| fatal "cannot import KMK from ${KMK_BLOB}"
+		keyctl add encrypted evm-key "load $(cat ${EVM_KEY_BLOB})" @u \
+			|| fatal "cannot import EVM key from ${EVM_KEY_BLOB}"
+	fi
+}
+
 setup_integrity() {
 
 	klog "Setting up IMA/EVM Integrity..."
@@ -46,30 +78,12 @@ setup_integrity() {
 	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/libc.so.6"
 	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/libc.so.6"
 
-    # Skip key importing IMA/EVM certificates now done in kernel via CONFIG_SYSTEM_TRUSTED_KEYS
-	# # Import IMA/EVM X509
-	# if [ ! -f "$IMA_X509" ] || [ ! -f "$EVM_X509" ]; then
-	# 	fatal "IMA/EVM X509 certificates not found!"
-	# fi
+	setup_evm
+	setup_ima
 
-	# ima_id=$(keyctl newring _ima @u)
-	# evmctl import "$IMA_X509" $ima_id > /dev/null 2>&1
-
-	# evm_id=$(keyctl newring _evm @u)
-	# evmctl import "$EVM_X509" $evm_id > /dev/null 2>&1
-
-	# Load IMA policy
-	if [ ! -f "$IMA_POLICY" ]; then
-		fatal "IMA policy not found!"
-	fi
-
-	cat "$IMA_POLICY" \
-		 > /sys/kernel/security/integrity/ima/policy \
-		|| fatal "cannot load IMA policy"
-
-	# Enable EVM in signature verification mode only 
+	# Enable EVM in signature + hmac verification mode
 	# and lock the configuration to prevent changes at runtime
-	echo "0x80000002" > /sys/kernel/security/integrity/evm/evm
+	echo "0x80000003" > /sys/kernel/security/integrity/evm/evm
 }
 
 # Verify AVB signature and set up dm-verity on the decrypted root device.

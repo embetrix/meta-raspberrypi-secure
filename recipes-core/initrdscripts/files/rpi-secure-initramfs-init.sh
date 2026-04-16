@@ -45,6 +45,8 @@ IMA_X509="/etc/keys/x509_ima.der"
 EVM_X509="/etc/keys/x509_evm.der"
 IMA_MANIFEST="/etc/ima-signatures.manifest"
 EVM_MANIFEST="/etc/evm-signatures.manifest"
+KMK_BLOB="$ROOT_MNT$BOOT_MNT/kmk.blob"
+EVM_KEY_BLOB="$ROOT_MNT$BOOT_MNT/evm-key.blob"
 
 BOOT_SLOT="/proc/device-tree/chosen/bootloader/partition"
 BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
