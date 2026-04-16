@@ -36,3 +36,9 @@ appraise func=MMAP_CHECK mask=MAY_EXEC appraise_type=imasig
 appraise func=FIRMWARE_CHECK appraise_type=imasig
 appraise func=MODULE_CHECK appraise_type=imasig
 appraise func=POLICY_CHECK appraise_type=imasig
+
+# Hash and appraise all files on ext4 partitions (rw data partitions)
+# hash: compute and store IMA hash on first access
+# appraise: verify IMA signature/hash on any write-like access
+hash func=FILE_CHECK fsmagic=0xEF53
+appraise func=FILE_CHECK mask=^MAY_READ fsmagic=0xEF53
