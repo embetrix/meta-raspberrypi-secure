@@ -7,8 +7,10 @@ SIGNED_BOOT=1
 # Enable UART for bootloader but can be disabled for production
 BOOT_UART=1
 
-# Reset if OS not started within 30s
-BOOT_WATCHDOG_TIMEOUT=30
+# Disabled: bootloader watchdog not cancelled under SIGNED_BOOT=1 (firmware bug?)
+# https://github.com/raspberrypi/firmware/issues/2023
+# Re-enable once firmware fixes auto-cancel with secure boot
+#BOOT_WATCHDOG_TIMEOUT=180
 
 # Walk partitions if autoboot.txt is corrupt/missing
 PARTITION_WALK=1
