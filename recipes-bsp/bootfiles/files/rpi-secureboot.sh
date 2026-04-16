@@ -6,11 +6,12 @@
 # via the EEPROM recovery mechanism on the boot selector partition
 set -e
 
+SIGNED_DT="/proc/device-tree/chosen/bootloader/signed"
 BOOT_MNT="/boot"
 
 # Detect SoC and check OTP rows for the secure-boot public key hash.
 #   BCM2711 (RPi 4): rows 47-54 (SHA256 of RSA public key)
-#   BCM2712 (RPi 5): secure-boot key OTP rows are not publicly documented
+#   BCM2712 (RPi 5): /proc/device-tree/chosen/bootloader/signed Bit3 (1 = OTP programmed, 0 = not programmed)
 check_pubkey_otp() {
 
     SOC=$(awk -F, '/^brcm/{print $2}' /proc/device-tree/compatible 2>/dev/null | tr -d '\0' || true)
@@ -20,10 +21,19 @@ check_pubkey_otp() {
             OTP_ROWS="47-54"
             ;;
         bcm2712)
-            echo "Warning: BCM2712 secure-boot key OTP rows are not publicly documented" >&2
-            PUBKEY_OTP=""
-            OTP_ROWS="unknown"
-            return 1
+            if [ -e "$SIGNED_DT" ]; then
+                SIGNED_VAL=$(hexdump -v -e '/1 "%02x"' "$SIGNED_DT" 2>/dev/null)
+                if [ $(( 0x$SIGNED_VAL & 0x8 )) -ne 0 ]; then
+                    PUBKEY_OTP="burned"
+                else
+                    PUBKEY_OTP=""
+                fi
+            else
+                echo "Warning: $SIGNED_DT not available" >&2
+                PUBKEY_OTP=""
+                return 1
+            fi
+            OTP_ROWS="device-tree"
             ;;
         *)
             echo "Warning: unknown SoC '$SOC', cannot check OTP fuses" >&2
