@@ -7,8 +7,8 @@
 fatal() {
 
 	echo "FATAL: $1" >&2
-	reboot -f
-	#sh
+	#reboot -f
+	sh
 }
 
 klog() {
@@ -89,5 +89,12 @@ await_blockdev() {
 	done
 	if [ $i -eq $TIMEOUT ]; then
 		fatal "Timeout waiting for $1"
+	fi
+}
+
+feed_watchdog() {
+
+	if [ -c /dev/watchdog ]; then
+		watchdog -t 5 /dev/watchdog &
 	fi
 }
