@@ -20,6 +20,7 @@ export PATH=$PATH:/sbin:/usr/sbin
 BOOT_DEV=""
 BOOTACTIVE_DEV=""
 BOOTUPDATE_DEV=""
+BLOBS_DEV=""
 ROOT_DEV=""
 UPDATE_DEV=""
 DATA_DEV=""
@@ -34,6 +35,7 @@ VERITY_DM_NAME="verity-root"
 ROOT_MNT="/root"
 BOOT_MNT="/boot"
 BOOTUPDATE_MNT="/boot-update"
+BLOBS_MNT="/blobs"
 DATA_MNT="/var/data"
 BACKUPS_MNT="/var/backups"
 
@@ -45,8 +47,9 @@ IMA_X509="/etc/keys/x509_ima.der"
 EVM_X509="/etc/keys/x509_evm.der"
 IMA_MANIFEST="/etc/ima-signatures.manifest"
 EVM_MANIFEST="/etc/evm-signatures.manifest"
-KMK_BLOB="$ROOT_MNT$BOOT_MNT/kmk.blob"
-EVM_KEY_BLOB="$ROOT_MNT$BOOT_MNT/evm-key.blob"
+KMK_BLOB="$BLOBS_MNT/kmk.blob"
+ENC_KEY_BLOB="$BLOBS_MNT/enc-key.blob"
+EVM_KEY_BLOB="$BLOBS_MNT/evm-key.blob"
 
 BOOT_SLOT="/proc/device-tree/chosen/bootloader/partition"
 BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
@@ -62,10 +65,11 @@ MACHINE_ID=""
 BOOT=1
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
-ROOT_SLOT_A=4
-ROOT_SLOT_B=5
-DATA_PART=6
-BACKUPS_PART=7
+BLOBS_PART=4
+ROOT_SLOT_A=5
+ROOT_SLOT_B=6
+DATA_PART=7
+BACKUPS_PART=8
 
 TIMEOUT=40
 
@@ -103,8 +107,15 @@ await_blockdev "$ROOT_DEV"
 # Required to make pipe work in shell
 ln -s /proc/self/fd /dev/fd
 
+# Mount blobs partition containing encryption keys KMK and blobs
+mount -t ext4 -o $OPT_PART $BLOBS_DEV "$BLOBS_MNT" \
+	|| fatal "cannot mount blobs device $BLOBS_DEV"
+
 # Derive and cache the LUKS2 key once
 derive_key
+
+# Set up encrypted keys in kernel keyring
+setup_encrypted_keys
 
 if ! cryptsetup isLuks "$ROOT_DEV" 2>/dev/null; then
 	encrypt_rootfs "$ROOT_DEV" "$UPDATE_DEV" "$ROOT_DM_NAME" "$UPDATE_DM_NAME"

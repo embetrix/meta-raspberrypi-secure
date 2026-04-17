@@ -30,38 +30,6 @@ restore_ima_evm_signatures() {
 	done < "$manifest"
 }
 
-setup_ima() {
-
-	# Load IMA policy
-	if [ ! -f "$IMA_POLICY" ]; then
-		fatal "IMA policy not found!"
-	fi
-
-	cat "$IMA_POLICY" \
-		 > /sys/kernel/security/integrity/ima/policy \
-		|| fatal "cannot load IMA policy"
-}
-
-setup_evm() {
-
-	if [ ! -f "${KMK_BLOB}" ] || [ ! -f "${EVM_KEY_BLOB}" ]; then
-		keyctl add trusted kmk "new 32" @u || fatal "cannot create KMK" \
-			|| fatal "cannot export KMK to ${KMK_BLOB}"
-		keyctl pipe $(keyctl search @u trusted kmk) > ${KMK_BLOB} \
-			|| fatal "cannot export KMK to ${KMK_BLOB}"
-		keyctl add encrypted evm-key "new default trusted:kmk 32" @u \
-			|| fatal "cannot create EVM key"
-		keyctl pipe $(keyctl search @u encrypted evm-key) > ${EVM_KEY_BLOB} \
-			|| fatal "cannot export EVM key to ${EVM_KEY_BLOB}"
-		sync
-	else
-		keyctl add trusted kmk "load $(cat ${KMK_BLOB})" @u \
-			|| fatal "cannot import KMK from ${KMK_BLOB}"
-		keyctl add encrypted evm-key "load $(cat ${EVM_KEY_BLOB})" @u \
-			|| fatal "cannot import EVM key from ${EVM_KEY_BLOB}"
-	fi
-}
-
 setup_integrity() {
 
 	klog "Setting up IMA/EVM Integrity..."
@@ -78,8 +46,14 @@ setup_integrity() {
 	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/libc.so.6"
 	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/libc.so.6"
 
-	setup_evm
-	setup_ima
+	# Load IMA policy
+	if [ ! -f "$IMA_POLICY" ]; then
+		fatal "IMA policy not found!"
+	fi
+
+	cat "$IMA_POLICY" \
+		 > /sys/kernel/security/integrity/ima/policy \
+		|| fatal "cannot load IMA policy"
 
 	# Enable EVM in signature + hmac verification mode
 	# and lock the configuration to prevent changes at runtime

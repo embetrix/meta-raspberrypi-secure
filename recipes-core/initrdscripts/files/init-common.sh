@@ -73,6 +73,7 @@ get_boot_slot() {
 		*) fatal "Unknown boot slot: $boot_hex" ;;
 	esac
 	BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT}"
+	BLOBS_DEV="/dev/${BASE_DEV}${SEP}${BLOBS_PART}"
 	DATA_DEV="/dev/${BASE_DEV}${SEP}${DATA_PART}"
 	BACKUPS_DEV="/dev/${BASE_DEV}${SEP}${BACKUPS_PART}"
 }

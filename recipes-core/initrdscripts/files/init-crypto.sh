@@ -4,6 +4,54 @@
 #
 # Crypto helpers: LUKS2 key derivation, rootfs encryption, data partition setup
 
+setup_encrypted_keys() {
+
+	if rpi-fw-crypto pubkey --key-id "$OTP_KEY_ID" --out /dev/null 2>/dev/null; then
+		klog "OTP key provisioned, using trusted master key"
+		MASTER_KEY_TYPE="trusted"
+		ENC_KEY_MASTER="trusted:kmk"
+	else
+		klog "WARNING: OTP key not provisioned, using user master key (not secure)"
+		MASTER_KEY_TYPE="user"
+		ENC_KEY_MASTER="user:kmk"
+	fi
+
+	if [ ! -f "${KMK_BLOB}" ] || [ ! -f "${ENC_KEY_BLOB}" ] || [ ! -f "${EVM_KEY_BLOB}" ]; then
+		if [ "$MASTER_KEY_TYPE" = "trusted" ]; then
+			keyctl add trusted kmk "new 32" @u \
+				|| fatal "cannot create KMK"
+			keyctl pipe $(keyctl search @u trusted kmk) > ${KMK_BLOB} \
+				|| fatal "cannot export KMK to ${KMK_BLOB}"
+		else
+			keyctl add user kmk "`dd if=/dev/urandom bs=1 count=32 2>/dev/null`" @u \
+				|| fatal "cannot create KMK"
+			keyctl pipe `keyctl search @u user kmk` > ${KMK_BLOB} \
+				|| fatal "cannot export KMK to ${KMK_BLOB}"
+		fi
+		keyctl add encrypted enc-key "new ${ENC_KEY_MASTER} 32" @u \
+			|| fatal "cannot create enc-key"
+		keyctl pipe $(keyctl search @u encrypted enc-key) > ${ENC_KEY_BLOB} \
+			|| fatal "cannot export enc-key to ${ENC_KEY_BLOB}"
+		keyctl add encrypted evm-key "new ${ENC_KEY_MASTER} 32" @u \
+			|| fatal "cannot create EVM key"
+		keyctl pipe $(keyctl search @u encrypted evm-key) > ${EVM_KEY_BLOB} \
+			|| fatal "cannot export EVM key to ${EVM_KEY_BLOB}"
+		sync
+	else
+		if [ "$MASTER_KEY_TYPE" = "trusted" ]; then
+			keyctl add trusted kmk "load $(cat ${KMK_BLOB})" @u \
+				|| fatal "cannot import KMK from ${KMK_BLOB}"
+		else
+			keyctl add user kmk "`cat ${KMK_BLOB}`" @u \
+				|| fatal "cannot import KMK from ${KMK_BLOB}"
+		fi
+		keyctl add encrypted enc-key "load $(cat ${ENC_KEY_BLOB})" @u \
+			|| fatal "cannot import enc-key from ${ENC_KEY_BLOB}"
+		keyctl add encrypted evm-key "load $(cat ${EVM_KEY_BLOB})" @u \
+			|| fatal "cannot import EVM key from ${EVM_KEY_BLOB}"
+	fi
+}
+
 # Derive LUKS2 encryption key from secure storage:
 # Uses rpi-fw-crypto HMAC-SHA256 with the OTP device key
 # The HMAC input is the storage device CID (if available) which
@@ -92,7 +140,7 @@ encrypt_rootfs() {
 	# Do NOT shrink or expand the filesystem the AVB hashtree
 	# must remain intact for dm-verity verification.
 	klog "Copying image from $update_dev to encrypted root volume..."
-	dd if="$update_dev" of="/dev/mapper/$root_dm" bs=4M 2>/dev/null
+	dd if="$update_dev" of="/dev/mapper/$root_dm" bs=1M 2>/dev/null
 	sync
 
 	# Format update partition as LUKS2
