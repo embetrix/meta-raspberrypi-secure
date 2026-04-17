@@ -63,6 +63,7 @@ IMAGE_BOOT_FILES += "${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERN
 
 # No kernel image inside the rootfs
 RDEPENDS:${KERNEL_PACKAGE_NAME}-base = ""
+RRECOMMENDS:${KERNEL_PACKAGE_NAME}-base = ""
 
 # Raspberry Pi Secure Boot configuration
 RPI_SECURE_BOOT_SIGN = "1"
