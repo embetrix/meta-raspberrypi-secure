@@ -49,9 +49,11 @@ IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce
 EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
 VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
 VERITY_SIG      = "${@bb.utils.contains('RPI_SECURITY_PROFILE',  'prod', '1', '0', d)}"
-TRUSTED_KEY_SRC ?= "trusted.source=rpifwcrypto"
+TRUSTED_SRC    ?= "rpifwcrypto"
 
-CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} ${TRUSTED_KEY_SRC} \
+CMDLINE:append  = " ${CONSOLE_SELECT} \
+                     ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} \
+                     trusted.source=${TRUSTED_SRC} \
                      verity_mode=${VERITY_MODE} dm_verity.require_signatures=${VERITY_SIG}"
 
 # Remove debug-tweaks in production
