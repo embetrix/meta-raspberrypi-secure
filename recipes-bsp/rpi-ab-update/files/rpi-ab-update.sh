@@ -117,21 +117,14 @@ update_boot() {
 
     echo "Updating boot image on inactive partition at $BOOT_UPDATE_MNT ..."
 
+    cp "$img" "$BOOT_UPDATE_MNT/boot.img" \
+        || die "Failed to copy boot.img to $BOOT_UPDATE_MNT"
+
     if is_secure_boot; then
         [ -n "$BOOT_SIG" ] || die "Secure boot is active, -s <boot.sig> is required"
 
-        cp "$img" "$BOOT_UPDATE_MNT/boot.img" \
-            || die "Failed to copy boot.img to $BOOT_UPDATE_MNT"
-
         cp "$BOOT_SIG" "$BOOT_UPDATE_MNT/boot.sig" \
             || die "Failed to copy boot.sig to $BOOT_UPDATE_MNT"
-    else
-        echo "Secure boot not enabled, extracting boot image contents..."
-        tmp_mnt=$(mktemp -d) || die "Failed to create temp mount point"
-        mount -o loop,ro "$img" "$tmp_mnt" || die "Failed to mount boot image"
-        cp -a "$tmp_mnt"/. "$BOOT_UPDATE_MNT"/ || die "Failed to copy boot contents"
-        umount "$tmp_mnt"
-        rmdir "$tmp_mnt"
     fi
 
     sync

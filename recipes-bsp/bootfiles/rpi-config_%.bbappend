@@ -5,6 +5,8 @@ SRC_URI += "file://autoboot.txt \
             file://bootconf-recovery.txt \
             file://readme.txt"
 
+ENABLE_BOOT_RAMDISK ??= ""
+ENABLE_UART_2NDSTAGE ??= ""
 ENABLE_WATCHDOG ??= ""
 ENABLE_USB_MAX_CURRENT ??= ""
 ENABLE_PCIEX ??= ""
@@ -24,7 +26,10 @@ do_deploy:append() {
     if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then
         sed -i 's/^BOOT_UART=.*/BOOT_UART=0/' ${DEPLOYDIR}/bootconf.txt
     fi
-
+    if [ "${ENABLE_BOOT_RAMDISK}" = "1" ]; then
+        echo "# Enable Boot RAMDisk" >>$CONFIG
+        echo "boot_ramdisk=1" >>$CONFIG
+    fi
     if [ "${ENABLE_UART_2NDSTAGE}" = "1" ]; then
         echo "# Enable UART in 2nd stage" >>$CONFIG
         echo "uart_2ndstage=1" >>$CONFIG
@@ -37,7 +42,6 @@ do_deploy:append() {
             raspberrypi4*) echo "dtparam=watchdog=on" >>$CONFIG ;;
         esac
     fi
-
     if [ "${ENABLE_USB_MAX_CURRENT}" = "1" ]; then
         echo "# Enable USB max current" >>$CONFIG
         echo "usb_max_current_enable=1" >>$CONFIG
