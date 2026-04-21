@@ -8,15 +8,19 @@
 #   for it and set up dm-verity via dmsetup at runtime.
 inherit image_types
 
-DEPENDS += "avbtool-native"
+DEPENDS += "avbtool-native openssl-native"
 CONVERSIONTYPES += "avbverity"
 
-WICVARS:append = " AVB_SIGN_KEY AVB_ALGORITHM AVB_HASH_ALGORITHM"
+WICVARS:append = " AVB_SIGN_KEY AVB_ALGORITHM AVB_HASH_ALGORITHM AVB_ROOTHASH_SIG AVB_X509"
 
 # Default AVB settings
 AVB_ALGORITHM ?= "SHA256_RSA4096"
 AVB_HASH_ALGORITHM ?= "sha256"
 AVB_PARTITION_NAME ?= "rootfs"
+
+# Enable PKCS#7 root hash signature (for dm-verity root_hash_sig_key_desc)
+# Uses AVB_SIGN_KEY and AVB_X509 when set to "1"
+AVB_ROOTHASH_SIG ?= "1"
 
 # Partition size for avbtool (bytes):  Default 0 = auto-size the partition
 # to fit the image + hashtree + footer exactly.  Override to set an explicit
@@ -36,8 +40,12 @@ avb_verity_setup() {
         bbfatal "AVB sign key not found: ${AVB_SIGN_KEY}"
     fi
 
-    # Backup the input image to the output location 
-    # before adding the AVB hashtree footer in-place
+    if [ "${AVB_ROOTHASH_SIG}" = "1" ]; then
+        if [ ! -f "${AVB_X509}" ]; then
+            bbfatal "AVB X.509 cert not found: ${AVB_X509}"
+        fi
+    fi
+
     cp $IMAGE_IN $IMAGE_OUT
     avbtool add_hashtree_footer \
         --image $IMAGE_OUT \
@@ -47,7 +55,33 @@ avb_verity_setup() {
         --key ${AVB_SIGN_KEY} \
         --hash_algorithm ${AVB_HASH_ALGORITHM} \
         --do_not_generate_fec
+
+    if [ "${AVB_ROOTHASH_SIG}" = "1" ]; then
+        ROOT_HASH=$(avbtool info_image --image $IMAGE_OUT \
+            | sed -n 's/.*Root Digest:[[:space:]]*//p')
+        SALT=$(avbtool info_image --image $IMAGE_OUT \
+            | sed -n 's/.*Salt:[[:space:]]*//p')
+        # Kernel passes root hash as hex string to verify_pkcs7_signature
+        echo -n "$ROOT_HASH" > ${WORKDIR}/roothash.hex
+
+        openssl smime -sign -binary -noattr -nocerts \
+            -in ${WORKDIR}/roothash.hex \
+            -inkey ${AVB_SIGN_KEY} -signer ${AVB_X509} \
+            -outform der -out ${WORKDIR}/roothash.p7s
+
+        avbtool erase_footer --image $IMAGE_OUT
+        avbtool add_hashtree_footer \
+            --image $IMAGE_OUT \
+            --partition_name ${AVB_PARTITION_NAME} \
+            --partition_size ${AVB_PARTITION_SIZE} \
+            --algorithm ${AVB_ALGORITHM} \
+            --key ${AVB_SIGN_KEY} \
+            --hash_algorithm ${AVB_HASH_ALGORITHM} \
+            --salt ${SALT} \
+            --do_not_generate_fec \
+            --prop_from_file roothash_sig:${WORKDIR}/roothash.p7s
+    fi
 }
 
 CONVERSION_CMD:avbverity = "avb_verity_setup ${IMAGE_NAME}.${type} ${IMAGE_NAME}.${type}.avbverity"
-CONVERSION_DEPENDS_avbverity = "avbtool-native"
+CONVERSION_DEPENDS_avbverity = "avbtool-native openssl-native"
