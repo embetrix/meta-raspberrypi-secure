@@ -47,8 +47,11 @@ CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
 EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
 VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
+VERITY_SIG      = "${@bb.utils.contains('RPI_SECURITY_PROFILE',  'prod', '1', '0', d)}"
 TRUSTED_KEY_SRC ?= "trusted.source=rpifwcrypto"
-CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} verity_mode=${VERITY_MODE} ${TRUSTED_KEY_SRC}"
+
+CMDLINE:append  = " ${CONSOLE_SELECT} ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} ${TRUSTED_KEY_SRC} \
+                     verity_mode=${VERITY_MODE} dm_verity.require_signatures=${VERITY_SIG}"
 
 # Remove debug-tweaks in production
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
