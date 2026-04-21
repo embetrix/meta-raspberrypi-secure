@@ -5,10 +5,9 @@
 # rpi secure initramfs init script:
 #   mount_early_fs     - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
 #   get_boot_slot      - Detect A/B boot slot from device tree
-#   derive_key         - Derive LUKS2 key from OTP HMAC or serial fallback
-#   encrypt_rootfs     - First-boot rootfs encryption (plain to LUKS2)
+#   encrypt_rootfs     - First-boot rootfs encryption (plain to dm-crypt)
 #   setup_avb_verity   - AVB signature verification and dm-verity setup
-#   mount_data_luks    - First-boot data partitions encryption
+#   mount_dmcrypt_data   - First-boot data partitions encryption
 #   setup_integrity    - Import IMA/EVM keys and load appraise policy
 #   switch_root        - Switch to the real root filesystem
 #
@@ -50,6 +49,7 @@ EVM_MANIFEST="/etc/evm-signatures.manifest"
 KMK_BLOB="$BLOBS_MNT/kmk.blob"
 ENC_KEY_BLOB="$BLOBS_MNT/enc-key.blob"
 EVM_KEY_BLOB="$BLOBS_MNT/evm-key.blob"
+KEY_SZ=32
 
 BOOT_SLOT="/proc/device-tree/chosen/bootloader/partition"
 BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
@@ -57,7 +57,6 @@ BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
 HW_SERIAL="/proc/device-tree/serial-number"
 CID=""
 
-ENC_KEY_HEX=""
 MACHINE_ID=""
 
 # Partition numbers for A/B slots, data and backups
@@ -111,22 +110,21 @@ ln -s /proc/self/fd /dev/fd
 mount -t ext4 -o $OPT_PART $BLOBS_DEV "$BLOBS_MNT" \
 	|| fatal "cannot mount blobs device $BLOBS_DEV"
 
-# Derive and cache the LUKS2 key once
-derive_key
-
 # Set up encrypted keys in kernel keyring
 setup_encrypted_keys
 
-if ! cryptsetup isLuks "$ROOT_DEV" 2>/dev/null; then
-	encrypt_rootfs "$ROOT_DEV" "$UPDATE_DEV" "$ROOT_DM_NAME" "$UPDATE_DM_NAME"
+# Always open root as dm-crypt first.
+# First boot : decrypted content is garbage (no rootfs yet) will lead to blkid fails
+# Normal boot: decrypted content is valid erofs+AVB will lead to blkid succeess
+dmcrypt_open "$ROOT_DEV" "$ROOT_DM_NAME"
+
+if ! blkid -s TYPE "/dev/mapper/$ROOT_DM_NAME" >/dev/null 2>&1; then
+	encrypt_rootfs "$ROOT_DM_NAME" "$UPDATE_DEV" "$UPDATE_DM_NAME"
 else
-	inject_key | cryptsetup luksOpen --key-file=- "$ROOT_DEV" "$ROOT_DM_NAME" \
-		|| fatal "cannot open root LUKS2 device $ROOT_DEV"
-	inject_key | cryptsetup luksOpen --key-file=- "$UPDATE_DEV" "$UPDATE_DM_NAME" \
-		|| fatal "cannot open update LUKS2 device $UPDATE_DEV"
+	dmcrypt_open "$UPDATE_DEV" "$UPDATE_DM_NAME"
 fi
 
-# Probe filesystem type on LUKS2 device before dm-verity
+# Probe filesystem type on dm-crypt device before dm-verity
 fstype=$(blkid -s TYPE -o value "/dev/mapper/$ROOT_DM_NAME" 2>/dev/null) \
 	|| fatal "cannot detect root filesystem type"
 
@@ -141,13 +139,10 @@ mount -t "$fstype" -o "$OPT_ROOT" "$ROOT_BLOCK_DEV" "$ROOT_MNT" \
 	|| fatal "cannot mount root partition"
 
 # Mount data partition
-mount_data_luks "$DATA_DEV" "$DATA_DM_NAME" "data" "$ROOT_MNT$DATA_MNT" "$OPT_PART"
+mount_dmcrypt_data "$DATA_DEV" "$DATA_DM_NAME" "data" "$ROOT_MNT$DATA_MNT" "$OPT_PART"
 
 # Mount backups partition
-mount_data_luks "$BACKUPS_DEV" "$BACKUPS_DM_NAME" "backups" "$ROOT_MNT$BACKUPS_MNT" "$OPT_PART"
-
-# Clear cached key
-unset ENC_KEY_HEX
+mount_dmcrypt_data "$BACKUPS_DEV" "$BACKUPS_DM_NAME" "backups" "$ROOT_MNT$BACKUPS_MNT" "$OPT_PART"
 
 mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 	|| fatal "cannot mount boot device $BOOT_DEV"

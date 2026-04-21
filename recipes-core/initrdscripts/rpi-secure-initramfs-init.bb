@@ -16,7 +16,6 @@ RDEPENDS:${PN}:append = " \
                 e2fsprogs-e2fsck \
                 cryptsetup \
                 raspi-utils-rpifwcrypto \
-                block-device-id \
                 keyutils \
                 attr \
                 ima-evm-utils \
