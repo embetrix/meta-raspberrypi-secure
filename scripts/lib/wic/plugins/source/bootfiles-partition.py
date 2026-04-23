@@ -1,6 +1,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
 # Minimal WIC source plugin that populates a VFAT partition from
 # a separate variable (IMAGE_BOOT_PARTITION_FILES) so it can coexist

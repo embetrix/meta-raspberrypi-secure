@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
 SUMMARY = "Raspberry Pi secure boot toggle helper"
 DESCRIPTION = "Script to check, enable, or disable secure boot via EEPROM recovery"

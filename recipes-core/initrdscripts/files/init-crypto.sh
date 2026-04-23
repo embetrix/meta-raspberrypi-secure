@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
 # Crypto helpers: plain dm-crypt with kernel keyring, rootfs encryption, data partition setup
 

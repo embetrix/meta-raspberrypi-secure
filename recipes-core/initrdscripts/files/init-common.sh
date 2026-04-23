@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
 # Common helpers: logging, early mounts, boot slot detection, block device wait
 
