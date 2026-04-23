@@ -59,17 +59,21 @@ setup_encrypted_keys() {
 
 # Open a block device with plain dm-crypt using the encrypted key
 # already loaded in the kernel keyring by setup_encrypted_keys().
-# Usage: dmcrypt_open <device> <dm_name>
-dmcrypt_open() {
+# Usage: setup_dmcrypt <device> <dm_name>
+setup_dmcrypt() {
 
 	dev="$1"
 	dm_name="$2"
 
-	cryptsetup open --type plain --batch-mode "$dev" "$dm_name" \
-		--volume-key-keyring="%encrypted:enc-key" \
-		--cipher aes-xts-plain64 \
-		--key-size $((KEY_SZ * 8)) \
+	num_sectors=$(blockdev --getsz "$dev") \
+		|| fatal "cannot get size of $dev"
+
+	dmsetup create "$dm_name" --table \
+		"0 $num_sectors crypt aes-xts-plain64 :${KEY_SZ}:encrypted:enc-key 0 $dev 0" \
 		|| fatal "cannot open plain dm-crypt $dev as $dm_name"
+
+	# No udev in initramfs so create the device node manually
+	dmsetup mknodes "$dm_name"
 }
 
 #############################################################################
@@ -101,7 +105,7 @@ encrypt_rootfs() {
     
 	# Note: blkdiscard is not supported on all block devices (e.g. SD cards)
 	blkdiscard -sf "$update_dev" 2>/dev/null || true
-	dmcrypt_open "$update_dev" "$update_dm"
+	setup_dmcrypt "$update_dev" "$update_dm"
    
 	enc_end=$(date +%s)
 	klog "Rootfs encryption complete in $((enc_end - enc_start))s"
@@ -121,7 +125,7 @@ mount_dmcrypt_data() {
 
 	[ -n "$dev" ] || return 0
 
-	dmcrypt_open "$dev" "$dm_name"
+	setup_dmcrypt "$dev" "$dm_name"
 
 	if ! blkid -s TYPE "/dev/mapper/$dm_name" >/dev/null 2>&1; then
 		fmt_start=$(date +%s)

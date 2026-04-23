@@ -12,9 +12,10 @@ RDEPENDS:${PN}:append = " \
                 busybox \
                 util-linux-mount \
                 util-linux-blkid \
+                util-linux-blockdev \
                 e2fsprogs-mke2fs \
                 e2fsprogs-e2fsck \
-                cryptsetup \
+                libdevmapper \
                 raspi-utils-rpifwcrypto \
                 keyutils \
                 attr \

@@ -113,15 +113,19 @@ mount -t ext4 -o $OPT_PART $BLOBS_DEV "$BLOBS_MNT" \
 # Set up encrypted keys in kernel keyring
 setup_encrypted_keys
 
+# dm-crypt and EVM use request_key() which searches the session keyring,
+# not the user keyring where the keys were added
+keyctl link @us @s
+
 # Always open root as dm-crypt first.
 # First boot : decrypted content is garbage (no rootfs yet) will lead to blkid fails
 # Normal boot: decrypted content is valid erofs+AVB will lead to blkid succeess
-dmcrypt_open "$ROOT_DEV" "$ROOT_DM_NAME"
+setup_dmcrypt "$ROOT_DEV" "$ROOT_DM_NAME"
 
 if ! blkid -s TYPE "/dev/mapper/$ROOT_DM_NAME" >/dev/null 2>&1; then
 	encrypt_rootfs "$ROOT_DM_NAME" "$UPDATE_DEV" "$UPDATE_DM_NAME"
 else
-	dmcrypt_open "$UPDATE_DEV" "$UPDATE_DM_NAME"
+	setup_dmcrypt "$UPDATE_DEV" "$UPDATE_DM_NAME"
 fi
 
 # Probe filesystem type on dm-crypt device before dm-verity
