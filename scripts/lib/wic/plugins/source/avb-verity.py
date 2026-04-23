@@ -5,25 +5,24 @@
 # DESCRIPTION
 # WIC source plugin that builds a compact rootfs image with an AVB
 # (Android Verified Boot) hashtree footer appended right after the
-# filesystem using avbtool.  The footer contains a signed Merkle hash
-# tree that enables dm-verity integrity verification at runtime via
-# avb_verify and dmsetup.  The image is not padded to partition size,
-# making it compatible with LUKS containers.
+# filesystem using avb_sign.  The footer contains a signed Merkle hash
+# tree with a PKCS#7 root hash signature that enables dm-verity
+# integrity verification at runtime via avb_verify and dmsetup.
+# The image is not padded to partition size, making it compatible
+# with LUKS containers.
 #
 # Required bitbake variables:
-#   AVB_SIGN_KEY       : path to the RSA private key (PEM) for signing
+#   AVB_SIGN_KEY       : path to the private key (PEM) for signing
+#   AVB_X509           : path to the X.509 certificate
 #
 # Optional bitbake variables:
 #   AVB_ALGORITHM      : signing algorithm (default: SHA256_RSA4096)
-#   AVB_HASH_ALGORITHM : hash algorithm     (default: sha256)
-#   AVB_ROOTHASH_SIG   : "1" to embed a PKCS#7 root hash signature (default: "0")
-#   AVB_X509           : path to the X.509 certificate (required when AVB_ROOTHASH_SIG=1)
+#   AVB_HASH_ALGORITHM : hash algorithm    (default: sha256)
 #
 #
 
 import logging
 import os
-import re
 import shutil
 import sys
 
@@ -183,82 +182,27 @@ class AVBVerityPlugin(SourcePlugin):
         if not os.path.isfile(sign_key):
             raise WicError("AVB signing key not found: %s" % sign_key)
 
-        logger.info("avb-verity: algorithm=%s, hash=%s, partition=%s"
-                    % (algorithm, hash_algorithm, part_name))
+        logger.info("avb-verity: algorithm=%s, partition=%s"
+                    % (algorithm, part_name))
 
-        avb_cmd = ("avbtool add_hashtree_footer "
+        avb_x509 = get_bitbake_var("AVB_X509") or ""
+
+        avb_output = os.path.join(cr_workdir, "avb-verity-output.img")
+
+        avb_cmd = ("avb_sign "
                    "--image %s "
-                   "--partition_name %s "
-                   "--partition_size 0 "
-                   "--algorithm %s "
+                   "--output %s "
                    "--key %s "
-                   "--hash_algorithm %s "
-                   "--do_not_generate_fec"
-                   % (rootfs_img, part_name,
-                      algorithm, sign_key, hash_algorithm))
+                   "--cert %s "
+                   "--partition-name %s "
+                   "--algorithm %s"
+                   % (rootfs_img, avb_output, sign_key,
+                      avb_x509, part_name, algorithm))
 
         _, output = exec_native_cmd(avb_cmd, native_sysroot)
-        logger.info("avbtool add_hashtree_footer output:\n%s" % output)
+        logger.info("avb_sign output:\n%s" % output)
 
-        # PKCS#7 root hash signature (for dm-verity root_hash_sig_key_desc)
-        roothash_sig = get_bitbake_var("AVB_ROOTHASH_SIG") or "0"
-        if roothash_sig == "1":
-            avb_x509 = get_bitbake_var("AVB_X509")
-            if not avb_x509 or not os.path.isfile(avb_x509):
-                raise WicError("AVB_ROOTHASH_SIG is enabled but AVB_X509 "
-                               "certificate not found: %s" % avb_x509)
-
-            # Extract root hash and salt from the AVB footer
-            info_cmd = "avbtool info_image --image %s" % rootfs_img
-            _, info_output = exec_native_cmd(info_cmd, native_sysroot)
-
-            root_hash = None
-            salt = None
-            for line in info_output.splitlines():
-                m = re.match(r'.*Root Digest:\s+([\da-fA-F]+)', line)
-                if m:
-                    root_hash = m.group(1)
-                m = re.match(r'.*Salt:\s+([\da-fA-F]+)', line)
-                if m:
-                    salt = m.group(1)
-
-            if not root_hash or not salt:
-                raise WicError("Failed to extract root hash or salt from "
-                               "AVB footer of %s" % rootfs_img)
-
-            logger.info("avb-verity: root_hash=%s salt=%s" % (root_hash, salt))
-
-            roothash_hex = os.path.join(cr_workdir, "roothash.hex")
-            roothash_p7s = os.path.join(cr_workdir, "roothash.p7s")
-
-            with open(roothash_hex, 'w') as f:
-                f.write(root_hash)
-
-            sign_cmd = ("openssl smime -sign -binary -noattr -nocerts "
-                        "-in %s -inkey %s -signer %s "
-                        "-outform der -out %s"
-                        % (roothash_hex, sign_key, avb_x509, roothash_p7s))
-            exec_native_cmd(sign_cmd, native_sysroot)
-
-            # Erase footer and re-add with same salt + embedded signature
-            erase_cmd = "avbtool erase_footer --image %s" % rootfs_img
-            exec_native_cmd(erase_cmd, native_sysroot)
-
-            avb_cmd = ("avbtool add_hashtree_footer "
-                       "--image %s "
-                       "--partition_name %s "
-                       "--partition_size 0 "
-                       "--algorithm %s "
-                       "--key %s "
-                       "--hash_algorithm %s "
-                       "--salt %s "
-                       "--do_not_generate_fec "
-                       "--prop_from_file roothash_sig:%s"
-                       % (rootfs_img, part_name, algorithm,
-                          sign_key, hash_algorithm, salt, roothash_p7s))
-            _, output = exec_native_cmd(avb_cmd, native_sysroot)
-            logger.info("avbtool add_hashtree_footer (with roothash_sig) "
-                        "output:\n%s" % output)
+        shutil.move(avb_output, rootfs_img)
 
         avb_image_bytes = os.path.getsize(rootfs_img)
         logger.info("avb-verity: compact image size %d bytes"

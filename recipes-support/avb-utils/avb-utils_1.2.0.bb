@@ -19,4 +19,13 @@ inherit cmake pkgconfig
 
 CFLAGS += "-DAVB_COMPILATION"
 
-RDEPENDS:${PN} = "avb-keys"
+PACKAGES =+ "${PN}-python"
+
+EXTRA_OECMAKE:class-native = "-DINSTALL_AVB_SIGN=ON"
+
+RDEPENDS:${PN}:class-target = "avb-keys"
+RDEPENDS:${PN}-python = "python3-core openssl"
+
+FILES:${PN}-python = "${bindir}/avb_sign ${bindir}/avbtool"
+
+BBCLASSEXTEND = "native nativesdk"
