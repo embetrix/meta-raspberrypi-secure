@@ -23,5 +23,5 @@ RDEPENDS:packagegroup-dev = " \
     rpi-eeprom \
     rpi-secureboot \
     rpi-ab-update \
-    avb-verify \
+    avb-utils \
     "
