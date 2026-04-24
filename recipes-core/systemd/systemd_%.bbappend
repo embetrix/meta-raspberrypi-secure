@@ -7,9 +7,9 @@ PACKAGECONFIG:remove = " \
     utmp \
     "
 
-PACKAGECONFIG:append = " cryptsetup cryptsetup-plugins journal-upload"
+PACKAGECONFIG:append = " journal-upload"
 
-RRECOMMENDS:${PN} += "${PN}-journal-upload ${PN}-crypt ${PN}-container"
+RRECOMMENDS:${PN} += "${PN}-journal-upload ${PN}-container"
 
 do_install:append() {
 
