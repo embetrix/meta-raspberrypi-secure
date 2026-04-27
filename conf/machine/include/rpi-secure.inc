@@ -48,13 +48,12 @@ CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
 EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
 VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
-VERITY_SIG      = "${@bb.utils.contains('RPI_SECURITY_PROFILE',  'prod', '1', '0', d)}"
 TRUSTED_SRC    ?= "rpifwcrypto"
 
 CMDLINE:append  = " ${CONSOLE_SELECT} \
                      ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} \
                      trusted.source=${TRUSTED_SRC} \
-                     verity_mode=${VERITY_MODE} dm_verity.require_signatures=${VERITY_SIG}"
+                     verity_mode=${VERITY_MODE}"
 
 # Remove debug-tweaks in production
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
@@ -94,6 +93,7 @@ INHERIT += "ima-evm-rootfs"
 # AVB/DM-Verity configuration
 IMAGE_CLASSES += "avb-verity"
 IMAGE_FSTYPES += " ${ROOTFS_TYPE}.avbverity.gz"
+AVB_ROOT_HASH_SIGN = "1"
 
 # Extra Runtime Packages
 MACHINE_EXTRA_RRECOMMENDS += " \

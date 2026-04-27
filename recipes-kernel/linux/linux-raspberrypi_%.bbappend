@@ -4,9 +4,12 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 inherit kernel-modsign
 
 # Stage IMA/EVM x509 for CONFIG_SYSTEM_TRUSTED_KEYS
+KERNEL_TRUSTED_KEYS = "${AVB_X509} ${IMA_EVM_X509} ${MODSIGN_X509}"
 inherit kernel-trusted-keys
 
-SRC_URI += "file://0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch"
+SRC_URI += "file://v6.6/0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch \
+            file://v6.6/0002-dm-verity-add-CONFIG_DM_VERITY_REQUIRE_ROOTHASH_SIG.patch \
+            "
 
 SRC_URI += "file://dm-crypt-verity.cfg \
             file://ext4.cfg \

@@ -47,6 +47,10 @@ repos:
     url: "https://git.yoctoproject.org/git/meta-selinux.git"
     branch: scarthgap
     path: "layers/meta-selinux"
+  meta-avb:
+    url: "https://github.com/embetrix/meta-avb.git"
+    branch: scarthgap
+    path: "layers/meta-avb"
 env:
   SECURITY_PROFILE: "dev"
 local_conf_header:
