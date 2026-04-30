@@ -37,6 +37,9 @@ MACHINE_EXTRA_RRECOMMENDS      += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm
 RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'overlays/tpm-slb9670.dtbo', '', d)}"
 
 # Console disable serial console login in production
+# Mainline kernel uses ttyAMA0 for the PL011 UART, not the firmware's serial0 alias
+CMDLINE_SERIAL = "console=ttyS1,115200"
+SERIAL_CONSOLES = "115200;ttyS1"
 SERIAL_CONSOLES_DEFAULT := "${SERIAL_CONSOLES}"
 CONSOLE_VERBOSE ?= "loglevel=7"
 CONSOLE_SILENT  ?= "console=null quiet loglevel=0"
@@ -69,6 +72,9 @@ IMAGE_BOOT_FILES += "${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin;${SDIMG_KERN
 # No kernel image inside the rootfs
 RDEPENDS:${KERNEL_PACKAGE_NAME}-base = ""
 RRECOMMENDS:${KERNEL_PACKAGE_NAME}-base = ""
+
+RPI_KERNEL_DEVICETREE_OVERLAYS = ""
+RPI_KERNEL_DEVICETREE:raspberrypi4-64 = "broadcom/bcm2711-rpi-4-b.dtb"
 
 # Raspberry Pi Secure Boot configuration
 RPI_SECURE_BOOT_SIGN = "1"
@@ -126,3 +132,11 @@ IMAGE_BOOT_PARTITION_FILES = "autoboot.txt \
 # This reduces the kernel attack surface
 # RPI_KERNEL_DEVICETREE_OVERLAYS = ""
 # RPI_KERNEL_DEVICETREE = ""
+
+# RPI_KERNEL_DEVICETREE_OVERLAYS = ""
+# RPI_KERNEL_DEVICETREE:raspberrypi4-64 = "broadcom/bcm2711-rpi-4-b.dtb"
+# RPI_KERNEL_DEVICETREE:raspberrypi5 = "broadcom/bcm2712-rpi-5-b.dtb"
+
+PREFERRED_PROVIDER_virtual/kernel = "linux-mainline"
+PREFERRED_VERSION_linux-mainline ?= "7.0%"
+

@@ -1,0 +1,642 @@
+From e51e854f6cd5b16acc18ca192d8673ac42ed21c2 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Mon, 13 Apr 2026 13:45:16 +0200
+Subject: [PATCH] security/keys: add rpi firmware crypto trusted key source
+
+Add a new trusted key source "rpifwcrypto" that uses the Raspberry Pi
+VideoCore firmware OTP-backed HMAC-SHA256 to seal and unseal trusted key
+material. The OTP key is device-unique and never exported from the
+firmware and only the HMAC output is used to derive an AES-256-GCM wrapping
+key per-seal binding blobs to the originating device.
+
+Blob layout: header (magic, key_id, nonce, iv, key_len) followed by
+AES-256-GCM ciphertext and a 16-byte authentication tag. The header
+is included as AAD, so any tampering with key_id, nonce, iv, or
+key_len is detected at unseal time.
+
+This is analog to the DCP trusted key source: a hardware-bound wrapping
+key derived from a firmware/hardware KDF with software
+AES-GCM for the actual key material wrap.
+Keys are non-migratable (migratable=0) as they are bound to the device OTP.
+
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ .../security/keys/trusted-encrypted.rst       |  55 +++
+ MAINTAINERS                                   |   8 +
+ include/keys/trusted_rpifwcrypto.h            |   9 +
+ security/keys/trusted-keys/Kconfig            |  14 +
+ security/keys/trusted-keys/Makefile           |   2 +
+ security/keys/trusted-keys/trusted_core.c     |   6 +-
+ .../keys/trusted-keys/trusted_rpifwcrypto.c   | 398 ++++++++++++++++++
+ 7 files changed, 491 insertions(+), 1 deletion(-)
+ create mode 100644 include/keys/trusted_rpifwcrypto.h
+ create mode 100644 security/keys/trusted-keys/trusted_rpifwcrypto.c
+
+diff --git a/Documentation/security/keys/trusted-encrypted.rst b/Documentation/security/keys/trusted-encrypted.rst
+index ddff7c7c2582..e4716760ece1 100644
+--- a/Documentation/security/keys/trusted-encrypted.rst
++++ b/Documentation/security/keys/trusted-encrypted.rst
+@@ -89,6 +89,15 @@ safe.
+          and the LPAR root key is additionally persisted in secure locations
+          such as the processor SEEPROMs and encrypted NVRAM.
+ 
++     (6) RPi firmware crypto (Raspberry Pi VideoCore firmware OTP-backed HMAC)
++
++         Rooted to a device-unique key stored in on-chip OTP fuses and
++         accessible only to the VideoCore firmware. The kernel requests
++         HMAC-SHA256(otp_key, nonce) over the firmware mailbox and the raw OTP
++         key material never leaves the firmware. The resulting HMAC output is
++         used as an AES-256-GCM wrapping key making sealed blobs
++         device-specific and non-migratable.
++
+   *  Execution isolation
+ 
+      (1) TPM
+@@ -118,6 +127,13 @@ safe.
+          isolated in-memory copy in secure hypervisor memory, as well as in a
+          persistent copy in hypervisor-encrypted NVRAM.
+ 
++     (6) RPi firmware crypto
++
++         Crypto operations execute inside the VideoCore firmware which runs
++         in a separate processing domain from the Arm application cores.
++         The OTP key is readable only by firmware code not by the kernel
++         directly.
++
+   * Optional binding to platform integrity state
+ 
+      (1) TPM
+@@ -150,6 +166,11 @@ safe.
+          Relies on secure and trusted boot process of IBM Power systems for
+          platform integrity.
+ 
++     (6) RPi firmware crypto
++
++         Relies on secure and trusted boot process of Raspberrypi for
++         platform integrity.
++
+   *  Interfaces and APIs
+ 
+      (1) TPM
+@@ -175,6 +196,13 @@ safe.
+          Platform Keystore has well documented interfaces in PAPR document.
+          Refer to ``Documentation/arch/powerpc/papr_hcalls.rst``
+ 
++     (6) RPi firmware crypto
++
++         Interface is the Raspberry Pi VideoCore firmware mailbox property
++         protocol (``include/soc/bcm2835/raspberrypi-firmware.h``). The
++         crypto tags used (``0x0003008f``, ``0x00030092``) require a firmware
++         build that includes OTP crypto support.
++
+   *  Threat model
+ 
+      The strength and appropriateness of a particular trust source for a given
+@@ -221,6 +249,10 @@ selected trust source:
+ 
+      The normal kernel random number generator is used to generate keys.
+ 
++   *  RPi firmware crypto: Kernel RNG
++
++     The normal kernel random number generator is used to generate keys.
++
+ Users may override this by specifying ``trusted.rng=kernel`` on the kernel
+ command-line to override the used RNG with the kernel's random number pool.
+ 
+@@ -371,6 +403,29 @@ Usage::
+ specific to PKWM key-blob implementation.  The key length for new keys is
+ always in bytes. Trusted Keys can be 32 - 128 bytes (256 - 1024 bits).
+ 
++Trusted Keys usage: RPi firmware crypto
++----------------------------------------
++
++Prerequisites:
++
++* A Raspberry Pi SoC with VideoCore firmware that supports the OTP crypto
++  mailbox tags (``0x0003008f`` / ``0x00030092``).
++* The target OTP key slot must be programmed (non-zero) before use.
++  A slot with all-zero content causes the firmware to return an error.
++
++Key slot 1 is used by default. Override with ``trusted.rpifwcrypto_key_id=N``
++if a different slot is needed.
++
++Usage::
++
++    keyctl add trusted name "new keylen" ring
++    keyctl add trusted name "load hex_blob" ring
++    keyctl print keyid
++
++"keyctl print" returns an ASCII hex copy of the sealed key, which is in format
++specific to this rpifwcrypto key-blob implementation. The key length for new keys is
++always in bytes. Trusted Keys can be 32 - 128 bytes (256 - 1024 bits).
++
+ Encrypted Keys usage
+ --------------------
+ 
+diff --git a/MAINTAINERS b/MAINTAINERS
+index d1cc0e12fe1f..d5770eb937bd 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -14184,6 +14184,14 @@ S:	Supported
+ F:	include/keys/trusted_pkwm.h
+ F:	security/keys/trusted-keys/trusted_pkwm.c
+ 
++KEYS-TRUSTED-RPIFWCRYPTO
++M:	Ayoub Zaki <ayoub.zaki@embetrix.com>
++L:	linux-integrity@vger.kernel.org
++L:	keyrings@vger.kernel.org
++S:	Maintained
++F:	include/keys/trusted_rpifwcrypto.h
++F:	security/keys/trusted-keys/trusted_rpifwcrypto.c
++
+ KEYS-TRUSTED-TEE
+ M:	Sumit Garg <sumit.garg@kernel.org>
+ L:	linux-integrity@vger.kernel.org
+diff --git a/include/keys/trusted_rpifwcrypto.h b/include/keys/trusted_rpifwcrypto.h
+new file mode 100644
+index 000000000000..df5d51d7257a
+--- /dev/null
++++ b/include/keys/trusted_rpifwcrypto.h
+@@ -0,0 +1,9 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __RPIFWCRYPTO_TRUSTED_KEY_H
++#define __RPIFWCRYPTO_TRUSTED_KEY_H
++
++#include <keys/trusted-type.h>
++
++extern struct trusted_key_ops trusted_key_rpifwcrypto_ops;
++
++#endif
+diff --git a/security/keys/trusted-keys/Kconfig b/security/keys/trusted-keys/Kconfig
+index 9e00482d886a..d45e28d52c55 100644
+--- a/security/keys/trusted-keys/Kconfig
++++ b/security/keys/trusted-keys/Kconfig
+@@ -54,6 +54,20 @@ config TRUSTED_KEYS_PKWM
+ 	help
+ 	  Enable use of IBM PowerVM Key Wrapping Module (PKWM) as a trusted key backend.
+ 
++config TRUSTED_KEYS_RPIFWCRYPTO
++	bool "RPi VideoCore firmware crypto as trusted key source"
++	depends on RASPBERRYPI_FIRMWARE >= TRUSTED_KEYS
++	select CRYPTO_AES
++	select CRYPTO_GCM
++	select HAVE_TRUSTED_KEYS
++	default y
++	help
++	  Enable use of the Raspberry Pi VideoCore firmware OTP-backed
++	  HMAC-SHA256 as trusted key backend. Keys are sealed with
++	  AES-256-GCM using a hardware-bound wrapping key derived from
++	  a per-device OTP key slot, targeting BCM2711 (RPi 4) and
++	  BCM2712 (RPi 5) and their derivatives.
++
+ if !HAVE_TRUSTED_KEYS
+ 	comment "No trust source selected!"
+ endif
+diff --git a/security/keys/trusted-keys/Makefile b/security/keys/trusted-keys/Makefile
+index 5fc053a21dad..6f5dddd6d3c1 100644
+--- a/security/keys/trusted-keys/Makefile
++++ b/security/keys/trusted-keys/Makefile
+@@ -18,3 +18,5 @@ trusted-$(CONFIG_TRUSTED_KEYS_CAAM) += trusted_caam.o
+ trusted-$(CONFIG_TRUSTED_KEYS_DCP) += trusted_dcp.o
+ 
+ trusted-$(CONFIG_TRUSTED_KEYS_PKWM) += trusted_pkwm.o
++
++trusted-$(CONFIG_TRUSTED_KEYS_RPIFWCRYPTO) += trusted_rpifwcrypto.o
+diff --git a/security/keys/trusted-keys/trusted_core.c b/security/keys/trusted-keys/trusted_core.c
+index 0b142d941cd2..70029b9bfc5e 100644
+--- a/security/keys/trusted-keys/trusted_core.c
++++ b/security/keys/trusted-keys/trusted_core.c
+@@ -13,6 +13,7 @@
+ #include <keys/trusted_dcp.h>
+ #include <keys/trusted_tpm.h>
+ #include <keys/trusted_pkwm.h>
++#include <keys/trusted_rpifwcrypto.h>
+ #include <linux/capability.h>
+ #include <linux/err.h>
+ #include <linux/hex.h>
+@@ -33,7 +34,7 @@ MODULE_PARM_DESC(rng, "Select trusted key RNG");
+ 
+ static char *trusted_key_source;
+ module_param_named(source, trusted_key_source, charp, 0);
+-MODULE_PARM_DESC(source, "Select trusted keys source (tpm, tee, caam, dcp or pkwm)");
++MODULE_PARM_DESC(source, "Select trusted keys source (tpm, tee, caam, dcp, pkwm or rpifwcrypto)");
+ 
+ static const struct trusted_key_source trusted_key_sources[] = {
+ #if defined(CONFIG_TRUSTED_KEYS_TPM)
+@@ -51,6 +52,9 @@ static const struct trusted_key_source trusted_key_sources[] = {
+ #if defined(CONFIG_TRUSTED_KEYS_PKWM)
+ 	{ "pkwm", &pkwm_trusted_key_ops },
+ #endif
++#if defined(CONFIG_TRUSTED_KEYS_RPIFWCRYPTO)
++	{ "rpifwcrypto", &trusted_key_rpifwcrypto_ops },
++#endif
+ };
+ 
+ DEFINE_STATIC_CALL_NULL(trusted_key_seal, *trusted_key_sources[0].ops->seal);
+diff --git a/security/keys/trusted-keys/trusted_rpifwcrypto.c b/security/keys/trusted-keys/trusted_rpifwcrypto.c
+new file mode 100644
+index 000000000000..b2efebe0063e
+--- /dev/null
++++ b/security/keys/trusted-keys/trusted_rpifwcrypto.c
+@@ -0,0 +1,398 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Trusted keys backed by Raspberry Pi VideoCore firmware OTP crypto
++ *
++ * Copyright (C) 2026 Embetrix Embedded Systems Solutions
++ * Author: Ayoub Zaki <ayoub.zaki@embetrix.com>
++ *
++ * Largely inspired by the DCP trusted key implementation by sigma star GmbH
++ * (security/keys/trusted-keys/trusted_dcp.c)
++ */
++
++#include <crypto/aead.h>
++#include <linux/key-type.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/printk.h>
++#include <linux/random.h>
++#include <linux/scatterlist.h>
++#include <linux/slab.h>
++#include <keys/trusted-type.h>
++#include <keys/trusted_rpifwcrypto.h>
++#include <soc/bcm2835/raspberrypi-firmware.h>
++
++#define RPFW_MAGIC   0x52504657U  /* "RPFW" */
++#define RPFW_NONCE_LEN        32  /* HMAC input / per-key salt    */
++#define RPFW_IV_LEN           12  /* AES-GCM standard IV length   */
++#define RPFW_TAG_LEN          16  /* AES-GCM authentication tag   */
++#define RPFW_WRAP_KEY_LEN     32  /* AES-256 key from HMAC output */
++
++#define RPI_FIRMWARE_GET_CRYPTO_NUM_OTP_KEYS   0x0003008fU
++#define RPI_FIRMWARE_GET_CRYPTO_HMAC_SHA256    0x00030092U
++
++/**
++ * DOC: rpifwcrypto blob format
++ *
++ * The Raspberry Pi VideoCore firmware provides an HMAC-SHA256 operation keyed
++ * by a device-unique OTP key slot that never leaves the firmware. It does not
++ * perform key sealing directly, so we define a custom blob format that uses the
++ * firmware-derived wrapping key to seal the trusted key payload.
++ *
++ * Whenever a new trusted key is created, a random 32-byte nonce and 12-byte IV
++ * are generated. The nonce is passed to the firmware as the HMAC message,
++ * the 32-byte HMAC output becomes the AES-256 wrapping key. The trusted key
++ * payload is then encrypted with AES-256-GCM using that wrapping key and the
++ * random IV. The blob header (magic, key_id, nonce, iv, key_len) is
++ * authenticated as AAD, so any tampering with it is detected at unseal time.
++ *
++ * Blob layout::
++ *
++ *   +----------------------+--------+
++ *   | struct rpfw_blob_hdr | 54 B   |  authenticated (AAD)
++ *   +----------------------+--------+
++ *   | ciphertext           | key_len|  encrypted payload
++ *   +----------------------+--------+
++ *   | GCM auth tag         | 16 B   |  authentication tag
++ *   +----------------------+--------+
++ *
++ * Total blob size: 54 + key_len + 16 bytes.
++ */
++
++/**
++ * struct rpfw_blob_hdr - header of an rpifwcrypto trusted key blob
++ *
++ * @magic:   Magic identifier always %RPFW_MAGIC (``"RPFW"`` little-endian)
++ * @key_id:  OTP key slot used to derive the wrapping key via HMAC-SHA256
++ * @nonce:   Random 32-byte value passed as the HMAC message; a fresh nonce is
++ *           generated for every seal operation so that each blob uses a
++ *           distinct wrapping key
++ * @iv:      Random 12-byte AES-GCM IV unique per seal operation
++ * @key_len: Length of the plaintext trusted key in bytes
++ *
++ * The entire header is used as Additional Authenticated Data (AAD) for
++ * AES-256-GCM so modification of any field is detected at unseal time.
++ */
++struct rpfw_blob_hdr {
++	__le32  magic;
++	__le32  key_id;
++	u8      nonce[RPFW_NONCE_LEN];
++	u8      iv[RPFW_IV_LEN];
++	__le16  key_len;
++} __packed;
++
++#define RPFW_BLOB_OVERHEAD  (sizeof(struct rpfw_blob_hdr) + RPFW_TAG_LEN)
++
++static struct rpi_firmware *rpfw_fw;
++static struct device_node  *rpfw_fw_np;
++static u32 rpfw_key_id = 1;
++
++struct rpfw_hmac_req {
++	__le32  flags;
++	__le32  key_id;
++	__le32  length;
++	u8      message[RPFW_NONCE_LEN];
++} __packed;
++
++struct rpfw_hmac_resp {
++	__le32  status;
++	__le32  length;
++	u8      hmac[RPFW_WRAP_KEY_LEN];
++} __packed;
++
++union rpfw_hmac_buf {
++	struct rpfw_hmac_req  req;
++	struct rpfw_hmac_resp resp;
++};
++
++module_param_named(rpifwcrypto_key_id, rpfw_key_id, uint, 0);
++MODULE_PARM_DESC(rpifwcrypto_key_id,
++		 "OTP key slot for AES-256-GCM wrapping key derivation (trusted.rpifwcrypto_key_id=N, default: 1)");
++
++static int rpfw_ensure_fw(void)
++{
++	struct rpi_firmware *fw;
++	__le32 num_keys_buf = 0;
++	int ret;
++
++	if (rpfw_fw)
++		return 0;
++
++	fw = rpi_firmware_get(rpfw_fw_np);
++	if (IS_ERR_OR_NULL(fw)) {
++		pr_err("rpifwcrypto: could not get firmware handle (%ld)\n",
++		       fw ? PTR_ERR(fw) : -ENODEV);
++		return fw ? PTR_ERR(fw) : -ENODEV;
++	}
++
++	ret = rpi_firmware_property(fw, RPI_FIRMWARE_GET_CRYPTO_NUM_OTP_KEYS,
++				    &num_keys_buf, sizeof(num_keys_buf));
++	if (ret) {
++		pr_err("rpifwcrypto: firmware OTP crypto not supported: %d\n", ret);
++		rpi_firmware_put(fw);
++		return -ENODEV;
++	}
++
++	rpfw_fw = fw;
++
++	pr_info("rpifwcrypto: ready, %u OTP key slot(s), using slot %u\n",
++		le32_to_cpu(num_keys_buf), rpfw_key_id);
++
++	return 0;
++}
++
++static int rpfw_derive_wrap_key(const u8 *nonce, u8 *wrap_key)
++{
++	union rpfw_hmac_buf buf = {};
++	int ret;
++
++	ret = rpfw_ensure_fw();
++	if (ret)
++		return ret;
++
++	buf.req.flags  = cpu_to_le32(0);
++	buf.req.key_id = cpu_to_le32(rpfw_key_id);
++	buf.req.length = cpu_to_le32(RPFW_NONCE_LEN);
++	memcpy(buf.req.message, nonce, RPFW_NONCE_LEN);
++
++	ret = rpi_firmware_property(rpfw_fw,
++				    RPI_FIRMWARE_GET_CRYPTO_HMAC_SHA256,
++				    &buf, sizeof(buf));
++	if (ret) {
++		pr_err("rpifwcrypto: HMAC mailbox call failed for key_id=%u: %d\n",
++		       rpfw_key_id, ret);
++		goto out;
++	}
++
++	if (le32_to_cpu(buf.resp.status) != 0) {
++		pr_err("rpifwcrypto: HMAC firmware error %u for key_id=%u\n",
++		       le32_to_cpu(buf.resp.status), rpfw_key_id);
++		ret = -EIO;
++		goto out;
++	}
++
++	if (le32_to_cpu(buf.resp.length) != RPFW_WRAP_KEY_LEN) {
++		pr_err("rpifwcrypto: unexpected HMAC length %u (expected %u)\n",
++		       le32_to_cpu(buf.resp.length), RPFW_WRAP_KEY_LEN);
++		ret = -EIO;
++		goto out;
++	}
++
++	memcpy(wrap_key, buf.resp.hmac, RPFW_WRAP_KEY_LEN);
++out:
++	memzero_explicit(&buf, sizeof(buf));
++	return ret;
++}
++
++static int rpfw_aead_op(const u8 *wrap_key, const u8 *iv,
++			const u8 *aad, size_t aad_len,
++			const u8 *in, size_t in_len,
++			u8 *out, bool encrypt)
++{
++	struct crypto_aead *tfm;
++	struct aead_request *req;
++	struct scatterlist sg;
++	DECLARE_CRYPTO_WAIT(wait);
++	u8 *buf;
++	size_t cryptlen, buf_len;
++	int ret;
++
++	if (encrypt) {
++		cryptlen = in_len;
++		buf_len  = aad_len + in_len + RPFW_TAG_LEN;
++	} else {
++		if (in_len <= RPFW_TAG_LEN)
++			return -EINVAL;
++
++		cryptlen = in_len;
++		buf_len  = aad_len + in_len;
++	}
++
++	buf = kzalloc(buf_len, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	memcpy(buf, aad, aad_len);
++	memcpy(buf + aad_len, in, in_len);
++
++	tfm = crypto_alloc_aead("gcm(aes)", 0, 0);
++	if (IS_ERR(tfm)) {
++		ret = PTR_ERR(tfm);
++		goto out_free_buf;
++	}
++
++	ret = crypto_aead_setkey(tfm, wrap_key, RPFW_WRAP_KEY_LEN);
++	if (ret)
++		goto out_free_tfm;
++
++	ret = crypto_aead_setauthsize(tfm, RPFW_TAG_LEN);
++	if (ret)
++		goto out_free_tfm;
++
++	req = aead_request_alloc(tfm, GFP_KERNEL);
++	if (!req) {
++		ret = -ENOMEM;
++		goto out_free_tfm;
++	}
++
++	sg_init_one(&sg, buf, buf_len);
++
++	aead_request_set_callback(req,
++				  CRYPTO_TFM_REQ_MAY_BACKLOG |
++				  CRYPTO_TFM_REQ_MAY_SLEEP,
++				  crypto_req_done, &wait);
++	aead_request_set_crypt(req, &sg, &sg, cryptlen, (u8 *)iv);
++	aead_request_set_ad(req, aad_len);
++
++	ret = crypto_wait_req(encrypt ? crypto_aead_encrypt(req)
++						: crypto_aead_decrypt(req),
++					&wait);
++	if (!ret) {
++		size_t out_len = encrypt ? (cryptlen + RPFW_TAG_LEN)
++					 : (cryptlen - RPFW_TAG_LEN);
++		memcpy(out, buf + aad_len, out_len);
++	}
++
++	aead_request_free(req);
++
++out_free_tfm:
++	crypto_free_aead(tfm);
++out_free_buf:
++	memzero_explicit(buf, buf_len);
++	kfree(buf);
++	return ret;
++}
++
++static int rpfw_seal(struct trusted_key_payload *p, char *datablob)
++{
++	struct rpfw_blob_hdr *hdr;
++	u8 nonce[RPFW_NONCE_LEN];
++	u8 iv[RPFW_IV_LEN];
++	u8 wrap_key[RPFW_WRAP_KEY_LEN];
++	size_t blob_len;
++	int ret;
++
++	if (p->key_len < MIN_KEY_SIZE || p->key_len > MAX_KEY_SIZE)
++		return -EINVAL;
++
++	blob_len = RPFW_BLOB_OVERHEAD + p->key_len;
++	if (blob_len > MAX_BLOB_SIZE)
++		return -EOVERFLOW;
++
++	get_random_bytes(nonce, sizeof(nonce));
++	get_random_bytes(iv, sizeof(iv));
++
++	ret = rpfw_derive_wrap_key(nonce, wrap_key);
++	if (ret)
++		goto out;
++
++	hdr = (struct rpfw_blob_hdr *)p->blob;
++	hdr->magic   = cpu_to_le32(RPFW_MAGIC);
++	hdr->key_id  = cpu_to_le32(rpfw_key_id);
++	memcpy(hdr->nonce, nonce, RPFW_NONCE_LEN);
++	memcpy(hdr->iv, iv, RPFW_IV_LEN);
++	hdr->key_len = cpu_to_le16(p->key_len);
++
++	ret = rpfw_aead_op(wrap_key, iv,
++			   (u8 *)hdr, sizeof(*hdr),
++			   p->key, p->key_len,
++			   p->blob + sizeof(*hdr),
++			   true);
++	if (ret) {
++		pr_err("rpifwcrypto: seal encrypt failed: %d\n", ret);
++		goto out;
++	}
++
++	p->blob_len = blob_len;
++
++out:
++	memzero_explicit(wrap_key, sizeof(wrap_key));
++	return ret;
++}
++
++static int rpfw_unseal(struct trusted_key_payload *p, char *datablob)
++{
++	struct rpfw_blob_hdr *hdr;
++	u8 wrap_key[RPFW_WRAP_KEY_LEN];
++	u16 key_len;
++	size_t expected_blob_len;
++	int ret;
++
++	if (p->blob_len < RPFW_BLOB_OVERHEAD + MIN_KEY_SIZE)
++		return -EINVAL;
++
++	hdr = (struct rpfw_blob_hdr *)p->blob;
++
++	if (le32_to_cpu(hdr->magic) != RPFW_MAGIC)
++		return -EINVAL;
++
++	key_len = le16_to_cpu(hdr->key_len);
++	if (key_len < MIN_KEY_SIZE || key_len > MAX_KEY_SIZE)
++		return -EINVAL;
++
++	expected_blob_len = RPFW_BLOB_OVERHEAD + key_len;
++	if (p->blob_len != expected_blob_len)
++		return -EINVAL;
++
++	if (le32_to_cpu(hdr->key_id) != rpfw_key_id) {
++		pr_warn("rpifwcrypto: blob key_id %u != configured key_id %u\n",
++			le32_to_cpu(hdr->key_id), rpfw_key_id);
++		return -EINVAL;
++	}
++
++	ret = rpfw_derive_wrap_key(hdr->nonce, wrap_key);
++	if (ret)
++		goto out;
++
++	ret = rpfw_aead_op(wrap_key, hdr->iv,
++			   (u8 *)hdr, sizeof(*hdr),
++			   p->blob + sizeof(*hdr), key_len + RPFW_TAG_LEN,
++			   p->key,
++			   false);
++	if (ret) {
++		pr_err("rpifwcrypto: unseal decrypt failed: %d\n", ret);
++		goto out;
++	}
++
++	p->key_len = key_len;
++
++out:
++	memzero_explicit(wrap_key, sizeof(wrap_key));
++	return ret;
++}
++
++static int rpfw_init(void)
++{
++	struct device_node *fw_np;
++
++	fw_np = of_find_compatible_node(NULL, NULL, "raspberrypi,bcm2835-firmware");
++	if (!fw_np) {
++		pr_err("rpifwcrypto: firmware DT node not found\n");
++		return -ENODEV;
++	}
++
++	rpfw_fw_np = fw_np;
++
++	return register_key_type(&key_type_trusted);
++}
++
++static void rpfw_exit(void)
++{
++	unregister_key_type(&key_type_trusted);
++
++	if (rpfw_fw) {
++		rpi_firmware_put(rpfw_fw);
++		rpfw_fw = NULL;
++		rpfw_fw_np = NULL;
++	} else if (rpfw_fw_np) {
++		of_node_put(rpfw_fw_np);
++		rpfw_fw_np = NULL;
++	}
++}
++
++struct trusted_key_ops trusted_key_rpifwcrypto_ops = {
++	.init = rpfw_init,
++	.seal = rpfw_seal,
++	.unseal = rpfw_unseal,
++	.exit = rpfw_exit,
++	.migratable = 0,
++};
+-- 
+2.43.0
+
