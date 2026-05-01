@@ -11,6 +11,7 @@ PROVIDES = "virtual/kernel"
 
 SRC_URI += "file://defconfig \
             file://0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch \
+            file://0002-firmware-raspberrypi-add-OTP-crypto-key-status-and-p.patch \
             "
 
 # Stage IMA/EVM x509 for CONFIG_SYSTEM_TRUSTED_KEYS

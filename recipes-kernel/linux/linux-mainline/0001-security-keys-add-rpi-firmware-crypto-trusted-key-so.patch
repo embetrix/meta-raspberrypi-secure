@@ -1,7 +1,7 @@
-From e51e854f6cd5b16acc18ca192d8673ac42ed21c2 Mon Sep 17 00:00:00 2001
+From bc85dc8fb3f72e9724d138da19669366dfd11e5a Mon Sep 17 00:00:00 2001
 From: Ayoub Zaki <ayoub.zaki@embetrix.com>
 Date: Mon, 13 Apr 2026 13:45:16 +0200
-Subject: [PATCH] security/keys: add rpi firmware crypto trusted key source
+Subject: [PATCH 1/2] security/keys: add rpi firmware crypto trusted key source
 
 Add a new trusted key source "rpifwcrypto" that uses the Raspberry Pi
 VideoCore firmware OTP-backed HMAC-SHA256 to seal and unseal trusted key
@@ -24,11 +24,12 @@ Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
  .../security/keys/trusted-encrypted.rst       |  55 +++
  MAINTAINERS                                   |   8 +
  include/keys/trusted_rpifwcrypto.h            |   9 +
+ include/soc/bcm2835/raspberrypi-firmware.h    |   7 +
  security/keys/trusted-keys/Kconfig            |  14 +
  security/keys/trusted-keys/Makefile           |   2 +
  security/keys/trusted-keys/trusted_core.c     |   6 +-
- .../keys/trusted-keys/trusted_rpifwcrypto.c   | 398 ++++++++++++++++++
- 7 files changed, 491 insertions(+), 1 deletion(-)
+ .../keys/trusted-keys/trusted_rpifwcrypto.c   | 400 ++++++++++++++++++
+ 8 files changed, 500 insertions(+), 1 deletion(-)
  create mode 100644 include/keys/trusted_rpifwcrypto.h
  create mode 100644 security/keys/trusted-keys/trusted_rpifwcrypto.c
 
@@ -167,6 +168,38 @@ index 000000000000..df5d51d7257a
 +extern struct trusted_key_ops trusted_key_rpifwcrypto_ops;
 +
 +#endif
+diff --git a/include/soc/bcm2835/raspberrypi-firmware.h b/include/soc/bcm2835/raspberrypi-firmware.h
+index e1f87fbfe554..2ebcbd4538ac 100644
+--- a/include/soc/bcm2835/raspberrypi-firmware.h
++++ b/include/soc/bcm2835/raspberrypi-firmware.h
+@@ -71,6 +71,9 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_GET_DISPMANX_RESOURCE_MEM_HANDLE =       0x00030014,
+ 	RPI_FIRMWARE_GET_EDID_BLOCK =                         0x00030020,
+ 	RPI_FIRMWARE_GET_CUSTOMER_OTP =                       0x00030021,
++	RPI_FIRMWARE_GET_CRYPTO_NUM_OTP_KEYS =                0x0003008f,
++	RPI_FIRMWARE_GET_CRYPTO_KEY_STATUS =                  0x00030090,
++	RPI_FIRMWARE_GET_CRYPTO_HMAC_SHA256 =                 0x00030092,
+ 	RPI_FIRMWARE_GET_DOMAIN_STATE =                       0x00030030,
+ 	RPI_FIRMWARE_GET_THROTTLED =                          0x00030046,
+ 	RPI_FIRMWARE_GET_CLOCK_MEASURED =                     0x00030047,
+@@ -80,6 +83,7 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_SET_VOLTAGE =                            0x00038003,
+ 	RPI_FIRMWARE_SET_TURBO =                              0x00038009,
+ 	RPI_FIRMWARE_SET_CUSTOMER_OTP =                       0x00038021,
++	RPI_FIRMWARE_SET_CRYPTO_KEY_STATUS =                  0x00038090,
+ 	RPI_FIRMWARE_SET_DOMAIN_STATE =                       0x00038030,
+ 	RPI_FIRMWARE_GET_GPIO_STATE =                         0x00030041,
+ 	RPI_FIRMWARE_SET_GPIO_STATE =                         0x00038041,
+@@ -136,6 +140,9 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_GET_DMA_CHANNELS =                       0x00060001,
+ };
+ 
++#define RPI_FIRMWARE_CRYPTO_KEY_STATUS_DEVICE_PRIVATE     BIT(0)
++#define RPI_FIRMWARE_CRYPTO_KEY_STATUS_LOCKED             BIT(8)
++
+ enum rpi_firmware_clk_id {
+ 	RPI_FIRMWARE_EMMC_CLK_ID = 1,
+ 	RPI_FIRMWARE_UART_CLK_ID,
 diff --git a/security/keys/trusted-keys/Kconfig b/security/keys/trusted-keys/Kconfig
 index 9e00482d886a..d45e28d52c55 100644
 --- a/security/keys/trusted-keys/Kconfig
@@ -235,10 +268,10 @@ index 0b142d941cd2..70029b9bfc5e 100644
  DEFINE_STATIC_CALL_NULL(trusted_key_seal, *trusted_key_sources[0].ops->seal);
 diff --git a/security/keys/trusted-keys/trusted_rpifwcrypto.c b/security/keys/trusted-keys/trusted_rpifwcrypto.c
 new file mode 100644
-index 000000000000..b2efebe0063e
+index 000000000000..543c2765dbaa
 --- /dev/null
 +++ b/security/keys/trusted-keys/trusted_rpifwcrypto.c
-@@ -0,0 +1,398 @@
+@@ -0,0 +1,400 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Trusted keys backed by Raspberry Pi VideoCore firmware OTP crypto
@@ -268,8 +301,6 @@ index 000000000000..b2efebe0063e
 +#define RPFW_TAG_LEN          16  /* AES-GCM authentication tag   */
 +#define RPFW_WRAP_KEY_LEN     32  /* AES-256 key from HMAC output */
 +
-+#define RPI_FIRMWARE_GET_CRYPTO_NUM_OTP_KEYS   0x0003008fU
-+#define RPI_FIRMWARE_GET_CRYPTO_HMAC_SHA256    0x00030092U
 +
 +/**
 + * DOC: rpifwcrypto blob format
@@ -325,6 +356,7 @@ index 000000000000..b2efebe0063e
 +
 +static struct rpi_firmware *rpfw_fw;
 +static struct device_node  *rpfw_fw_np;
++static bool rpfw_unsupported;
 +static u32 rpfw_key_id = 1;
 +
 +struct rpfw_hmac_req {
@@ -357,6 +389,8 @@ index 000000000000..b2efebe0063e
 +
 +	if (rpfw_fw)
 +		return 0;
++	if (rpfw_unsupported)
++		return -ENODEV;
 +
 +	fw = rpi_firmware_get(rpfw_fw_np);
 +	if (IS_ERR_OR_NULL(fw)) {
@@ -370,6 +404,7 @@ index 000000000000..b2efebe0063e
 +	if (ret) {
 +		pr_err("rpifwcrypto: firmware OTP crypto not supported: %d\n", ret);
 +		rpi_firmware_put(fw);
++		rpfw_unsupported = true;
 +		return -ENODEV;
 +	}
 +

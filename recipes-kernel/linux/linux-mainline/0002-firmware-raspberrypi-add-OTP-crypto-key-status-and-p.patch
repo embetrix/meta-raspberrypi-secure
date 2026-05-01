@@ -1,0 +1,164 @@
+From 8be69c9979f1ac14beec9568107482f88cf17d7e Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Fri, 1 May 2026 11:56:44 +0200
+Subject: [PATCH] firmware: raspberrypi: add OTP crypto key status and
+ provisioning interface
+
+The VideoCore firmware exposes OTP-backed HMAC-SHA256 key slots that
+can be provisioned (written and permanently locked) via the mailbox
+property interface. Add a sysfs attribute group "rpifwcrypto" on the
+firmware device with two attributes:
+
+  otp_status   (r): reports the status of each OTP key slot as reported
+               by the firmware (empty / provisioned / locked).
+  otp_provision (w): provisions and locks a slot by writing its index;
+               device-private and locked flags are set atomically in a
+               single firmware call to avoid a vulnerable intermediate
+               state.
+
+Capability is probed at driver init by querying
+RPI_FIRMWARE_GET_CRYPTO_NUM_OTP_KEYS; the sysfs group is only
+registered if the firmware responds successfully. On older boards
+(e.g. BCM2837 / RPi 3) that do not implement the OTP crypto tags the
+group is not exposed and no sysfs entries are created.
+
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ drivers/firmware/raspberrypi.c | 97 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 96 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/firmware/raspberrypi.c b/drivers/firmware/raspberrypi.c
+index 0aa322e9a2e7..ed50ac37ce05 100644
+--- a/drivers/firmware/raspberrypi.c
++++ b/drivers/firmware/raspberrypi.c
+@@ -15,6 +15,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
++#include <linux/sysfs.h>
+ #include <soc/bcm2835/raspberrypi-firmware.h>
+ 
+ #define MBOX_MSG(chan, data28)		(((data28) & ~0xf) | ((chan) & 0xf))
+@@ -273,10 +274,96 @@ static void devm_rpi_firmware_put(void *data)
+ 	rpi_firmware_put(fw);
+ }
+ 
++static ssize_t otp_status_show(struct device *dev,
++			       struct device_attribute *attr, char *buf)
++{
++	struct rpi_firmware *fw = dev_get_drvdata(dev);
++	u32 num_keys, status, i;
++	__le32 lbuf;
++	ssize_t len = 0;
++	int ret;
++
++	ret = rpi_firmware_property(fw, RPI_FIRMWARE_GET_CRYPTO_NUM_OTP_KEYS,
++				    &lbuf, sizeof(lbuf));
++	if (ret)
++		return ret;
++
++	num_keys = le32_to_cpu(lbuf);
++
++	for (i = 1; i <= num_keys; i++) {
++		lbuf = cpu_to_le32(i);
++		ret = rpi_firmware_property(fw, RPI_FIRMWARE_GET_CRYPTO_KEY_STATUS,
++					    &lbuf, sizeof(lbuf));
++		if (ret) {
++			len += sysfs_emit_at(buf, len, "slot %u: error %d\n", i, ret);
++			continue;
++		}
++
++		status = le32_to_cpu(lbuf);
++		len += sysfs_emit_at(buf, len, "slot %u: 0x%08x", i, status);
++		if (!status)
++			len += sysfs_emit_at(buf, len, " [empty]");
++		if (status & RPI_FIRMWARE_CRYPTO_KEY_STATUS_DEVICE_PRIVATE)
++			len += sysfs_emit_at(buf, len, " [provisioned]");
++		if (status & RPI_FIRMWARE_CRYPTO_KEY_STATUS_LOCKED)
++			len += sysfs_emit_at(buf, len, " [locked]");
++		len += sysfs_emit_at(buf, len, "\n");
++	}
++
++	return len;
++}
++static DEVICE_ATTR_RO(otp_status);
++
++static ssize_t otp_provision_store(struct device *dev,
++				   struct device_attribute *attr,
++				   const char *buf, size_t count)
++{
++	struct rpi_firmware *fw = dev_get_drvdata(dev);
++	__le32 pbuf[2];
++	__le32 lbuf;
++	u32 slot, status;
++	int ret;
++
++	ret = kstrtou32(buf, 0, &slot);
++	if (ret)
++		return ret;
++
++	lbuf = cpu_to_le32(slot);
++	ret = rpi_firmware_property(fw, RPI_FIRMWARE_GET_CRYPTO_KEY_STATUS,
++				    &lbuf, sizeof(lbuf));
++	if (ret)
++		return ret;
++
++	status = le32_to_cpu(lbuf);
++	if (status)
++		return -EEXIST;
++
++	pbuf[0] = cpu_to_le32(slot);
++	pbuf[1] = cpu_to_le32(RPI_FIRMWARE_CRYPTO_KEY_STATUS_DEVICE_PRIVATE |
++			       RPI_FIRMWARE_CRYPTO_KEY_STATUS_LOCKED);
++
++	ret = rpi_firmware_property(fw, RPI_FIRMWARE_SET_CRYPTO_KEY_STATUS,
++				    pbuf, sizeof(pbuf));
++	return ret ? ret : count;
++}
++static DEVICE_ATTR_WO(otp_provision);
++
++static struct attribute *rpifwcrypto_attrs[] = {
++	&dev_attr_otp_status.attr,
++	&dev_attr_otp_provision.attr,
++	NULL,
++};
++
++static const struct attribute_group rpifwcrypto_attr_group = {
++	.name  = "rpifwcrypto",
++	.attrs = rpifwcrypto_attrs,
++};
++
+ static int rpi_firmware_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct rpi_firmware *fw;
++	int ret;
+ 
+ 	/*
+ 	 * Memory will be freed by rpi_firmware_delete() once all users have
+@@ -292,7 +379,7 @@ static int rpi_firmware_probe(struct platform_device *pdev)
+ 
+ 	fw->chan = mbox_request_channel(&fw->cl, 0);
+ 	if (IS_ERR(fw->chan)) {
+-		int ret = PTR_ERR(fw->chan);
++		ret = PTR_ERR(fw->chan);
+ 		kfree(fw);
+ 		return dev_err_probe(dev, ret, "Failed to get mbox channel\n");
+ 	}
+@@ -306,6 +393,14 @@ static int rpi_firmware_probe(struct platform_device *pdev)
+ 	rpi_register_hwmon_driver(dev, fw);
+ 	rpi_register_clk_driver(dev);
+ 
++	/* Only expose the OTP crypto interface if the firmware supports it. */
++	if (!rpi_firmware_property(fw, RPI_FIRMWARE_GET_CRYPTO_NUM_OTP_KEYS,
++				   &(__le32){0}, sizeof(__le32))) {
++		ret = devm_device_add_group(dev, &rpifwcrypto_attr_group);
++		if (ret)
++			dev_warn(dev, "failed to create rpifwcrypto sysfs group: %d\n", ret);
++	}
++
+ 	return 0;
+ }
+ 
+-- 
+2.43.0
