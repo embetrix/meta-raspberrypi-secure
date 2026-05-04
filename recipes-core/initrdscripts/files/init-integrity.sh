@@ -65,16 +65,16 @@ setup_integrity() {
 # Usage: setup_avb_verity <luks_dm_name> <verity_dm_name>
 setup_avb_verity() {
 
-	luks_dev="/dev/mapper/$1"
+	dev="/dev/mapper/$1"
 	verity_name="$2"
 
 	if [ ! -f "$AVB_PUBKEY" ]; then
 		fatal "AVB public key not found at $AVB_PUBKEY"
 	fi
 
-	klog "Verifying AVB signature on $luks_dev..."
-	dm_table=$(avb_verify --dm-table -d "$luks_dev" -k "$AVB_PUBKEY") \
-		|| fatal "AVB verification failed on $luks_dev"
+	klog "Verifying AVB signature on $dev..."
+	dm_table=$(avb_verify --dm-table -d "$dev" -k "$AVB_PUBKEY") \
+		|| fatal "AVB verification failed on $dev"
 
 	# Apply dm-verity corruption behavior from kernel cmdline
 	# (prod=restart, dev=ignore)
@@ -91,5 +91,5 @@ setup_avb_verity() {
 	# No udev in initramfs so create the device node manually
 	dmsetup mknodes "$verity_name"
 
-	klog "dm-verity $verity_name active on $luks_dev"
+	klog "dm-verity $verity_name active on $dev"
 }
