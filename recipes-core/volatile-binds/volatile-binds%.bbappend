@@ -14,5 +14,5 @@ VOLATILE_BINDS:append = "${@'/var/data/var/log /var/log\\n' if d.getVar('VOLATIL
 # Bind mount wpa_supplicant config if wifi is enabled
 VOLATILE_BINDS:append = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '/var/data/etc/wpa_supplicant /etc/wpa_supplicant\\n', '', d)}"
 
-# Bind mount /home/root only in dev profile
-VOLATILE_BINDS:append = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', '/var/data/home/root /home/root\\n', '', d)}"
+# Bind mount /root only in dev profile
+VOLATILE_BINDS:append = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', '/var/data/root /root\\n', '', d)}"
