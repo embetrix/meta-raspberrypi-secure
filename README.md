@@ -8,7 +8,7 @@ A Yocto layer that builds security-hardened Raspberry Pi images on top of [meta-
 
 - `Secure boot` with a full chain of trust rooted in the RPi bootloader
 - `Read-only rootfs` with state isolated to authenticated/encrypted data partition
-- `Encrypted writable partitions` (dm-crypt + key bound to the SoC)
+- `Encrypted writable data partitions` (dm-crypt + key bound to the SoC)
 - `Runtime integrity` via IMA/EVM
 - `A/B partitioning` for atomic updates of boot and root slots
 - `Hardened kernel & userspace` (sysctl, systemd, OpenSSH, busybox)
@@ -47,14 +47,14 @@ DISTRO = "rpi-secure"
 Using [kas](https://kas.readthedocs.io/en/latest/userguide/getting-started.html) directly:
 
 ```sh
-KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=prod \
+KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=dev \
     kas build kas-rpi-secure.yml:kas-signing-keys.yml
 ```
 
 Or using the [kas container](https://kas.readthedocs.io/en/latest/userguide/kas-container.html):
 
 ```sh
-KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=prod \
+KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=dev \
     kas-container build kas-rpi-secure.yml:kas-signing-keys.yml
 ```
 
