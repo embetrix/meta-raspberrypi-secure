@@ -1,4 +1,17 @@
 #!/usr/sbin/nft -f
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+#
+# Default-deny nftables ruleset :
+#
+# Input:   drop all, allow established/related, SSH and HTTPS from RFC1918/ULA
+#          (rate-limited), ICMP/ICMPv6 essentials and DHCPv4/v6 client replies
+#
+# Forward: drop all
+#
+# Output:  drop all, allow established/related, ICMP/ICMPv6, HTTPS, DNS, NTP
+#          and DHCPv4/v6 client requests
 
 flush ruleset
 
@@ -10,11 +23,14 @@ define DHCP4_S   = 67
 define DHCP4_C   = 68
 define DHCP6_S   = 547
 define DHCP6_C   = 546
-define CONNLIMIT = 10
 define RFC1918   = { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 }
 define ULA       = { fc00::/7, fe80::/10 }
 
 table inet filter {
+
+    # Per-source SYN-flood mitigation (auto-expiring dynamic sets)
+    set syn_flood4 { type ipv4_addr; flags dynamic; timeout 1m; }
+    set syn_flood6 { type ipv6_addr; flags dynamic; timeout 1m; }
 
     chain input {
         type filter hook input priority 0; policy drop;
@@ -23,15 +39,19 @@ table inet filter {
         ct state invalid drop
         ct state related,established accept
 
+        # Generic per-source SYN-flood guard
+        meta nfproto ipv4 tcp flags syn / fin,syn,rst,ack ct state new update @syn_flood4 { ip  saddr limit rate over 15/second burst 50 packets } drop
+        meta nfproto ipv6 tcp flags syn / fin,syn,rst,ack ct state new update @syn_flood6 { ip6 saddr limit rate over 15/second burst 50 packets } drop
+
         # SSH rate-limited, private networks only
-        ip  saddr $RFC1918 tcp dport $SSH ct count over $CONNLIMIT drop
-        ip6 saddr $ULA     tcp dport $SSH ct count over $CONNLIMIT drop
+        ip  saddr $RFC1918 tcp dport $SSH ct count over 10 drop
+        ip6 saddr $ULA     tcp dport $SSH ct count over 10 drop
         ip  saddr $RFC1918 tcp dport $SSH ct state new limit rate 3/minute burst 5 packets accept
         ip6 saddr $ULA     tcp dport $SSH ct state new limit rate 3/minute burst 5 packets accept
 
         # HTTPS rate-limited, private networks only
-        ip  saddr $RFC1918 tcp dport $HTTPS ct count over $CONNLIMIT drop
-        ip6 saddr $ULA     tcp dport $HTTPS ct count over $CONNLIMIT drop
+        ip  saddr $RFC1918 tcp dport $HTTPS ct count over 10 drop
+        ip6 saddr $ULA     tcp dport $HTTPS ct count over 10 drop
         ip  saddr $RFC1918 tcp dport $HTTPS ct state new limit rate 25/minute burst 50 packets accept
         ip6 saddr $ULA     tcp dport $HTTPS ct state new limit rate 25/minute burst 50 packets accept
 
