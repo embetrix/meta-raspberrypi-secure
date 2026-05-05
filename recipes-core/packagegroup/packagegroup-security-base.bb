@@ -13,7 +13,7 @@ SUMMARY:packagegroup-security-base = "Security base support"
 
 RDEPENDS:packagegroup-security-base = " \
     auditd   \
-    iptables \
+    nftables \
     usbguard \
     rng-tools \
     "

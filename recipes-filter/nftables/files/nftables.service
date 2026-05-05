@@ -1,0 +1,14 @@
+[Unit]
+Description=nftables firewall
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/nftables/firewall.nft
+ExecReload=/usr/sbin/nft -f /etc/nftables/firewall.nft
+ExecStop=/usr/sbin/nft flush ruleset
+
+[Install]
+WantedBy=multi-user.target

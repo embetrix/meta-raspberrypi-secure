@@ -1,0 +1,92 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+define SSH       = 22
+define HTTPS     = 443
+define DNS       = 53
+define NTP       = 123
+define DHCP4_S   = 67
+define DHCP4_C   = 68
+define DHCP6_S   = 547
+define DHCP6_C   = 546
+define CONNLIMIT = 10
+define RFC1918   = { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 }
+define ULA       = { fc00::/7, fe80::/10 }
+
+table inet filter {
+
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        iif lo accept
+        ct state invalid drop
+        ct state related,established accept
+
+        # SSH rate-limited, private networks only
+        ip  saddr $RFC1918 tcp dport $SSH ct count over $CONNLIMIT drop
+        ip6 saddr $ULA     tcp dport $SSH ct count over $CONNLIMIT drop
+        ip  saddr $RFC1918 tcp dport $SSH ct state new limit rate 3/minute burst 5 packets accept
+        ip6 saddr $ULA     tcp dport $SSH ct state new limit rate 3/minute burst 5 packets accept
+
+        # HTTPS rate-limited, private networks only
+        ip  saddr $RFC1918 tcp dport $HTTPS ct count over $CONNLIMIT drop
+        ip6 saddr $ULA     tcp dport $HTTPS ct count over $CONNLIMIT drop
+        ip  saddr $RFC1918 tcp dport $HTTPS ct state new limit rate 25/minute burst 50 packets accept
+        ip6 saddr $ULA     tcp dport $HTTPS ct state new limit rate 25/minute burst 50 packets accept
+
+        # ICMPv4
+        icmp type destination-unreachable accept
+        icmp type time-exceeded accept
+        icmp type echo-request limit rate 1/second accept
+
+        # ICMPv6
+        icmpv6 type { destination-unreachable, packet-too-big, time-exceeded } accept
+        icmpv6 type { parameter-problem } accept
+        icmpv6 type echo-request limit rate 1/second accept
+        icmpv6 type { nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } ip6 hoplimit 255 accept
+
+        # DHCP
+        udp sport $DHCP4_S udp dport $DHCP4_C accept
+        udp sport $DHCP6_S udp dport $DHCP6_C accept
+
+        log prefix "nft:DROP:IN " level warn limit rate 5/minute burst 10 packets
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        log prefix "nft:DROP:FWD " level warn limit rate 5/minute burst 10 packets
+    }
+
+    chain output {
+        type filter hook output priority 0; policy drop;
+
+        oif lo accept
+        ct state invalid drop
+        ct state related,established accept
+
+        # ICMPv4
+        icmp type destination-unreachable accept
+        icmp type time-exceeded accept
+        icmp type echo-request accept
+
+        # ICMPv6
+        icmpv6 type { destination-unreachable, packet-too-big, time-exceeded } accept
+        icmpv6 type { parameter-problem } accept
+        icmpv6 type echo-request accept
+        icmpv6 type { nd-router-solicit, nd-neighbor-solicit, nd-neighbor-advert } ip6 hoplimit 255 accept
+
+        # Allowed outbound services
+        tcp dport $HTTPS accept
+        udp dport $NTP accept
+        tcp dport $DNS accept
+        udp dport $DNS accept
+
+        # DHCP
+        udp sport $DHCP4_C udp dport $DHCP4_S accept
+        udp sport $DHCP6_C udp dport $DHCP6_S accept
+
+        log prefix "nft:DROP:OUT " level warn limit rate 5/minute burst 10 packets
+    }
+}
