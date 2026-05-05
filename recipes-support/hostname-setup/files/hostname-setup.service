@@ -1,0 +1,11 @@
+[Unit]
+Description=hostname setup service
+Before=network.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/hostname-setup
+
+[Install]
+WantedBy=basic.target
