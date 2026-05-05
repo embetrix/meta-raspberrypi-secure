@@ -57,11 +57,5 @@ local_conf_header:
   standard: |
     CONF_VERSION = "2"
     INHERIT += "rm_work"
-    EXTRA_IMAGE_FEATURES += "debug-tweaks"
-    PACKAGE_CLASSES = "package_deb"
   security: |
     RPI_SECURITY_PROFILE = "${SECURITY_PROFILE}"
-  sdk: |
-    SDKMACHINE = "x86_64"
-  license_flags: |
-    LICENSE_FLAGS_ACCEPTED += "synaptics-killswitch"
