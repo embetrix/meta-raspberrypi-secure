@@ -6,12 +6,12 @@
 # corresponding BitBake variables to set in local.conf or kas header
 #
 # Usage: genkey-helper.sh [KEY_DIR] [KAS_FRAGMENT]
-#   KEY_DIR       directory to store generated keys (default: /tmp/rpi-secure-keys)
+#   KEY_DIR       directory to store generated keys (default: rpi-secure-keys)
 #   KAS_FRAGMENT  path to kas fragment to generate (default: kas-signing-keys.yml)
 
 set -e
 
-KEY_DIR="${1:-/tmp/rpi-secure-keys}"
+KEY_DIR="${1:-rpi-secure-keys}"
 KEY_DIR="$(cd "$(dirname "$KEY_DIR")" 2>/dev/null && pwd)/$(basename "$KEY_DIR")" || KEY_DIR="$(readlink -f "$KEY_DIR")"
 TOP_LAYER_DIR="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)"
 
