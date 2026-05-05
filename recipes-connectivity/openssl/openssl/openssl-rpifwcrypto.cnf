@@ -1,9 +1,16 @@
 [openssl_init]
-providers = provider_sect
+providers   = provider_sect
+alg_section = algorithm_sect
+
+[algorithm_sect]
+# Prefer the default provider for generic operations (ephemeral EC keygen
+# for TLS 1.3 ECDHE, hashing, RNG). pkcs11-provider stays active so the
+# explicit "pkcs11:" URI still resolves token-backed keys via OSSL_STORE.
+default_properties = ?provider=default
 
 [provider_sect]
-pkcs11 = pkcs11_sect
 default = default_sect
+pkcs11  = pkcs11_sect
 
 [default_sect]
 activate = 1
