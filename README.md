@@ -6,13 +6,13 @@ A Yocto layer that builds security-hardened Raspberry Pi images on top of [meta-
 
 ## Features
 
-- `Secure boot` with a full chain of trust rooted in the RPi bootloader
-- `Read-only rootfs` with state isolated to authenticated/encrypted data partition
-- `Encrypted writable data partitions` (dm-crypt + key bound to the SoC)
-- `Runtime integrity` via IMA/EVM
-- `A/B partitioning` for atomic updates of boot and root slots
-- `Hardened kernel & userspace` (sysctl, systemd, OpenSSH, busybox)
-- `Network & USB protection` (default-drop firewall, USBGuard, audit)
+- Secure boot with a full chain of trust rooted in the RPi bootloader
+- Read-only rootfs with state isolated to data partitions
+- Encrypted writable data partitions (dm-crypt + key bound to the SoC)
+- Runtime integrity via IMA/EVM
+- A/B partitioning for atomic updates of boot and root slots
+- Hardened kernel & userspace (sysctl, systemd, OpenSSH, busybox)
+- Network & USB protection (default-drop firewall, USBGuard, audit)
 
 ## Quick Start
 
@@ -21,7 +21,7 @@ A Yocto layer that builds security-hardened Raspberry Pi images on top of [meta-
 Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys, and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
 
 ```sh
-./scripts/genkey-helper.sh rpi-secure-keys
+./scripts/genkey-helper.sh
 ```
 
 ### 2. Configure the build
