@@ -3,16 +3,26 @@ HOMEPAGE = "https://github.com/embetrix/rpifwcrypto-pkcs11"
 LICENSE = "GPL-3.0-or-later"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=9d121eb775096c0ba619421933ef0736"
 
-SRC_URI = "git://github.com/embetrix/rpifwcrypto-pkcs11.git;protocol=https;branch=master"
+SRC_URI = "git://github.com/embetrix/rpifwcrypto-pkcs11.git;protocol=https;branch=master \
+           file://99-vcio.rules \
+          "
 SRCREV = "d7becadf2fdf37896fb03eb25ec72b70a67a0483"
 
 S = "${WORKDIR}/git"
 
-inherit cmake
+inherit cmake useradd
 
 DEPENDS = "raspi-utils"
 
-FILES:${PN} += "${libdir}/pkcs11 ${datadir}/p11-kit"
+USERADD_PACKAGES = "${PN}"
+GROUPADD_PARAM:${PN} = "-r vcio"
+
+do_install:append() {
+    install -d ${D}${sysconfdir}/udev/rules.d
+    install -m 0644 ${WORKDIR}/99-vcio.rules ${D}${sysconfdir}/udev/rules.d/
+}
+
+FILES:${PN} += "${libdir}/pkcs11 ${datadir}/p11-kit ${sysconfdir}/udev/rules.d"
 INSANE_SKIP:${PN} += "dev-so"
 
 RRECOMMENDS:${PN} = "raspi-utils-rpifwcrypto pkcs11-provider libp11"
