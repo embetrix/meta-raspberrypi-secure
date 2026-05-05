@@ -1,3 +1,6 @@
+# Pin systemd-journal GID so the IMA policy fgroup= filter is stable across builds
+GROUPADD_PARAM:${PN} = "-r --gid 908 systemd-journal;"
+
 # Remove features irrelevant for embedded
 PACKAGECONFIG:remove = " \
     hibernate \
