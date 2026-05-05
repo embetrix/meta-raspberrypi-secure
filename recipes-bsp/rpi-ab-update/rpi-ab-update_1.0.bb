@@ -1,10 +1,10 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
 SUMMARY = "A/B partition update script"
 DESCRIPTION = "Update the inactive boot and root redundant partitions based on the current boot slot"
-LICENSE = "GPL-3.0-or-later"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-3.0-or-later;md5=1c76c4cc354acaac30ed4d5eefea7245"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 SRC_URI = "file://rpi-ab-update.sh \
            file://rpi-ab-update-confirm.service \

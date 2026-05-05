@@ -1,6 +1,6 @@
 DESCRIPTION = "Raspberry Pi secure initramfs image"
-LICENSE = "GPL-3.0-or-later"
-LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-3.0-or-later;md5=1c76c4cc354acaac30ed4d5eefea7245"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 PACKAGE_INSTALL = "rpi-secure-initramfs-init \
                    base-files base-passwd \

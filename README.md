@@ -121,4 +121,4 @@ The key is accessible via the `rpifwcrypto-pkcs11` PKCS#11 module for device ide
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE) for details.
+MIT. See [LICENSE](LICENSE) for details.

@@ -1,5 +1,5 @@
 #!/usr/bin/sh
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
 # rpi secure initramfs init script:

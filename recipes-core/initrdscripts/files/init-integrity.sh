@@ -1,5 +1,5 @@
 #!/usr/bin/sh
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
 # Integrity helpers: IMA/EVM and AVB dm-verity setup
