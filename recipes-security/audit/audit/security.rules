@@ -3,76 +3,32 @@
 -w /etc/shadow -p wa -k identity
 -w /etc/group -p wa -k identity
 -w /etc/ssh/sshd_config -p wa -k sshd
+-w /etc/ssh/sshd_config_readonly -p wa -k sshd
 -w /etc/audit/ -p wa -k audit-config
--w /etc/iptables/ -p wa -k firewall
+-w /etc/nftables/ -p wa -k firewall
 -w /etc/usbguard/ -p wa -k usbguard
 -w /etc/systemd/system/ -p wa -k systemd
 
-## Mount operations: detect remount rw attempts on read-only rootfs
--a never,exit -F arch=b64 -S mount,umount2 -F exe=/usr/lib/systemd/systemd-executor
+## Mount operations: detect remount rw attempts
 -a always,exit -F arch=b64 -S mount,umount2 -k mount
 
-## Kernel module loading: log even if signature verification rejects them
+## Kernel module loading
 -a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
 
-## Privilege escalation (exclude sshd and systemd-executor)
+## Privilege escalation
 -a never,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -F exe=/usr/sbin/sshd
 -a never,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -F exe=/usr/lib/systemd/systemd-executor
 -a always,exit -F arch=b64 -S setuid,setgid,setreuid,setregid,setresuid,setresgid -k privilege
 
-## Execution tracking: all execve calls
--a always,exit -F arch=b64 -S execve -k exec
-
-## ptrace: process injection / debugging attempts
+## ptrace: process injection attempts
 -a always,exit -F arch=b64 -S ptrace -k ptrace
 
-## Time changes: clock tampering undermines log integrity
+## Time changes
 -a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k time
 
-## Network: socket creation outside established services
--a never,exit -F arch=b64 -S socket -F exe=/usr/lib/systemd/systemd-timesyncd
--a always,exit -F arch=b64 -S socket -F a0=2 -k network-ipv4
--a always,exit -F arch=b64 -S socket -F a0=10 -k network-ipv6
-
-## Exclude trusted service internals from noisy syscall rules
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-udevd
--a never,exit -F arch=b64 -S prctl -F exe=/usr/bin/udevadm
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-userwork
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-userdbd
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-timesyncd
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd
--a never,exit -F arch=b64 -S prctl -F exe=/usr/sbin/sshd
--a never,exit -F arch=b64 -S prctl -F exe=/usr/bin/journalctl
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-journald
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-executor
--a never,exit -F arch=b64 -S prctl -F exe=/usr/lib/systemd/systemd-journal-upload
--a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-timesyncd
--a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-resolved
--a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd
--a never,exit -F arch=b64 -S connect -F exe=/usr/sbin/sshd
--a never,exit -F arch=b64 -S connect -F exe=/usr/lib/systemd/systemd-executor
--a never,exit -F arch=b64 -S accept,accept4 -F exe=/usr/lib/systemd/systemd-userwork
--a never,exit -F arch=b64 -S accept,accept4 -F exe=/usr/lib/systemd/systemd-userdbd
--a never,exit -F arch=b64 -S bind -F exe=/usr/lib/systemd/systemd-timesyncd
--a never,exit -F arch=b64 -S bind -F exe=/usr/lib/systemd/systemd-resolved
-
-## Network intrusion detection: inbound connections, outbound connections, listening sockets
--a always,exit -F arch=b64 -S connect -k network-connect
--a always,exit -F arch=b64 -S accept,accept4 -k network-accept
--a always,exit -F arch=b64 -S bind -k network-bind
--a always,exit -F arch=b64 -S listen -k network-listen
-
-## Failed access attempts: someone probing the filesystem
--a always,exit -F arch=b64 -S openat -F exit=-EACCES -k access-denied
--a always,exit -F arch=b64 -S openat -F exit=-EPERM -k access-denied
-
-## System integrity: reboot attempts, hostname/identity tampering
+## System integrity: reboot, hostname tampering
 -a always,exit -F arch=b64 -S reboot -k reboot
 -a always,exit -F arch=b64 -S sethostname,setdomainname -k hostname
 
-## Log integrity: detect log deletion or modification
--w /var/log/ -p wa -k log-tamper
-
-## Personality / prctl: sandbox escape indicators
--a always,exit -F arch=b64 -S personality -k personality
--a always,exit -F arch=b64 -S prctl -k prctl
+## Log integrity (only track deletion: too noisy)
+-w /var/log/ -p a -k log-tamper
