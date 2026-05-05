@@ -55,7 +55,8 @@ CMDLINE:append  = " ${CONSOLE_SELECT} \
                      trusted.source=${TRUSTED_SRC} \
                      verity_mode=${VERITY_MODE}"
 
-# Remove debug-tweaks in production
+# Enable debug-tweaks and remove in prod
+EXTRA_IMAGE_FEATURES += "debug-tweaks"
 EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
 
 # Initramfs Bundle
@@ -121,8 +122,5 @@ IMAGE_BOOT_PARTITION_FILES = "autoboot.txt \
                               pieeprom.upd.hashsig;_pieeprom.upd.sig_ \
                               readme.txt"
 
-# Device Tree Hardening
-# Keep only the DTB and overlays required by the actual hardware
-# This reduces the kernel attack surface
-# RPI_KERNEL_DEVICETREE_OVERLAYS = ""
-# RPI_KERNEL_DEVICETREE = ""
+# Licenses accepted for this machine configuration 
+LICENSE_FLAGS_ACCEPTED += "synaptics-killswitch"
