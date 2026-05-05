@@ -10,7 +10,7 @@
 #   KAS_FRAGMENT  path to kas fragment to generate (default: kas-signing-keys.yml)
 
 set -e
-
+umask 077
 KEY_DIR="${1:-rpi-secure-keys}"
 KEY_DIR="$(cd "$(dirname "$KEY_DIR")" 2>/dev/null && pwd)/$(basename "$KEY_DIR")" || KEY_DIR="$(readlink -f "$KEY_DIR")"
 TOP_LAYER_DIR="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)"
