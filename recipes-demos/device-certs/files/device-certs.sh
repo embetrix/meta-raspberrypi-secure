@@ -29,13 +29,29 @@ SERVER_KEY_ID="${SERVER_KEY_ID:-%01}"
 SERVER_KEY_URI="pkcs11:object=${PKCS11_TOKEN};id=${SERVER_KEY_ID};type=private"
 
 if [ ! -f device-cert.pem ]; then
-    openssl req -x509 -new -provider pkcs11 -provider default \
+    # pkcs11-provider reconstructs EC keys with explicit curve parameters:
+    # browsers reject these so reencode as named curve (prime256v1)
+    openssl pkey -provider pkcs11 -provider default -pubin \
+            -in "pkcs11:object=${PKCS11_TOKEN};id=${SERVER_KEY_ID};type=public" \
+            -pubout | \
+    openssl ec -pubin -param_enc named_curve -out pubkey.pem || exit 1
+
+    openssl req -new -provider pkcs11 -provider default \
             -key "$SERVER_KEY_URI" \
-            -out device-cert.pem -days 365 \
             -subj "/C=DE/ST=BW/O=Embetrix/OU=DeviceCert/CN=$HOSTNAME" \
             -addext "subjectAltName=DNS:$HOSTNAME,DNS:localhost,IP:$DEVICE_IP,IP:127.0.0.1" \
             -addext "keyUsage=digitalSignature" \
-            -addext "extendedKeyUsage=serverAuth" || exit 1
+            -addext "extendedKeyUsage=serverAuth" \
+            -out device-cert.csr || exit 1
+
+    openssl x509 -req -in device-cert.csr \
+            -force_pubkey pubkey.pem \
+            -signkey "$SERVER_KEY_URI" \
+            -provider pkcs11 -provider default \
+            -out device-cert.pem -days 365 \
+            -copy_extensions copyall || exit 1
+
+    rm -f pubkey.pem device-cert.csr
 fi
 
 chmod 644 *.pem
