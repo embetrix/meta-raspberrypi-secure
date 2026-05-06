@@ -27,7 +27,7 @@ Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys, and writes a
 ### 2. Configure the build
 
 - `KAS_MACHINE`: `raspberrypi5` *(default)*, `raspberrypi-cm5-io-board`, `raspberrypi4-64`.
-- `SECURITY_PROFILE`: `dev` *(default)* or `prod`.
+- `SECURITY_PROFILE`: `dev` *(default)* for bring-up (serial console, debug tweaks, IMA/EVM non-enforcing) or `prod` for release (silent boot, enforcing integrity, locked device key).
 
 ### 3. Build
 
