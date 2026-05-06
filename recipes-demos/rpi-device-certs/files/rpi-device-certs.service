@@ -9,7 +9,7 @@ Wants=nginx.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/etc/certs
-ExecStart=/usr/bin/device-certs --force
+ExecStart=/usr/bin/rpi-device-certs --force
 Restart=on-failure
 RestartSec=3
 
