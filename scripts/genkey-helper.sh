@@ -13,7 +13,6 @@ set -e
 umask 077
 KEY_DIR="${1:-rpi-secure-keys}"
 KEY_DIR="$(cd "$(dirname "$KEY_DIR")" 2>/dev/null && pwd)/$(basename "$KEY_DIR")" || KEY_DIR="$(readlink -f "$KEY_DIR")"
-TOP_LAYER_DIR="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)"
 
 CN="rpi-secure"
 ORG="Embetrix"
@@ -118,7 +117,7 @@ fi
 # SSH CA key pair (ed25519)
 SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
-KAS_FRAGMENT="${2:-$TOP_LAYER_DIR/kas-signing-keys.yml}"
+KAS_FRAGMENT="${2:-$PWD/kas-signing-keys.yml}"
 if [ -f "$SSH_CA_KEY" ]; then
     echo "  Skipping SSH CA key pair (already exists)"
 else
@@ -170,9 +169,9 @@ OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
 EOF
 echo "#######################################################"
 echo
-echo "Generated kas fragment: $(basename "$KAS_FRAGMENT")"
+echo "Generated kas fragment: $KAS_FRAGMENT"
 echo "Use it directly in your build:"
-echo "  kas build kas-rpi-secure.yml:$(basename "$KAS_FRAGMENT")"
+echo "  kas build kas-rpi-secure.yml:$KAS_FRAGMENT"
 echo
 echo "SSH CA private key (keep secret): $SSH_CA_KEY"
 echo
