@@ -12,7 +12,6 @@ INHERIT += "rpi-secure-machine-compat"
 INHERIT += "image-buildinfo"
 
 # Bootloader configuration
-ENABLE_BOOT_RAMDISK     = "1"
 ENABLE_WATCHDOG         = "1"
 ENABLE_USB_MAX_CURRENT  = "1"
 ENABLE_PCIEX            = "1"
