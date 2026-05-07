@@ -13,7 +13,7 @@
 #
 
 #set -x
-
+umask 077
 export PATH=$PATH:/sbin:/usr/sbin
 
 BOOT_DEV=""
