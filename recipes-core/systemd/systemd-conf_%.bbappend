@@ -2,7 +2,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 SRC_URI += "file://timesyncd.conf \
             file://journal-upload.conf \
-			file://80-wlan.network
+			file://80-wlan.network \
             "
 
 SRC_URI += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.conf', '', d)}"
