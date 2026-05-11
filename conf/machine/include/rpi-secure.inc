@@ -91,13 +91,20 @@ ROOTFS_TYPE ?= "erofs"
 
 # Files for the boot partition selector
 WICVARS:append = " IMAGE_BOOT_PARTITION_FILES"
-IMAGE_BOOT_PARTITION_FILES = "autoboot.txt \
+
+# Set to "1" to auto-flash the signed EEPROM on first boot of a fresh Pi
+# Runs once: recovery.bin is renamed to recovery.000 after a successful flash
+RPI_EEPROM_PROVISION    ?= "0"
+IMAGE_BOOT_PARTITION_FILES = "autoboot.txt readme.txt \
                               recovery.bin;_recovery.bin_ \
                               pieeprom-recovery.bin;_pieeprom.bin_ \
                               pieeprom-recovery.sig;_pieeprom.sig_ \
                               pieeprom.bin.signed;_pieeprom.upd_ \
-                              pieeprom.upd.hashsig;_pieeprom.upd.sig_ \
-                              readme.txt"
+                              pieeprom.upd.hashsig;_pieeprom.upd.sig_"
+
+IMAGE_BOOT_PARTITION_FILES += "${@bb.utils.contains('RPI_EEPROM_PROVISION', '1', \
+                               'recovery.bin pieeprom.bin.signed;pieeprom.upd pieeprom.upd.hashsig;pieeprom.sig', \
+                               '', d)}"
 
 # Licenses accepted for this machine configuration 
 LICENSE_FLAGS_ACCEPTED += "synaptics-killswitch"
