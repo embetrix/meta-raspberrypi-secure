@@ -3,13 +3,13 @@
 # Copyright 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
 # rpi secure initramfs init script:
-#   mount_early_fs     - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
-#   get_boot_slot      - Detect A/B boot slot from device tree
-#   encrypt_rootfs     - First-boot rootfs encryption (plain to dm-crypt)
-#   setup_avb_verity   - AVB signature verification and dm-verity setup
-#   mount_dmcrypt_data   - First-boot data partitions encryption
-#   setup_integrity    - Import IMA/EVM keys and load appraise policy
-#   switch_root        - Switch to the real root filesystem
+#   mount_early_fs      - Mount devtmpfs, tmpfs, proc, sysfs, securityfs
+#   get_boot_slot       - Detect A/B boot slot from device tree
+#   encrypt_rootfs      - First-boot rootfs encryption (plain to dm-crypt)
+#   setup_avb_verity    - AVB signature verification and dm-verity setup
+#   mount_dmcrypt_data  - First-boot data partitions encryption
+#   setup_evm_integrity - Setup EVM mode
+#   switch_root         - Switch to the real root filesystem
 #
 
 #set -x
@@ -39,13 +39,8 @@ DATA_MNT="/var/data"
 BACKUPS_MNT="/var/backups"
 
 OPT_ROOT="ro,noatime"
-OPT_PART="noexec,nodev,nosuid"
+OPT_PART="noexec,nodev,nosuid,iversion"
 
-IMA_POLICY="/etc/ima/ima-policy"
-IMA_X509="/etc/keys/x509_ima.der"
-EVM_X509="/etc/keys/x509_evm.der"
-IMA_MANIFEST="/etc/ima-signatures.manifest"
-EVM_MANIFEST="/etc/evm-signatures.manifest"
 KMK_BLOB="$BLOBS_MNT/kmk.blob"
 ENC_KEY_BLOB="$BLOBS_MNT/enc-key.blob"
 EVM_KEY_BLOB="$BLOBS_MNT/evm-key.blob"
@@ -55,7 +50,6 @@ BOOT_SLOT="/proc/device-tree/chosen/bootloader/partition"
 BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
 
 HW_SERIAL="/proc/device-tree/serial-number"
-CID=""
 
 MACHINE_ID=""
 
@@ -73,11 +67,6 @@ BACKUPS_PART=8
 TIMEOUT=40
 
 OTP_KEY_ID=1
-
-# dm-integrity: set to "hmac-sha256"
-# to enable block-level tamper detection
-# Disable for better RW performance
-DM_INTEGRITY=""
 
 AVB_PUBKEY="/etc/avb/avb_pubkey.bin"
 
@@ -156,8 +145,8 @@ mount -t vfat -o $OPT_PART $BOOTUPDATE_DEV "$ROOT_MNT$BOOTUPDATE_MNT" \
 # Derive Machine ID from HW_SERIAL
 MACHINE_ID="$(tr -d '\0\n' < "$HW_SERIAL" | sha256sum | cut -c1-32)"
 
-# Setup IMA/EVM
-setup_integrity
+# Setup EVM
+setup_evm_integrity
 
 # Switch to real root
 klog "Switch to real root..."

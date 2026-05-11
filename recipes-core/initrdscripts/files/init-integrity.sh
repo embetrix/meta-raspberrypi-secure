@@ -2,62 +2,15 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
-# Integrity helpers: IMA/EVM and AVB dm-verity setup
+# Integrity helpers: EVM and AVB dm-verity setup
 
-# Restore IMA/EVM xattrs from build-time manifest
-# cpio newc format does not preserve xattrs so we re-apply them
-# Usage: restore_ima_evm_signatures <manifest> <xattr> <target_root> [file]
-#   If [file] is given, only restore that single file's signature
-restore_ima_evm_signatures() {
+setup_evm_integrity() {
 
-	manifest="$1"
-	xattr="$2"
-	target="$3"
-	single="$4"
-
-	[ -f "$manifest" ] || return 0
-
-	if [ -n "$single" ]; then
-		sig=$(grep "^${single} " "$manifest" | cut -d' ' -f2)
-		[ -n "$sig" ] && [ -e "${target}${single}" ] && \
-			setfattr -n "$xattr" -v "${sig#*:}" "${target}${single}" 2>/dev/null
-		return 0
-	fi
-
-	while read filepath sig; do
-		[ -e "${target}${filepath}" ] || continue
-		setfattr -n "$xattr" -v "${sig#*:}" "${target}${filepath}" 2>/dev/null
-	done < "$manifest"
-}
-
-setup_integrity() {
-
-	klog "Setting up IMA/EVM Integrity..."
-
-	# Restore IMA/EVM signatures on initramfs file path so that :
-	# switch_root binary does not break signature verification
-	# for performance reasons only handful files are needed to be restored
-	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/bin/busybox.nosuid"
-	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/bin/busybox.nosuid"
-	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/ld-linux-aarch64.so.1"
-	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/ld-linux-aarch64.so.1"  
-	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/libm.so.6"
-	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/libm.so.6"
-	restore_ima_evm_signatures "$IMA_MANIFEST" security.ima "" "/usr/lib/libc.so.6"
-	restore_ima_evm_signatures "$EVM_MANIFEST" security.evm "" "/usr/lib/libc.so.6"
-
-	# Load IMA policy
-	if [ ! -f "$IMA_POLICY" ]; then
-		fatal "IMA policy not found!"
-	fi
-
-	cat "$IMA_POLICY" \
-		 > /sys/kernel/security/integrity/ima/policy \
-		|| fatal "cannot load IMA policy"
-
+	klog "Setting up EVM Integrity..."
 	# Enable EVM in signature + hmac verification mode
 	# and lock the configuration to prevent changes at runtime
-	echo "0x80000003" > /sys/kernel/security/integrity/evm/evm
+	echo "0x80000003" > /sys/kernel/security/integrity/evm/evm \
+	    || fatal "Failed to enable EVM signature + HMAC verification"
 }
 
 # Verify AVB signature and set up dm-verity on the decrypted root device.

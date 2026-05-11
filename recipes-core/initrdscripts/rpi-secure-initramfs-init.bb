@@ -18,9 +18,6 @@ RDEPENDS:${PN}:append = " \
                 libdevmapper \
                 raspi-utils-rpifwcrypto \
                 keyutils \
-                attr \
-                ima-evm-utils \
-                ima-policy-appraise-sb \
                 ima-evm-keys \
                 avb-utils \
                 "
