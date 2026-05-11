@@ -2,12 +2,6 @@
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
 
-# Restrict to supported machines only
-INHERIT += "rpi-secure-machine-compat"
-
-# Include image build information
-INHERIT += "image-buildinfo"
-
 # Bootloader configuration
 ENABLE_WATCHDOG         = "1"
 ENABLE_USB_MAX_CURRENT  = "1"
