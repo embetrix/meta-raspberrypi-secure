@@ -7,7 +7,6 @@ inherit core-image extrausers
 IMAGE_FEATURES:append = " read-only-rootfs ssh-server-openssh"
 
 # save IMA/EVM signatures as fingerints for rootfs
-REQUIRED_DISTRO_FEATURES += "ima"
 IMA_FILE_SIGNATURES_FILE = "etc/ima-signatures.manifest"
 EVM_FILE_SIGNATURES_FILE = "etc/evm-signatures.manifest"
 
@@ -34,4 +33,7 @@ IMAGE_INSTALL += " \
 	packagegroup-security-base \
 	"
 
-IMAGE_INSTALL += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', " packagegroup-dev", '', d)}"
+IMAGE_INSTALL += "${@bb.utils.contains('DISTRO_FEATURES', 'ima', "packagegroup-ima-evm", '', d)}"
+IMAGE_INSTALL += "${@bb.utils.contains('DISTRO_FEATURES', 'selinux', "packagegroup-selinux", '', d)}"
+
+IMAGE_INSTALL += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "packagegroup-dev", '', d)}"
