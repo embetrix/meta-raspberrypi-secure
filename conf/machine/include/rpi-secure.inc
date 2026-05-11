@@ -47,10 +47,12 @@ CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
 EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
 VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
+SELINUX_ENFORCE = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
 TRUSTED_SRC    ?= "rpifwcrypto"
 
 CMDLINE:append  = " ${CONSOLE_SELECT} \
                      ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} \
+                     security=selinux enforcing=${SELINUX_ENFORCE} \
                      trusted.source=${TRUSTED_SRC} \
                      verity_mode=${VERITY_MODE}"
 
@@ -87,13 +89,6 @@ IMAGE_BOOT_FILES = "${@bb.utils.contains('RPI_SECURE_BOOT_SIGN', '1', \
                         '${IMAGE_BOOT_FILES_DEFAULT} ${IMAGE_BOOT_FILES_SECURE_BOOT}', d), \
                     '${IMAGE_BOOT_FILES_DEFAULT}', d)}"
 
-# IMA/EVM Rootfs Signing
-INHERIT += "ima-evm-rootfs"
-
-# AVB/DM-Verity configuration
-IMAGE_CLASSES += "avb-verity"
-IMAGE_FSTYPES += " ${ROOTFS_TYPE}.avbverity.gz"
-AVB_ROOT_HASH_SIGN = "1"
 
 # Extra Runtime Packages
 MACHINE_EXTRA_RRECOMMENDS += " \

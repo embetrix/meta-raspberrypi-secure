@@ -17,11 +17,6 @@ IMAGE_LINGUAS = ""
 # Do not install RRECOMMENDS
 NO_RECOMMENDATIONS = "1"
 
-# save IMA/EVM signatures to manifest files
-REQUIRED_DISTRO_FEATURES += "ima"
-IMA_FILE_SIGNATURES_FILE = "etc/ima-signatures.manifest"
-EVM_FILE_SIGNATURES_FILE = "etc/evm-signatures.manifest"
-
 IMAGE_FSTYPES = "${INITRAMFS_FSTYPES}"
 
 IMAGE_ROOTFS_SIZE = "8192"
