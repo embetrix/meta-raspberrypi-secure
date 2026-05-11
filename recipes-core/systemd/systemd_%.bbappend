@@ -1,15 +1,3 @@
-# Pin systemd-journal GID so the IMA policy fgroup= filter is stable across builds
-GROUPADD_PARAM:${PN} = "-r --gid 908 systemd-journal;"
-
-# Remove features irrelevant for embedded
-PACKAGECONFIG:remove = " \
-    hibernate \
-    machined \
-    nss-mymachines \
-    quotacheck \
-    utmp \
-    "
-
 PACKAGECONFIG:append = " journal-upload"
 
 RRECOMMENDS:${PN} += "${PN}-journal-upload ${PN}-container"
