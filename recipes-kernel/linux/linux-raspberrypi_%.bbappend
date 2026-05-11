@@ -3,8 +3,8 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 # Enable Kernel modules signing
 inherit kernel-modsign
 
-# Stage IMA/EVM x509 for CONFIG_SYSTEM_TRUSTED_KEYS
-KERNEL_TRUSTED_KEYS = "${AVB_X509} ${IMA_EVM_X509} ${MODSIGN_X509}"
+# Stage IMA/EVM & AVB_X509 x509 for CONFIG_SYSTEM_TRUSTED_KEYS
+KERNEL_TRUSTED_KEYS = "${AVB_X509} ${IMA_EVM_X509}"
 inherit kernel-trusted-keys
 
 SRC_URI += "file://patches/v6.6/0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch \
@@ -25,5 +25,8 @@ SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', '', 'file://no
 
 # TPM support 
 SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'file://tpm.cfg', '', d)}"
+
+# SELinux support
+SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'selinux', 'file://selinux.cfg', '', d)}"
 
 SRC_URI += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.cfg', '', d)}"
