@@ -7,18 +7,18 @@ A Yocto layer that builds security-hardened Raspberry Pi images on top of [meta-
 ## Features
 
 - Secure boot with a full chain of trust rooted in the RPi bootloader
-- Read-only rootfs with state isolated to data partitions
+- Read-only authenticated rootfs with state isolated to data partitions
 - Encrypted writable data partitions (dm-crypt + key bound to the SoC)
 - Runtime integrity via IMA/EVM
 - A/B partitioning for atomic updates of boot and root slots
-- Hardened kernel & userspace (sysctl, systemd, OpenSSH, busybox)
+- Hardened kernel & userspace (SELinux, sysctl, systemd, OpenSSH, busybox)
 - Network & USB protection (default-drop firewall, USBGuard, audit)
 
 ## Quick Start
 
 ### 1. Generate signing keys
 
-Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys, and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
+Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
 
 ```sh
 ./scripts/genkey-helper.sh
@@ -27,7 +27,7 @@ Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys, and writes a
 ### 2. Configure the build
 
 - `KAS_MACHINE`: `raspberrypi5` *(default)*, `raspberrypi-cm5-io-board`, `raspberrypi4-64`.
-- `SECURITY_PROFILE`: `dev` *(default)* for bring-up (serial console, debug tweaks, IMA/EVM, SELinx non-enforcing) or `prod` for release (silent boot, enforcing integrity, locked device key).
+- `SECURITY_PROFILE`: `dev` *(default)* for bring-up (serial console, debug tweaks, IMA/EVM, SELinx non-enforcing) or `prod` for release (secure boot, silent console, enforcing integrity, selinux and locked device key).
 
 ### 3. Build
 
@@ -115,9 +115,9 @@ The key is accessible via the `rpifwcrypto-pkcs11` PKCS#11 module for device ide
 
 | Model                       | MACHINE                      |
 |-----------------------------|------------------------------|
-| Raspberry Pi 4 Model B      | `raspberrypi4-64`            |
 | Raspberry Pi 5              | `raspberrypi5`               |
 | Compute Module 5 (IO Board) | `raspberrypi-cm5-io-board`   |
+| Raspberry Pi 4 Model B      | `raspberrypi4-64`            |
 
 ## License
 
