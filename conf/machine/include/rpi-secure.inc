@@ -2,9 +2,6 @@
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 #
 
-# Security profile "dev" or "prod"
-RPI_SECURITY_PROFILE ?= "dev"
-
 # Restrict to supported machines only
 INHERIT += "rpi-secure-machine-compat"
 
@@ -56,10 +53,6 @@ CMDLINE:append  = " ${CONSOLE_SELECT} \
                      trusted.source=${TRUSTED_SRC} \
                      verity_mode=${VERITY_MODE}"
 
-# Enable debug-tweaks and remove in prod
-EXTRA_IMAGE_FEATURES += "debug-tweaks"
-EXTRA_IMAGE_FEATURES:remove = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'debug-tweaks', '', d)}"
-
 # Initramfs Bundle
 INITRAMFS_IMAGE        ?= "rpi-secure-initramfs-image"
 INITRAMFS_IMAGE_NAME   ?= "rpi-secure-initramfs-image-${MACHINE}.rootfs"
@@ -97,10 +90,6 @@ MACHINE_EXTRA_RRECOMMENDS += " \
                         raspi-utils-rpieepromab \
                         raspi-utils-rpifwcrypto \
                         "
-
-# CVE checks
-INHERIT += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'cve-check', '', d)}"
-include conf/distro/include/cve-extra-exclusions.inc
 
 # WKS file
 WKS_FILES = "raspberrypi-secure.wks.in"
