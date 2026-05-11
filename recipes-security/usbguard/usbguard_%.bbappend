@@ -3,6 +3,9 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://rules.conf \
             file://usbguard-daemon.conf \
             "
+# Drop OpenSSL in favor of libsodium for better Selinux policy compatibility
+PACKAGECONFIG:remove = " openssl"
+PACKAGECONFIG:append = " libsodium"
 
 DEPENDS += "audit"
 RDEPENDS:${PN} += "auditd"
