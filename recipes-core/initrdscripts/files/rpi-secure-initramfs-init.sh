@@ -76,6 +76,7 @@ INIT="/sbin/init"
 # Source library files
 LIBDIR="/usr/libexec/rpi-secure"
 . "$LIBDIR/init-common.sh"
+. "$LIBDIR/init-ab-slot.sh"
 . "$LIBDIR/init-crypto.sh"
 . "$LIBDIR/init-integrity.sh"
 
