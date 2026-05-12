@@ -1,4 +1,4 @@
-name: CI
+name: OELINT
 
 on:
   push:

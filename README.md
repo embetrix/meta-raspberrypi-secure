@@ -1,7 +1,7 @@
 # meta-raspberrypi-secure
 
-[![CI](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml/badge.svg?branch=scarthgap)](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![OELINT](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/oelint.yml/badge.svg?branch=scarthgap)](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/oelint.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi/tree/scarthgap?h=scarthgap) layer with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
 
