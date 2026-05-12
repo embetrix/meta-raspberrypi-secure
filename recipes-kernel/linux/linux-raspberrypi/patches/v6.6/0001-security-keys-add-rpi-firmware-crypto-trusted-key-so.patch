@@ -14,9 +14,9 @@ AES-256-GCM ciphertext and a 16-byte authentication tag.  The header
 is included as AAD, so any tampering with key_id, nonce, iv, or
 key_len is detected at unseal time.
 
-This is analog to the DCP and CAAM sources in structure: a hardware-
+This is analog to the DCP trusted sources in structure: a hardware-
 bound wrapping key derived from a firmware/hardware KDF, with software
-AES-GCM for the actual key material wrap.  Keys are non-migratable
+AES-GCM for the actual key material wrap. Keys are non-migratable
 (migratable=0) as they are bound to the device OTP.
 
 Upstream-Status: Pending
