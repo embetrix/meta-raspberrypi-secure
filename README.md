@@ -8,7 +8,7 @@ A Yocto layer that provides a security-hardened baseline for Raspberry Pi images
 ## Features
 
 - Hardware root of trust with signed boot chain anchored in the SoC boot ROM
-- Read-only authenticated rootfs with state isolated to data partitions
+- Read-only encrypted/authenticated rootfs with state isolated to data partitions
 - Encrypted writable data partitions (dm-crypt + trusted key bound to the SoC)
 - Runtime integrity via IMA/EVM
 - A/B partitioning for atomic updates of boot and root slots
