@@ -25,6 +25,8 @@ Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys and writes a 
 ./tools/genkey-helper.sh
 ```
 
+> **Warning:** store them securely and keep an offline backup even for development.
+
 ### 2. Configure the build
 
 Two variables drive the build: `KAS_MACHINE` selects the target hardware (see [Supported Hardware](#supported-hardware)) and `SECURITY_PROFILE` selects the hardening level:
