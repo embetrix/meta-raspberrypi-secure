@@ -91,7 +91,7 @@ sudo bmap-writer \
     /dev/sdX
 ```
 
-> **Warning:** replace with your block device: e.g. `/dev/sdX` or `/dev/mmcblk0`
+> **Warning:** replace with your block device: e.g. `/dev/sda` or `/dev/mmcblk0`
 
 ### 5. Enable Secure Boot
 
