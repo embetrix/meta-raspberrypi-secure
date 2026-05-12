@@ -139,11 +139,13 @@ The key is accessible via the [rpifwcrypto-pkcs11](https://github.com/embetrix/r
 
 ## Supported Hardware
 
-| Model                       | MACHINE                      |
-|-----------------------------|------------------------------|
-| Raspberry Pi 5              | `raspberrypi5`               |
-| Compute Module 5 (IO Board) | `raspberrypi-cm5-io-board`   |
-| Raspberry Pi 4 Model B      | `raspberrypi4-64`            |
+| Model                       | MACHINE                      | Status                 |
+|-----------------------------|------------------------------|------------------------|
+| Raspberry Pi 5                | `raspberrypi5`               | Tested                 |
+| Raspberry Pi 4 Model B / CM4  | `raspberrypi4-64`            | Tested (CM4 untested)  |
+| Compute Module 5 (IO Board)   | `raspberrypi-cm5-io-board`   | Supported, not tested  |
+
+> **Note:** Other Raspberry Pi variants (Pi 3, Pi Zero, etc.) lack the hardware security features this layer relies on (OTP-backed signed boot, hardware-bound device key) and will not be supported.
 
 ## Commercial Support
 
