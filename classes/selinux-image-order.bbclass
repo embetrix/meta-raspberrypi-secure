@@ -9,8 +9,6 @@
 # That would sign xattrs before SELinux rewrites security.selinux and
 # invalidate every EVM signature. Force the order here.
 
-IMAGE_CLASSES += "selinux-image"
-
 python selinux_image_order_handler() {
     cmd = d.getVar('IMAGE_PREPROCESS_COMMAND') or ''
     if 'selinux_set_labels;' not in cmd or 'ima_evm_sign_rootfs;' not in cmd:
