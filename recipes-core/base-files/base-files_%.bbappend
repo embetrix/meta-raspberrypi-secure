@@ -1,10 +1,9 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 # add mount points for boot (inactive), blobs data/backups partitions
-dirs755 += " /boot-update \
-             /blobs       \
-             ${localstatedir}/data     \
-             ${localstatedir}/backups  \
+dirs755 += " ${localstatedir}/boot-update \
+             ${localstatedir}/data        \
+             ${localstatedir}/backups     \
             "
 
 # meta-integrity's base-files-ima.inc appends a second securityfs line

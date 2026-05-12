@@ -33,7 +33,7 @@ VERITY_DM_NAME="verity-root"
 
 ROOT_MNT="/root"
 BOOT_MNT="/boot"
-BOOTUPDATE_MNT="/boot-update"
+BOOTUPDATE_MNT="/var/boot-update"
 BLOBS_MNT="/blobs"
 DATA_MNT="/var/data"
 BACKUPS_MNT="/var/backups"
@@ -97,6 +97,7 @@ ln -s /proc/self/fd /dev/fd
 
 # Mount blobs partition containing encryption keys KMK and blobs
 fsck.ext4 -y "$BLOBS_DEV" || klog "fsck.ext4 on $BLOBS_DEV returned $?"
+mkdir -p "$BLOBS_MNT"
 mount -t ext4 -o $OPT_PART $BLOBS_DEV "$BLOBS_MNT" \
 	|| fatal "cannot mount blobs device $BLOBS_DEV"
 
