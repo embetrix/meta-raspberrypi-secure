@@ -128,6 +128,10 @@ The key is accessible via the [rpifwcrypto-pkcs11](https://github.com/embetrix/r
 | Compute Module 5 (IO Board) | `raspberrypi-cm5-io-board`   |
 | Raspberry Pi 4 Model B      | `raspberrypi4-64`            |
 
+## Commercial Support
+
+This layer is maintained by [Embetrix](https://embetrix.com), which provides extended services and consulting around it including: custom integration, security audits, secure-boot key-management and provisioning, OTA update solutions, certificate management (PKI, device identity), long-term maintenance and CVE backports. Get in touch at [info@embetrix.com](mailto:info@embetrix.com).
+
 ## License
 
 This project is licensed under the MIT License see the [LICENSE](LICENSE) for details.
