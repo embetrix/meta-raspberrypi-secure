@@ -69,7 +69,7 @@ KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=dev \
 
 ### 4. Flash
 
-Flash the image to an SD card or USB drive with [bmap-tools](https://github.com/yoctoproject/bmaptool) (replace with your block device: e.g. `/dev/sdX` or `/dev/mmcblk0`):
+Flash the image to an SD card or USB drive with [bmap-tools](https://github.com/yoctoproject/bmaptool) or [bmap-writer](https://github.com/embetrix/bmap-writer) (replace with your block device: e.g. `/dev/sdX` or `/dev/mmcblk0`):
 
 ```sh
 sudo bmaptool copy \
