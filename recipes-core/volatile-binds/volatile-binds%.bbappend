@@ -15,4 +15,4 @@ VOLATILE_BINDS:append = "${@'${localstatedir}/data${localstatedir}/log ${localst
 VOLATILE_BINDS:append = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '${localstatedir}/data${sysconfdir}/wpa_supplicant ${sysconfdir}/wpa_supplicant\\n', '', d)}"
 
 # Bind mount /root only in dev profile
-VOLATILE_BINDS:append = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', '${localstatedir}/data/root /root\\n', '', d)}"
+VOLATILE_BINDS:append = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', '${localstatedir}/data${ROOT_HOME} ${ROOT_HOME}\\n', '', d)}"
