@@ -1,8 +1,9 @@
 # meta-raspberrypi-secure
 
 [![CI](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml/badge.svg?branch=scarthgap)](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A Yocto layer that builds security-hardened Raspberry Pi images on top of [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=scarthgap).
+A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=scarthgap) with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
 
 ## Features
 
@@ -26,8 +27,12 @@ Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys and writes a 
 
 ### 2. Configure the build
 
-- `KAS_MACHINE`: `raspberrypi5` *(default)*, `raspberrypi-cm5-io-board`, `raspberrypi4-64`.
-- `SECURITY_PROFILE`: `dev` *(default)* for bring-up (serial console, debug tweaks, IMA/EVM, SELinx non-enforcing) or `prod` for release (secure boot, silent console, enforcing integrity, selinux and locked device key).
+Two variables drive the build: `KAS_MACHINE` selects the target hardware (see [Supported Hardware](#supported-hardware)) and `SECURITY_PROFILE` selects the hardening level:
+
+| Profile            | Use case | Behavior                                                                             |
+|--------------------|----------|--------------------------------------------------------------------------------------|
+| `dev` *(default)*  | Bring-up | Serial console, debug tweaks, IMA/EVM in log/fix mode, SELinux permissive            |
+| `prod`             | Release  | Silent console, JTAG & device key locked, kernel/userspace hardening, enforcing IMA/EVM & SELinux, SSH cert-only auth |
 
 ### 3. Build
 
@@ -121,4 +126,4 @@ The key is accessible via the `rpifwcrypto-pkcs11` PKCS#11 module for device ide
 
 ## License
 
-MIT. See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License see the [LICENSE](LICENSE) for details.
