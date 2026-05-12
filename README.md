@@ -17,6 +17,12 @@ A Yocto layer that provides a security-hardened baseline for Raspberry Pi images
 - Optional TPM 2.0 support (Infineon SLB9670)
 - Compliance & auditability (Audit, persistent logs, SBOM, CVE scanning)
 
+## Secure Boot Flow
+
+[![meta-raspberrypi-secure boot walkthrough](https://img.youtube.com/vi/3BLzPIFAJxM/maxresdefault.jpg)](https://www.youtube.com/watch?v=3BLzPIFAJxM)
+
+[![Watch on YouTube](https://img.shields.io/badge/Watch%20on-YouTube-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=3BLzPIFAJxM)
+
 ## Quick Start
 
 ### 1. Generate signing keys
