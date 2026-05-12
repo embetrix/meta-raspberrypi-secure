@@ -69,13 +69,24 @@ KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=dev \
 
 ### 4. Flash
 
-Flash the image to an SD card or USB drive with [bmap-tools](https://github.com/yoctoproject/bmaptool) or [bmap-writer](https://github.com/embetrix/bmap-writer) (replace with your block device: e.g. `/dev/sdX` or `/dev/mmcblk0`):
+Flash the image to an SD card or USB drive with [bmap-tools](https://github.com/yoctoproject/bmaptool):
 
 ```sh
 sudo bmaptool copy \
     build/tmp/deploy/images/<MACHINE>/rpi-secure-image-base-<MACHINE>.rootfs.wic.bz2 \
     /dev/sdX
 ```
+
+Or using [bmap-writer](https://github.com/embetrix/bmap-writer):
+
+```sh
+sudo bmap-writer \
+    build/tmp/deploy/images/<MACHINE>/rpi-secure-image-base-<MACHINE>.rootfs.wic.bz2 \
+    /dev/sdX
+```
+
+> **Warning:** replace with your block device: e.g. `/dev/sdX` or `/dev/mmcblk0`
+
 ### 5. Enable Secure Boot
 
 After flashing and booting the image, secure boot can be activated on the device using the `rpi-secureboot` utility:
