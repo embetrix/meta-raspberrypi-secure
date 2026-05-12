@@ -14,8 +14,8 @@ setup_evm_integrity() {
 }
 
 # Verify AVB signature and set up dm-verity on the decrypted root device.
-# The AVB footer (with hashtree) lives inside the LUKS2 container.
-# Usage: setup_avb_verity <luks_dm_name> <verity_dm_name>
+# The AVB footer (with hashtree) lives inside the dmcrypt container.
+# Usage: setup_avb_verity <dmcrypt_name> <dmverity_name>
 setup_avb_verity() {
 
 	dev="/dev/mapper/$1"

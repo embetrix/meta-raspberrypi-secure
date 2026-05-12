@@ -17,7 +17,7 @@
 # sets the tryboot flag so the firmware boots from the updated slot
 # on the next reboot.
 #
-# The initramfs already opens both LUKS2 containers at boot:
+# The initramfs already opens both dmcrypt containers at boot:
 #   /dev/mapper/root    active root slot
 #   /dev/mapper/update  inactive root slot (update target)
 # This script writes directly to the already-open dm device.
@@ -32,7 +32,7 @@ SIGNED_DT="/proc/device-tree/chosen/bootloader/signed"
 BOOT_SLOT_A=2
 BOOT_SLOT_B=3
 
-# The initramfs opens the inactive root LUKS2 as /dev/mapper/update
+# The initramfs opens the inactive root dmcrypt as /dev/mapper/update
 UPDATE_DM="/dev/mapper/update"
 
 # Boot partitions mounted by initramfs
@@ -142,7 +142,7 @@ update_root() {
 
     img="$1"
 
-    [ -b "$UPDATE_DM" ] || die "Update dm device $UPDATE_DM not available (LUKS not opened by initramfs?)"
+    [ -b "$UPDATE_DM" ] || die "Update dm device $UPDATE_DM not available (dmcrypt not opened by initramfs?)"
 
     echo "Writing rootfs image to $UPDATE_DM ..."
     case "$img" in
