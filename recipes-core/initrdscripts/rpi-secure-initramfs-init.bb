@@ -15,6 +15,7 @@ RDEPENDS:${PN}:append = " \
                 util-linux-blockdev \
                 e2fsprogs-mke2fs \
                 e2fsprogs-e2fsck \
+                dosfstools \
                 libdevmapper \
                 raspi-utils-rpifwcrypto \
                 keyutils \

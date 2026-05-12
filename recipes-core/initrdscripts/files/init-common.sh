@@ -17,11 +17,6 @@ klog() {
     echo "Initramfs: $@" > /dev/kmsg
 }
 
-hex2bin() {
-
-	printf '%b' "$(echo "$1" | sed 's/../\\x&/g')"
-}
-
 mount_early_fs() {
 
 	mount -t devtmpfs none /dev
@@ -91,12 +86,5 @@ await_blockdev() {
 	done
 	if [ $i -eq $TIMEOUT ]; then
 		fatal "Timeout waiting for $1"
-	fi
-}
-
-feed_watchdog() {
-
-	if [ -c /dev/watchdog ]; then
-		watchdog -t 5 /dev/watchdog &
 	fi
 }

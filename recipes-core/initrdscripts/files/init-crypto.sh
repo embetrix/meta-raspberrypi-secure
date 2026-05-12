@@ -134,6 +134,9 @@ mount_dmcrypt_data() {
 			|| fatal "cannot create filesystem on $dm_name"
 		fmt_end=$(date +%s)
 		klog "dm-crypt+ext4 setup of $dm_name completed in $((fmt_end - fmt_start))s"
+	else
+		fsck.ext4 -y "/dev/mapper/$dm_name" \
+			|| klog "fsck.ext4 on $dm_name returned $?"
 	fi
 
 	mkdir -p "$mnt"

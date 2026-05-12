@@ -96,11 +96,15 @@ await_blockdev "$ROOT_DEV"
 ln -s /proc/self/fd /dev/fd
 
 # Mount blobs partition containing encryption keys KMK and blobs
+fsck.ext4 -y "$BLOBS_DEV" || klog "fsck.ext4 on $BLOBS_DEV returned $?"
 mount -t ext4 -o $OPT_PART $BLOBS_DEV "$BLOBS_MNT" \
 	|| fatal "cannot mount blobs device $BLOBS_DEV"
 
 # Set up encrypted keys in kernel keyring
 setup_encrypted_keys
+
+# Unmount blobs partition after loading keys
+umount "$BLOBS_MNT"
 
 # dm-crypt and EVM use request_key() which searches the session keyring,
 # not the user keyring where the keys were added
@@ -137,8 +141,11 @@ mount_dmcrypt_data "$DATA_DEV" "$DATA_DM_NAME" "data" "$ROOT_MNT$DATA_MNT" "$OPT
 # Mount backups partition
 mount_dmcrypt_data "$BACKUPS_DEV" "$BACKUPS_DM_NAME" "backups" "$ROOT_MNT$BACKUPS_MNT" "$OPT_PART"
 
+fsck.vfat -y -w "$BOOT_DEV" || klog "fsck on $BOOT_DEV returned $?"
 mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 	|| fatal "cannot mount boot device $BOOT_DEV"
+
+fsck.vfat -y -w "$BOOTUPDATE_DEV" || klog "fsck on $BOOTUPDATE_DEV returned $?"
 mount -t vfat -o $OPT_PART $BOOTUPDATE_DEV "$ROOT_MNT$BOOTUPDATE_MNT" \
 	|| fatal "cannot mount boot update device $BOOTUPDATE_DEV"
 
