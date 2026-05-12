@@ -279,7 +279,7 @@ index 000000000000..292324a6ee25
 + *   +----------------------+--------+
 + *   | ciphertext           | key_len|  encrypted payload
 + *   +----------------------+--------+
-+ *   | GCM auth tag	        | 16 B   |  authentication tag
++ *   | GCM auth tag         | 16 B   |  authentication tag
 + *   +----------------------+--------+
 + *
 + * Total blob size: 54 + key_len + 16 bytes.
