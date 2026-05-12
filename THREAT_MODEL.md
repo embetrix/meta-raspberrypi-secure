@@ -1,11 +1,11 @@
-## Threat Model (Baseline)
+# Threat Model (Baseline)
 
 This layer provides a security baseline. It defines what the *platform*
 defends against: product-specific threat models built on top of this layer
 must extend it with application assets, network exposure and physical
 deployment considerations.
 
-### Assets Protected
+## Assets Protected
 
 - **Boot chain integrity** only firmware, bootloader, kernel and
   initramfs signed by the platform owner will execute.
@@ -21,7 +21,7 @@ deployment considerations.
 - **Update integrity** A/B slots are atomically updated: only
   signed images are accepted failed updates will rollback.
 
-### Attacker Model
+## Attacker Model
 
 The baseline assumes an attacker with one or more of the following
 capabilities:
@@ -40,7 +40,7 @@ capabilities:
    is to bypass authentication or extract data via exposed interfaces
    (USB, UART, network).
 
-### Defenses Provided
+## Defenses Provided
 
 | Threat                                       | Defense                                  |
 |----------------------------------------------|------------------------------------------|
@@ -58,7 +58,7 @@ capabilities:
 | Loss of audit trail                          | auditd + persistent `/var/log`           |
 | Unconstrained process privileges             | SELinux                                  |
 
-### Out of Scope
+## Out of Scope
 
 The following are explicitly *not* defended against by this layer.
 Products requiring protection against these must add hardware,
@@ -74,7 +74,7 @@ configuration, or process controls of their own.
 - **Loss or compromise of the platform signing keys** Once the OTP
   hash is fused, key compromise is unrecoverable. Key custody, HSM
   use, and rotation policy are the integrator's responsibility.
-- **Supply-chain compromise of upstream sources**  oky,
+- **Supply-chain compromise of upstream sources**  Poky,
   meta-raspberrypi, the kernel, or any third-party recipe. Mitigated
   partially by source URI hashes and not eliminated.
 - **Vulnerabilities in application code shipped on top of this layer**
@@ -87,7 +87,7 @@ configuration, or process controls of their own.
 - **Insider threats** with access to signing keys or production
   provisioning infrastructure.
 
-### Assumptions
+## Assumptions
 
 The baseline holds only if:
 
@@ -100,7 +100,7 @@ The baseline holds only if:
   not weakened downstream without an explicit risk decision.
 - System time is reasonably correct (for certificate validation).
 
-### What Integrators Must Add
+## What Integrators Must Add
 
 Products built on this layer should perform their own threat-modeling
 exercise covering at minimum:

@@ -3,23 +3,25 @@
 [![CI](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml/badge.svg?branch=scarthgap)](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=scarthgap) with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
+A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=scarthgap) layer with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
 
 ## Features
 
-- Secure boot with a full chain of trust rooted in the RPi bootloader
+- Hardware root of trust with signed boot chain anchored in the SoC boot ROM
 - Read-only authenticated rootfs with state isolated to data partitions
-- Encrypted writable data partitions (dm-crypt + key bound to the SoC)
+- Encrypted writable data partitions (dm-crypt + trusted key bound to the SoC)
 - Runtime integrity via IMA/EVM
 - A/B partitioning for atomic updates of boot and root slots
 - Hardened kernel & userspace (SELinux, sysctl, systemd, OpenSSH, busybox)
-- Network & USB protection (default-drop firewall, USBGuard, audit)
+- Network & USB protection (default-drop firewall, USBGuard)
+- Optional TPM 2.0 support (Infineon SLB9670)
+- Compliance & auditability (Audit, persistent logs, SBOM, CVE scanning)
 
 ## Quick Start
 
 ### 1. Generate signing keys
 
-Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
+Generates Secure-boot, AVB-DMVerity, IMA/EVM, Kernel-Modules and SSH-CA keys and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
 
 ```sh
 ./tools/genkey-helper.sh
@@ -99,7 +101,7 @@ rpi-secureboot disable
 
 ### 6. Provision Device-Unique ECDSA Key
 
-Each device can generate a unique ECDSA key pair stored in OTP, used for device identity and TLS certificates backed by hardware:
+Each device can generate a unique ECDSA key pair stored in OTP and could be used for device identity and TLS certificates backed by hardware:
 
 ```sh
 rpi-fw-crypto genkey --key-id 1 --alg ec
@@ -107,7 +109,7 @@ rpi-fw-crypto genkey --key-id 1 --alg ec
 
 > **Warning:** This is irreversible. The key is written once into OTP memory and can never be changed or erased.
 
-The key is accessible via the `rpifwcrypto-pkcs11` PKCS#11 module for device identity and TLS operations and via the kernel trusted key subsystem for storage encryption (dm-crypt).
+The key is accessible via the [rpifwcrypto-pkcs11](https://github.com/embetrix/rpifwcrypto-pkcs11) PKCS#11 module for device identity and TLS operations and via the kernel trusted key subsystem for storage encryption (dm-crypt).
 
 ## Layers dependencies
 
