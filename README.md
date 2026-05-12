@@ -95,7 +95,7 @@ sudo bmap-writer \
 
 ### 5. Enable Secure Boot
 
-After flashing and booting the image, secure boot can be activated on the device using the `rpi-secureboot` utility:
+See the official Raspberry Pi [Boot Security How-to](https://pip-assets.raspberrypi.com/categories/1260-security/documents/RP-003466-WP-3-Boot%20Security%20Howto.pdf?disposition=inline) (PDF) for the underlying mechanism. On a device flashed with this layer, secure boot can be activated using the `rpi-secureboot` utility:
 
 ```sh
 # Check current secure boot status
