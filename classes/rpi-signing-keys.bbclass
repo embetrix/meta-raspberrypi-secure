@@ -45,7 +45,7 @@ python rpi_check_signing_keys() {
     if errors:
         bb.fatal("Signing keys are missing:\n" + "\n".join(errors) + "\n\n" \
                  "Generate keys with:\n" \
-                 "  scripts/genkey-helper.sh <KEY_DIR>\n\n" \
+                 "  tools/genkey-helper.sh <KEY_DIR>\n\n" \
                  "Then build with:\n" \
                  "  kas build kas-rpi-secure.yml:kas-signing-keys.yml")
 }

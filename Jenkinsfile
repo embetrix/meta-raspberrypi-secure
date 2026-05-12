@@ -25,7 +25,7 @@ pipeline {
                     withCredentials([file(credentialsId: 'fd6cfa4d-679d-4d04-9e6a-74073de43385', variable: 'KEYS_TARBALL')]) {
                         sh "tar xzf \$KEYS_TARBALL -C ${env.WORKSPACE}"
                     }
-                    sh "scripts/genkey-helper.sh ${keyDir} ${kasFragment}"
+                    sh "tools/genkey-helper.sh ${keyDir} ${kasFragment}"
                 }
             }
         }

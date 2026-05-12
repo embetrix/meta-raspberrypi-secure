@@ -21,7 +21,7 @@
 #   RPI_SECURE_BOOT_SIGN = "1"
 #   RPI_SECURE_BOOT_SIGN_KEY = "/path/to/keys/secure-boot-sign.key"
 #
-#   Keys can be generated with scripts/genkey-helper.sh
+#   Keys can be generated with tools/genkey-helper.sh
 #
 #   To deploy boot.img/boot.sig to the boot partition via wic add:
 #   IMAGE_BOOT_FILES += "boot.img boot.sig"

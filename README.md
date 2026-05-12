@@ -22,7 +22,7 @@ A Yocto layer that provides a security-hardened baseline for Raspberry Pi images
 Generates secure-boot, AVB, IMA/EVM, kernel-module and SSH-CA keys and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
 
 ```sh
-./scripts/genkey-helper.sh
+./tools/genkey-helper.sh
 ```
 
 ### 2. Configure the build
