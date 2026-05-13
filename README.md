@@ -1,9 +1,9 @@
 # meta-raspberrypi-secure
 
-[![OELINT](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/oelint.yml/badge.svg?branch=scarthgap)](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/oelint.yml)
+[![OELINT](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/oelint.yml/badge.svg?branch=wrynose)](https://github.com/embetrix/meta-raspberrypi-secure/actions/workflows/oelint.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi/tree/scarthgap?h=scarthgap) layer with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
+A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi/tree/wrynose?h=wrynose) layer with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
 
 > **Disclaimer:** This layer is a hardened baseline and not a finished secure product. You are still responsible for threat modeling your product, removing unused software and services, tailoring defaults (SELinux, firewall, USBGuard, SW Updates, keys management) to your use case and independently testing the results. The maintainers accept no liability for bricked devices from incorrect OTP fuse programming, lost or leaked signing keys or misconfiguration. Provided as is with no warranty and no certification implied (see [LICENSE](LICENSE)).
 
@@ -132,12 +132,12 @@ The key is accessible via the [rpifwcrypto-pkcs11](https://github.com/embetrix/r
 
 ## Layers dependencies
 
-- [poky](https://git.yoctoproject.org/poky/log/?h=scarthgap)
-- [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=scarthgap)
-- [meta-openembedded](https://github.com/openembedded/meta-openembedded/tree/scarthgap)
-- [meta-security](https://git.yoctoproject.org/meta-security/log/?h=scarthgap)
-- [meta-selinux](https://git.yoctoproject.org/meta-selinux/log/?h=scarthgap)
-- [meta-avb](https://github.com/embetrix/meta-avb/tree/scarthgap)
+- [poky](https://git.yoctoproject.org/poky/log/?h=wrynose)
+- [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=wrynose)
+- [meta-openembedded](https://github.com/openembedded/meta-openembedded/tree/wrynose)
+- [meta-security](https://git.yoctoproject.org/meta-security/log/?h=wrynose)
+- [meta-selinux](https://git.yoctoproject.org/meta-selinux/log/?h=wrynose)
+- [meta-avb](https://github.com/embetrix/meta-avb/tree/wrynose)
 
 ## Supported Hardware
 
