@@ -38,6 +38,9 @@ BLOBS_MNT="/blobs"
 DATA_MNT="/var/data"
 BACKUPS_MNT="/var/backups"
 
+# Replaced by the actual value in the do_install
+ROOTFS_TYPE="__ROOTFS_TYPE___"
+
 OPT_ROOT="ro,noatime"
 OPT_PART="noexec,nodev,nosuid,iversion"
 
@@ -123,18 +126,14 @@ else
 	setup_dmcrypt "$UPDATE_DEV" "$UPDATE_DM_NAME"
 fi
 
-# Probe filesystem type on dm-crypt device before dm-verity
-fstype=$(blkid -s TYPE -o value "/dev/mapper/$ROOT_DM_NAME" 2>/dev/null) \
-	|| fatal "cannot detect root filesystem type"
-
 # Set up dm-verity on the decrypted root device
 setup_avb_verity "$ROOT_DM_NAME" "$VERITY_DM_NAME"
 ROOT_BLOCK_DEV="/dev/mapper/$VERITY_DM_NAME"
 
 mkdir -p "$ROOT_MNT"
 # Mount encrypted root filesystem
-klog "Mounting encrypted root filesystem $fstype on $ROOT_BLOCK_DEV..."
-mount -t "$fstype" -o "$OPT_ROOT" "$ROOT_BLOCK_DEV" "$ROOT_MNT" \
+klog "Mounting encrypted root filesystem ${ROOTFS_TYPE} on $ROOT_BLOCK_DEV..."
+mount -t "${ROOTFS_TYPE}" -o "$OPT_ROOT" "$ROOT_BLOCK_DEV" "$ROOT_MNT" \
 	|| fatal "cannot mount root partition"
 
 # Mount data partition

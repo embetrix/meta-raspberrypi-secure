@@ -28,6 +28,7 @@ S = "${UNPACKDIR}"
 
 do_install() {
     install -m 0755 ${UNPACKDIR}/rpi-secure-initramfs-init.sh ${D}/init
+    sed -i 's|__ROOTFS_TYPE___|${ROOTFS_TYPE}|g' ${D}/init
     install -d ${D}${libexecdir}/rpi-secure
     install -m 0644 ${UNPACKDIR}/init-common.sh ${D}${libexecdir}/rpi-secure/init-common.sh
     install -m 0644 ${UNPACKDIR}/init-ab-slot.sh ${D}${libexecdir}/rpi-secure/init-ab-slot.sh
