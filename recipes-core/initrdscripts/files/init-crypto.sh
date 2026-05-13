@@ -12,9 +12,12 @@
 setup_encrypted_keys() {
 
 	if rpi-fw-crypto pubkey --key-id "$OTP_KEY_ID" --out /dev/null 2>/dev/null; then
-		klog "OTP key provisioned, using trusted master key"
-		MASTER_KEY_TYPE="trusted"
-		ENC_KEY_MASTER="trusted:kmk"
+#		klog "OTP key provisioned, using trusted master key"
+		klog "OTP key provisioned but still sing user master key (not secure) untill rpi-fw-crypto patch is in place"
+#		MASTER_KEY_TYPE="trusted"
+#		ENC_KEY_MASTER="trusted:kmk"
+		MASTER_KEY_TYPE="user"
+		ENC_KEY_MASTER="user:kmk"
 	else
 		klog "WARNING: OTP key not provisioned, using user master key (not secure)"
 		MASTER_KEY_TYPE="user"
