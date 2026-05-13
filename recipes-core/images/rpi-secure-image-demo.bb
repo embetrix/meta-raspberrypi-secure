@@ -6,5 +6,7 @@ require recipes-core/images/rpi-secure-image-base.bb
 
 IMAGE_INSTALL += " \
 	rpi-device-certs \
-    open62541 \
+	open62541 \
+	tailscale \
+	cloudflared \
 	"
