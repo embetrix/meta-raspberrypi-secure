@@ -7,6 +7,7 @@ machine: "raspberrypi5"
 distro: rpi-secure
 target:
   - rpi-secure-image-base
+  - rpi-secure-image-demo
 repos:
   # It's current revision will be used to perform the build.
   meta-raspberrypi-secure:
