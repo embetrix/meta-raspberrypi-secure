@@ -1,4 +1,5 @@
 PACKAGECONFIG:append = " journal-upload"
+PACKAGECONFIG:remove = "osc-context"
 
 RRECOMMENDS:${PN} += "${PN}-journal-upload ${PN}-container"
 
