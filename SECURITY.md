@@ -6,7 +6,8 @@ Security fixes are provided for the following branches:
 
 | Branch     | Status     |
 |------------|------------|
-| scarthgap  | Supported  |
+| wrynose    | Supported  |
+
 
 ## Reporting a Vulnerability
 
