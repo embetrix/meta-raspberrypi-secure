@@ -7,8 +7,8 @@ inherit kernel-modsign
 KERNEL_TRUSTED_KEYS = "${AVB_X509} ${IMA_EVM_X509}"
 inherit kernel-trusted-keys
 
-SRC_URI += "file://patches/v6.6/0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch \
-            file://patches/v6.6/0002-dm-verity-add-CONFIG_DM_VERITY_REQUIRE_ROOTHASH_SIG.patch \
+SRC_URI += " \
+            file://patches/v6.12/0002-dm-verity-add-CONFIG_DM_VERITY_REQUIRE_ROOTHASH_SIG.patch \
             file://dm-crypt-verity.cfg \
             file://ext4.cfg \
             file://erofs.cfg \
@@ -18,15 +18,9 @@ SRC_URI += "file://patches/v6.6/0001-security-keys-add-rpi-firmware-crypto-trust
             file://hwrng.cfg \
             file://netfilter.cfg \
             file://crypto.cfg \
+            ${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '', 'file://no-wifi.cfg', d)} \
+            ${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', '', 'file://no-bluetooth.cfg', d)} \
+            ${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'file://tpm.cfg', '', d)} \
+            ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', 'file://selinux.cfg', '', d)} \
+            ${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.cfg', '', d)} \
             "
-
-SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '', 'file://no-wifi.cfg', d)}"
-SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', '', 'file://no-bluetooth.cfg', d)}"
-
-# TPM support 
-SRC_URI += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'file://tpm.cfg', '', d)}"
-
-# SELinux support
-SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'selinux', 'file://selinux.cfg', '', d)}"
-
-SRC_URI += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.cfg', '', d)}"
