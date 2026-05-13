@@ -91,7 +91,7 @@ ROOTFS_TYPE ?= "erofs"
 
 # Set to "1" to auto-flash the signed EEPROM on first boot of a fresh Pi
 # Runs once: recovery.bin is renamed to recovery.000 after a successful flash
-RPI_EEPROM_PROVISION    ?= "0"
+RPI_EEPROM_AUTO_PROVISION    ?= "0"
 IMAGE_EXTRA_PARTITION_FILES = "autoboot.txt readme.txt \
                               recovery.bin;_recovery.bin_ \
                               pieeprom-recovery.bin;_pieeprom.bin_ \
@@ -99,7 +99,7 @@ IMAGE_EXTRA_PARTITION_FILES = "autoboot.txt readme.txt \
                               pieeprom.bin.signed;_pieeprom.upd_ \
                               pieeprom.upd.hashsig;_pieeprom.upd.sig_"
 
-IMAGE_EXTRA_PARTITION_FILES += "${@bb.utils.contains('RPI_EEPROM_PROVISION', '1', \
+IMAGE_EXTRA_PARTITION_FILES += "${@bb.utils.contains('RPI_EEPROM_AUTO_PROVISION', '1', \
                                'recovery.bin pieeprom.bin.signed;pieeprom.upd pieeprom.upd.hashsig;pieeprom.sig', \
                                '', d)}"
 
