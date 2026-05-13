@@ -20,7 +20,7 @@ do_install () {
     install -d ${D}${sysconfdir}/certs
    
     install -d ${D}${sysconfdir}/nginx/conf.d
-    install -m 0644 ${UNPACKDIR}/nginx-override.conf ${D}${sysconfdir}/nginx/conf.d/nginx-override.conf
+    install -m 0644 ${UNPACKDIR}/nginx-pkcs11.conf ${D}${sysconfdir}/nginx/conf.d/nginx-pkcs11.conf
 
     install -d ${D}${bindir}
     install -m 0755 ${UNPACKDIR}/rpi-device-certs.sh       ${D}${bindir}/rpi-device-certs
@@ -43,4 +43,4 @@ FILES:${PN} = "${bindir} \
                ${sysconfdir}/nginx/conf.d \
                ${sysconfdir}/systemd \
                ${systemd_unitdir}/system/nginx.service.d \
-             "
+               "

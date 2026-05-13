@@ -3,7 +3,6 @@ Description=device certificates creation service
 After=network-online.target
 Wants=network-online.target
 Before=nginx.service
-Wants=nginx.service
 
 [Service]
 Type=oneshot
