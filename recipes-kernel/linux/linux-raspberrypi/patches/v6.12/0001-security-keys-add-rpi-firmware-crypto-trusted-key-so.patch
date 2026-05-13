@@ -1,4 +1,4 @@
-From 5d2653f8d54e2209fafc6a753b9655a4204313f4 Mon Sep 17 00:00:00 2001
+From e774431884415f465d33ced0e25b6bd81053cd62 Mon Sep 17 00:00:00 2001
 From: Ayoub Zaki <ayoub.zaki@embetrix.com>
 Date: Sun, 12 Apr 2026 19:59:21 +0200
 Subject: [PATCH] security/keys: add rpi firmware crypto trusted key source
@@ -20,28 +20,27 @@ AES-GCM for the actual key material wrap. Keys are non-migratable
 (migratable=0) as they are bound to the device OTP.
 
 Upstream-Status: Pending
-
 Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
 ---
  .../security/keys/trusted-encrypted.rst       |  57 +++
  include/keys/trusted_rpifwcrypto.h            |   9 +
- security/keys/trusted-keys/Kconfig            |  15 +-
+ security/keys/trusted-keys/Kconfig            |  14 +
  security/keys/trusted-keys/Makefile           |   2 +
  security/keys/trusted-keys/trusted_core.c     |   6 +-
  .../keys/trusted-keys/trusted_rpifwcrypto.c   | 417 ++++++++++++++++++
- 6 files changed, 504 insertions(+), 2 deletions(-)
+ 6 files changed, 504 insertions(+), 1 deletion(-)
  create mode 100644 include/keys/trusted_rpifwcrypto.h
  create mode 100644 security/keys/trusted-keys/trusted_rpifwcrypto.c
 
 diff --git a/Documentation/security/keys/trusted-encrypted.rst b/Documentation/security/keys/trusted-encrypted.rst
-index e989b9802f92..69fac1b7a021 100644
+index f4d7e162d5e4..b20ebfaf811e 100644
 --- a/Documentation/security/keys/trusted-encrypted.rst
 +++ b/Documentation/security/keys/trusted-encrypted.rst
-@@ -42,6 +42,15 @@ safe.
-          randomly generated and fused into each SoC at manufacturing time.
-          Otherwise, a common fixed test key is used instead.
+@@ -50,6 +50,15 @@ safe.
+          and the UNIQUE key. Default is to use the UNIQUE key, but selecting
+          the OTP key can be done via a module parameter (dcp_use_otp_key).
  
-+     (4) RPi firmware crypto (Raspberry Pi VideoCore firmware OTP-backed HMAC)
++     (5) RPi firmware crypto (Raspberry Pi VideoCore firmware OTP-backed HMAC)
 +
 +         Rooted to a device-unique key stored in on-chip OTP fuses and
 +         accessible only to the VideoCore firmware. The kernel requests
@@ -53,11 +52,11 @@ index e989b9802f92..69fac1b7a021 100644
    *  Execution isolation
  
       (1) TPM
-@@ -57,6 +66,13 @@ safe.
+@@ -71,6 +80,13 @@ safe.
+          environment. Only basic blob key encryption is executed there.
+          The actual key sealing/unsealing is done on main processor/kernel space.
  
-          Fixed set of operations running in isolated execution environment.
- 
-+     (4) RPi firmware crypto
++     (5) RPi firmware crypto
 +
 +         Crypto operations execute inside the VideoCore firmware which runs
 +         in a separate processing domain from the Arm application cores.
@@ -67,11 +66,11 @@ index e989b9802f92..69fac1b7a021 100644
    * Optional binding to platform integrity state
  
       (1) TPM
-@@ -79,6 +95,13 @@ safe.
-          Relies on the High Assurance Boot (HAB) mechanism of NXP SoCs
-          for platform integrity.
+@@ -98,6 +114,13 @@ safe.
+          Relies on Secure/Trusted boot process (called HAB by vendor) for
+          platform integrity.
  
-+     (4) RPi firmware crypto
++     (5) RPi firmware crypto
 +
 +         No boot-state binding is provided (no PCR equivalent). A sealed blob
 +         will unseal on any boot of the same physical device as long as the OTP
@@ -81,11 +80,11 @@ index e989b9802f92..69fac1b7a021 100644
    *  Interfaces and APIs
  
       (1) TPM
-@@ -94,6 +117,13 @@ safe.
+@@ -118,6 +141,13 @@ safe.
+          Vendor-specific API that is implemented as part of the DCP crypto driver in
+          ``drivers/crypto/mxs-dcp.c``.
  
-          Interface is specific to silicon vendor.
- 
-+     (4) RPi firmware crypto
++     (5) RPi firmware crypto
 +
 +         Interface is the Raspberry Pi VideoCore firmware mailbox property
 +         protocol (``include/soc/bcm2835/raspberrypi-firmware.h``). The
@@ -95,9 +94,9 @@ index e989b9802f92..69fac1b7a021 100644
    *  Threat model
  
       The strength and appropriateness of a particular trust source for a given
-@@ -129,6 +159,10 @@ selected trust source:
-      CAAM HWRNG, enable CRYPTO_DEV_FSL_CAAM_RNG_API and ensure the device
-      is probed.
+@@ -160,6 +190,10 @@ selected trust source:
+      a dedicated hardware RNG that is independent from DCP which can be enabled
+      to back the kernel RNG.
  
 +  *  RPi firmware crypto: Kernel RNG
 +
@@ -106,9 +105,9 @@ index e989b9802f92..69fac1b7a021 100644
  Users may override this by specifying ``trusted.rng=kernel`` on the kernel
  command-line to override the used RNG with the kernel's random number pool.
  
-@@ -231,6 +265,29 @@ Usage::
- CAAM-specific format.  The key length for new keys is always in bytes.
- Trusted Keys can be 32 - 128 bytes (256 - 1024 bits).
+@@ -275,6 +309,29 @@ Usage::
+ specific to this DCP key-blob implementation.  The key length for new keys is
+ always in bytes. Trusted Keys can be 32 - 128 bytes (256 - 1024 bits).
  
 +Trusted Keys usage: RPi firmware crypto
 +----------------------------------------
@@ -152,19 +151,19 @@ index 000000000000..df5d51d7257a
 +
 +#endif
 diff --git a/security/keys/trusted-keys/Kconfig b/security/keys/trusted-keys/Kconfig
-index dbfdd8536468..34594244687c 100644
+index 1fb8aa001995..a8cca67c5307 100644
 --- a/security/keys/trusted-keys/Kconfig
 +++ b/security/keys/trusted-keys/Kconfig
-@@ -33,6 +33,19 @@ config TRUSTED_KEYS_CAAM
- 	  Enable use of NXP's Cryptographic Accelerator and Assurance Module
- 	  (CAAM) as trusted key backend.
+@@ -47,6 +47,20 @@ config TRUSTED_KEYS_DCP
+ 	help
+ 	  Enable use of NXP's DCP (Data Co-Processor) as trusted key backend.
  
--if !TRUSTED_KEYS_TPM && !TRUSTED_KEYS_TEE && !TRUSTED_KEYS_CAAM
 +config TRUSTED_KEYS_RPIFWCRYPTO
 +	bool "RPi VideoCore firmware crypto as trusted key source"
 +	depends on RASPBERRYPI_FIRMWARE >= TRUSTED_KEYS
 +	select CRYPTO_AES
 +	select CRYPTO_GCM
++	select HAVE_TRUSTED_KEYS
 +	default y
 +	help
 +	  Enable use of the Raspberry Pi VideoCore firmware OTP-backed
@@ -173,43 +172,43 @@ index dbfdd8536468..34594244687c 100644
 +	  a per-device OTP key slot, targeting BCM2711 (RPi 4) and
 +	  BCM2712 (RPi 5) and their derivatives.
 +
-+if !TRUSTED_KEYS_TPM && !TRUSTED_KEYS_TEE && !TRUSTED_KEYS_CAAM && !TRUSTED_KEYS_RPIFWCRYPTO
- comment "No trust source selected!"
+ if !HAVE_TRUSTED_KEYS
+ 	comment "No trust source selected!"
  endif
 diff --git a/security/keys/trusted-keys/Makefile b/security/keys/trusted-keys/Makefile
-index 735aa0bc08ef..5f9b8c337ff1 100644
+index f0f3b27f688b..5f631d141c1b 100644
 --- a/security/keys/trusted-keys/Makefile
 +++ b/security/keys/trusted-keys/Makefile
-@@ -14,3 +14,5 @@ trusted-$(CONFIG_TRUSTED_KEYS_TPM) += tpm2key.asn1.o
- trusted-$(CONFIG_TRUSTED_KEYS_TEE) += trusted_tee.o
- 
+@@ -16,3 +16,5 @@ trusted-$(CONFIG_TRUSTED_KEYS_TEE) += trusted_tee.o
  trusted-$(CONFIG_TRUSTED_KEYS_CAAM) += trusted_caam.o
+ 
+ trusted-$(CONFIG_TRUSTED_KEYS_DCP) += trusted_dcp.o
 +
 +trusted-$(CONFIG_TRUSTED_KEYS_RPIFWCRYPTO) += trusted_rpifwcrypto.o
 diff --git a/security/keys/trusted-keys/trusted_core.c b/security/keys/trusted-keys/trusted_core.c
-index fee1ab2c734d..d6ee50c81a8c 100644
+index e2d9644efde1..52be2f9e2887 100644
 --- a/security/keys/trusted-keys/trusted_core.c
 +++ b/security/keys/trusted-keys/trusted_core.c
-@@ -11,6 +11,7 @@
- #include <keys/trusted_tee.h>
+@@ -12,6 +12,7 @@
  #include <keys/trusted_caam.h>
+ #include <keys/trusted_dcp.h>
  #include <keys/trusted_tpm.h>
 +#include <keys/trusted_rpifwcrypto.h>
  #include <linux/capability.h>
  #include <linux/err.h>
  #include <linux/init.h>
-@@ -30,7 +31,7 @@ MODULE_PARM_DESC(rng, "Select trusted key RNG");
+@@ -31,7 +32,7 @@ MODULE_PARM_DESC(rng, "Select trusted key RNG");
  
  static char *trusted_key_source;
  module_param_named(source, trusted_key_source, charp, 0);
--MODULE_PARM_DESC(source, "Select trusted keys source (tpm, tee or caam)");
-+MODULE_PARM_DESC(source, "Select trusted keys source (tpm, tee, caam or rpifwcrypto)");
+-MODULE_PARM_DESC(source, "Select trusted keys source (tpm, tee, caam or dcp)");
++MODULE_PARM_DESC(source, "Select trusted keys source (tpm, tee, caam, dcp or rpifwcrypto)");
  
  static const struct trusted_key_source trusted_key_sources[] = {
  #if defined(CONFIG_TRUSTED_KEYS_TPM)
-@@ -42,6 +43,9 @@ static const struct trusted_key_source trusted_key_sources[] = {
- #if defined(CONFIG_TRUSTED_KEYS_CAAM)
- 	{ "caam", &trusted_key_caam_ops },
+@@ -46,6 +47,9 @@ static const struct trusted_key_source trusted_key_sources[] = {
+ #if defined(CONFIG_TRUSTED_KEYS_DCP)
+ 	{ "dcp", &dcp_trusted_key_ops },
  #endif
 +#if defined(CONFIG_TRUSTED_KEYS_RPIFWCRYPTO)
 +    { "rpifwcrypto", &trusted_key_rpifwcrypto_ops },
@@ -219,7 +218,7 @@ index fee1ab2c734d..d6ee50c81a8c 100644
  DEFINE_STATIC_CALL_NULL(trusted_key_seal, *trusted_key_sources[0].ops->seal);
 diff --git a/security/keys/trusted-keys/trusted_rpifwcrypto.c b/security/keys/trusted-keys/trusted_rpifwcrypto.c
 new file mode 100644
-index 000000000000..292324a6ee25
+index 000000000000..764ec676a552
 --- /dev/null
 +++ b/security/keys/trusted-keys/trusted_rpifwcrypto.c
 @@ -0,0 +1,417 @@
@@ -641,5 +640,5 @@ index 000000000000..292324a6ee25
 +	.migratable = 0,
 +};
 -- 
-2.43.0
+2.34.1
 

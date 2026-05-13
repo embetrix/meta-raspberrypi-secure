@@ -7,7 +7,7 @@ inherit kernel-modsign
 KERNEL_TRUSTED_KEYS = "${AVB_X509} ${IMA_EVM_X509}"
 inherit kernel-trusted-keys
 
-SRC_URI += " \
+SRC_URI += "file://patches/v6.12/0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch \
             file://patches/v6.12/0002-dm-verity-add-CONFIG_DM_VERITY_REQUIRE_ROOTHASH_SIG.patch \
             file://dm-crypt-verity.cfg \
             file://ext4.cfg \
