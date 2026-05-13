@@ -9,6 +9,8 @@ SRC_URI = " \
            file://rpi-device-certs.service \
            "
 
+S = "${UNPACKDIR}"
+
 inherit systemd
 
 DEPENDS = "openssl-native"
@@ -18,10 +20,10 @@ do_install () {
     install -d ${D}${sysconfdir}/certs
    
     install -d ${D}${sysconfdir}/nginx/conf.d
-    install -m 0644 ${WORKDIR}/nginx-override.conf ${D}${sysconfdir}/nginx/conf.d/nginx-override.conf
+    install -m 0644 ${UNPACKDIR}/nginx-override.conf ${D}${sysconfdir}/nginx/conf.d/nginx-override.conf
 
     install -d ${D}${bindir}
-    install -m 0755 ${WORKDIR}/rpi-device-certs.sh       ${D}${bindir}/rpi-device-certs
+    install -m 0755 ${UNPACKDIR}/rpi-device-certs.sh       ${D}${bindir}/rpi-device-certs
 }
 
 SYSTEMD_SERVICE:${PN} = "rpi-device-certs.service"
@@ -29,10 +31,10 @@ SYSTEMD_PACKAGES = "${PN}"
 
 do_install:append() {
 	install -d ${D}${systemd_unitdir}/system
-	install -m 0644 ${WORKDIR}/rpi-device-certs.service ${D}${systemd_unitdir}/system/
+	install -m 0644 ${UNPACKDIR}/rpi-device-certs.service ${D}${systemd_unitdir}/system/
 
     install -d ${D}${systemd_unitdir}/system/nginx.service.d
-    install -m 0644 ${WORKDIR}/nginx-override.conf ${D}${systemd_unitdir}/system/nginx.service.d/
+    install -m 0644 ${UNPACKDIR}/nginx-override.conf ${D}${systemd_unitdir}/system/nginx.service.d/
 
 }
 

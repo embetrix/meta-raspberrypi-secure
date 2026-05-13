@@ -11,17 +11,19 @@ SRC_URI = "file://rpi-ab-update.sh \
            file://rpi-ab-update-confirm.timer \
            "
 
+S = "${UNPACKDIR}"
+
 inherit systemd
 
 SYSTEMD_SERVICE:${PN} = "rpi-ab-update-confirm.timer rpi-ab-update-confirm.service"
 
 do_install() {
     install -d ${D}${sbindir}
-    install -m 0755 ${WORKDIR}/rpi-ab-update.sh ${D}${sbindir}/rpi-ab-update
+    install -m 0755 ${UNPACKDIR}/rpi-ab-update.sh ${D}${sbindir}/rpi-ab-update
 
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/rpi-ab-update-confirm.service ${D}${systemd_system_unitdir}/
-    install -m 0644 ${WORKDIR}/rpi-ab-update-confirm.timer ${D}${systemd_system_unitdir}/
+    install -m 0644 ${UNPACKDIR}/rpi-ab-update-confirm.service ${D}${systemd_system_unitdir}/
+    install -m 0644 ${UNPACKDIR}/rpi-ab-update-confirm.timer ${D}${systemd_system_unitdir}/
 }
 
 COMPATIBLE_MACHINE = "raspberrypi4|raspberrypi4-64|raspberrypi5"

@@ -40,7 +40,7 @@ do_install:append () {
 
 	# Drop-in: start sshd after NTP sync (certificate validity needs correct time)
 	install -d ${D}${systemd_system_unitdir}/sshd.service.d
-	install -m 0644 ${WORKDIR}/sshd-time-sync.conf ${D}${systemd_system_unitdir}/sshd.service.d/time-sync.conf
+	install -m 0644 ${UNPACKDIR}/sshd-time-sync.conf ${D}${systemd_system_unitdir}/sshd.service.d/time-sync.conf
 }
 
 FILES:${PN}-sshd += "${sysconfdir}/ssh/certs \

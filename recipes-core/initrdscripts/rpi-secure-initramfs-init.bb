@@ -3,11 +3,11 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 SRC_URI = "file://rpi-secure-initramfs-init.sh \
-            file://init-common.sh \
-            file://init-ab-slot.sh \
-            file://init-crypto.sh \
-            file://init-integrity.sh \
-            "
+           file://init-common.sh \
+           file://init-ab-slot.sh \
+           file://init-crypto.sh \
+           file://init-integrity.sh \
+        "
 
 RDEPENDS:${PN}:append = " \
                 busybox \
@@ -24,15 +24,15 @@ RDEPENDS:${PN}:append = " \
                 avb-utils \
                 "
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 do_install() {
-    install -m 0755 ${WORKDIR}/rpi-secure-initramfs-init.sh ${D}/init
+    install -m 0755 ${UNPACKDIR}/rpi-secure-initramfs-init.sh ${D}/init
     install -d ${D}${libexecdir}/rpi-secure
-    install -m 0644 ${WORKDIR}/init-common.sh ${D}${libexecdir}/rpi-secure/init-common.sh
-    install -m 0644 ${WORKDIR}/init-ab-slot.sh ${D}${libexecdir}/rpi-secure/init-ab-slot.sh
-    install -m 0644 ${WORKDIR}/init-crypto.sh ${D}${libexecdir}/rpi-secure/init-crypto.sh
-    install -m 0644 ${WORKDIR}/init-integrity.sh ${D}${libexecdir}/rpi-secure/init-integrity.sh
+    install -m 0644 ${UNPACKDIR}/init-common.sh ${D}${libexecdir}/rpi-secure/init-common.sh
+    install -m 0644 ${UNPACKDIR}/init-ab-slot.sh ${D}${libexecdir}/rpi-secure/init-ab-slot.sh
+    install -m 0644 ${UNPACKDIR}/init-crypto.sh ${D}${libexecdir}/rpi-secure/init-crypto.sh
+    install -m 0644 ${UNPACKDIR}/init-integrity.sh ${D}${libexecdir}/rpi-secure/init-integrity.sh
     install -d ${D}/dev
     mknod -m 622 ${D}/dev/console c 5 1
 }

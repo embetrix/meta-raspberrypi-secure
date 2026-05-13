@@ -8,8 +8,6 @@ SRC_URI = "git://github.com/embetrix/rpifwcrypto-pkcs11.git;protocol=https;branc
           "
 SRCREV = "d7becadf2fdf37896fb03eb25ec72b70a67a0483"
 
-S = "${WORKDIR}/git"
-
 inherit cmake useradd
 
 DEPENDS = "raspi-utils"
@@ -19,7 +17,7 @@ GROUPADD_PARAM:${PN} = "-r vcio"
 
 do_install:append() {
     install -d ${D}${sysconfdir}/udev/rules.d
-    install -m 0644 ${WORKDIR}/99-vcio.rules ${D}${sysconfdir}/udev/rules.d/
+    install -m 0644 ${UNPACKDIR}/99-vcio.rules ${D}${sysconfdir}/udev/rules.d/
 }
 
 FILES:${PN} += "${libdir}/pkcs11 ${datadir}/p11-kit ${sysconfdir}/udev/rules.d"

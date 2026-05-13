@@ -18,10 +18,10 @@ PROGRAM_JTAG_LOCK ??= ""
 
 do_deploy:append() {
 
-    install -m 0644 ${WORKDIR}/autoboot.txt ${DEPLOYDIR}/autoboot.txt
-    install -m 0644 ${WORKDIR}/bootconf.txt ${DEPLOYDIR}/bootconf.txt
-    install -m 0644 ${WORKDIR}/bootconf-recovery.txt ${DEPLOYDIR}/bootconf-recovery.txt
-    install -m 0644 ${WORKDIR}/readme.txt ${DEPLOYDIR}/readme.txt
+    install -m 0644 ${UNPACKDIR}/autoboot.txt ${DEPLOYDIR}/autoboot.txt
+    install -m 0644 ${UNPACKDIR}/bootconf.txt ${DEPLOYDIR}/bootconf.txt
+    install -m 0644 ${UNPACKDIR}/bootconf-recovery.txt ${DEPLOYDIR}/bootconf-recovery.txt
+    install -m 0644 ${UNPACKDIR}/readme.txt ${DEPLOYDIR}/readme.txt
 
     # Disable BOOT_UART in production profile
     if [ "${RPI_SECURITY_PROFILE}" = "prod" ]; then

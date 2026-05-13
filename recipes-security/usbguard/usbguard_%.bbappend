@@ -14,6 +14,6 @@ EXTRA_OECONF += "--enable-audit"
 
 do_install:append() {
     install -d ${D}${sysconfdir}/usbguard
-    install -m 0600 ${WORKDIR}/rules.conf ${D}${sysconfdir}/usbguard/
-    install -m 0600 ${WORKDIR}/usbguard-daemon.conf ${D}${sysconfdir}/usbguard/
+    install -m 0600 ${UNPACKDIR}/rules.conf ${D}${sysconfdir}/usbguard/
+    install -m 0600 ${UNPACKDIR}/usbguard-daemon.conf ${D}${sysconfdir}/usbguard/
 }

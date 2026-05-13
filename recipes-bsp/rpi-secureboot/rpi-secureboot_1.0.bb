@@ -8,11 +8,13 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 
 SRC_URI = "file://rpi-secureboot.sh"
 
+S = "${UNPACKDIR}"
+
 RDEPENDS:${PN} = "raspi-utils"
 
 do_install() {
     install -d ${D}${sbindir}
-    install -m 0755 ${WORKDIR}/rpi-secureboot.sh ${D}${sbindir}/rpi-secureboot
+    install -m 0755 ${UNPACKDIR}/rpi-secureboot.sh ${D}${sbindir}/rpi-secureboot
 }
 
 COMPATIBLE_MACHINE = "raspberrypi4|raspberrypi4-64|raspberrypi5"

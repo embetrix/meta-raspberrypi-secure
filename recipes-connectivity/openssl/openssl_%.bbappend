@@ -6,7 +6,7 @@ RRECOMMENDS:${PN}:class-target = "rpifwcrypto-pkcs11"
 
 do_install:append:class-target () {
 
-    install -m 0644 ${WORKDIR}/openssl-rpifwcrypto.cnf      ${D}${sysconfdir}/ssl/
+    install -m 0644 ${UNPACKDIR}/openssl-rpifwcrypto.cnf      ${D}${sysconfdir}/ssl/
     printf "\n# Enable rpifwcrypto provider config\n.include /etc/ssl/openssl-rpifwcrypto.cnf\n"  >> ${D}${sysconfdir}/ssl/openssl.cnf
 }
 
