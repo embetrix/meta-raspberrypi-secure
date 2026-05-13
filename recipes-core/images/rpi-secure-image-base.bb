@@ -30,10 +30,8 @@ EXTRA_USERS_PARAMS = " \
     "
 
 IMAGE_INSTALL += " \
-	packagegroup-security-base \
-	"
-
-IMAGE_INSTALL += "${@bb.utils.contains('DISTRO_FEATURES', 'ima', "packagegroup-ima-evm", '', d)}"
-IMAGE_INSTALL += "${@bb.utils.contains('DISTRO_FEATURES', 'selinux', "packagegroup-selinux", '', d)}"
-
-IMAGE_INSTALL += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "packagegroup-dev", '', d)}"
+    packagegroup-security-base \
+    ${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "packagegroup-dev", '', d)}    \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'ima', "packagegroup-ima-evm", '', d)}     \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', "packagegroup-selinux", '', d)} \
+    "
