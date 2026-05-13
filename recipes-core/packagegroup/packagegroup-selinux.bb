@@ -16,10 +16,10 @@ RDEPENDS:packagegroup-selinux = " \
 	libselinux \
 	libselinux-bin \
 	libsemanage \
-	policycoreutils-fixfiles \
-	policycoreutils-secon \
-	policycoreutils-semodule \
-	policycoreutils-sestatus \
-	policycoreutils-setfiles \
 	refpolicy \
+	${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "policycoreutils-fixfiles", '', d)}    \
+	${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "policycoreutils-secon", '', d)}       \
+	${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "policycoreutils-semodule", '', d)}    \
+	${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "policycoreutils-sestatus", '', d)}    \
+	${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', "policycoreutils-setfiles", '', d)}    \
    "
