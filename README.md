@@ -132,7 +132,7 @@ The key is accessible via the [rpifwcrypto-pkcs11](https://github.com/embetrix/r
 
 ## Layers dependencies
 
-- [poky](https://git.yoctoproject.org/poky/log/?h=wrynose)
+- [openembedded-core (core)](https://git.openembedded.org/openembedded-core/log/?h=wrynose)
 - [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=wrynose)
 - [meta-openembedded](https://github.com/openembedded/meta-openembedded/tree/wrynose)
 - [meta-security](https://git.yoctoproject.org/meta-security/log/?h=wrynose)
