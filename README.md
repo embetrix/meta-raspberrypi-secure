@@ -5,6 +5,8 @@
 
 A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi/tree/scarthgap?h=scarthgap) layer with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
 
+> **Disclaimer:** This layer is a hardened baseline and not a finished secure product. You are still responsible for threat modeling your product, removing unused software and services, tailoring defaults (SELinux, firewall, USBGuard, SW Updates, keys management) to your use case and independently testing the results. The maintainers accept no liability for bricked devices from incorrect OTP fuse programming, lost or leaked signing keys or misconfiguration. Provided as is with no warranty and no certification implied (see [LICENSE](LICENSE)).
+
 ## Features
 
 - Hardware root of trust with signed boot chain anchored in the SoC boot ROM
