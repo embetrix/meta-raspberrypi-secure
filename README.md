@@ -71,7 +71,7 @@ KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=dev \
 Or using the [kas container](https://kas.readthedocs.io/en/latest/userguide/kas-container.html):
 
 ```sh
-KAS_MACHINE=raspberrypi5 SECURITY_PROFILE=dev \
+KAS_MACHINE=raspberrypi5 --runtime-args "-e SECURITY_PROFILE=dev" \
     kas-container build kas-rpi-secure.yml:kas-signing-keys.yml
 ```
 
