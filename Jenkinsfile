@@ -12,10 +12,20 @@ pipeline {
         choice choices: ['no', 'yes'], description: 'clean workspace', name: 'CLEAN'
     }
     environment {
+        KAS_CLONE_DEPTH = "1"
         SECURITY_PROFILE = "${params.SECURITY_PROFILE}"
     }
 
     stages {
+
+        stage('Clean') {
+            when {
+                expression { params.CLEAN == 'yes' }
+            }
+            steps {
+               sh "git clean -fdx"
+            }
+        }
 
         stage('Setup') {
             steps {
@@ -27,15 +37,6 @@ pipeline {
                     }
                     sh "tools/genkey-helper.sh ${keyDir} ${kasFragment}"
                 }
-            }
-        }
-
-        stage('Clean') {
-            when {
-                expression { params.CLEAN == 'yes' }
-            }
-            steps {
-               sh "git clean -fdx"
             }
         }
 
