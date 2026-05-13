@@ -15,12 +15,11 @@ SRCREV_mqtt-c = "0f4c34c8cc00b16cfee094745d68b8cdbaecd8e0"
 
 SRC_URI = " \
     git://github.com/open62541/open62541.git;name=opcua;branch=1.5;protocol=https \
-    git://github.com/Pro/mdnsd.git;name=mdnsd;protocol=https;branch=master;destsuffix=git/deps/mdnsd \
-    git://github.com/OPCFoundation/UA-Nodeset;name=ua-nodeset;protocol=https;branch=latest;destsuffix=git/deps/ua-nodeset \
-    git://github.com/LiamBindle/MQTT-C.git;name=mqtt-c;protocol=https;branch=master;destsuffix=git/deps/mqtt-c \
+    git://github.com/Pro/mdnsd.git;name=mdnsd;protocol=https;branch=master;destsuffix=${BB_GIT_DEFAULT_DESTSUFFIX}/deps/mdnsd \
+    git://github.com/OPCFoundation/UA-Nodeset;name=ua-nodeset;protocol=https;branch=latest;destsuffix=${BB_GIT_DEFAULT_DESTSUFFIX}/deps/ua-nodeset \
+    git://github.com/LiamBindle/MQTT-C.git;name=mqtt-c;protocol=https;branch=master;destsuffix=${BB_GIT_DEFAULT_DESTSUFFIX}/deps/mqtt-c \
 "
 
-S = "${WORKDIR}/git"
 
 inherit cmake python3native
 
@@ -60,4 +59,5 @@ do_configure:prepend:toolchain-clang:riscv32() {
 
 do_install:append(){
     sed -i 's|${RECIPE_SYSROOT}|\$\{CMAKE_SYSROOT\}|g' ${D}${libdir}/cmake/open62541/open62541Targets.cmake
+    sed -i -e 's|-l[^ ]*/lib\([^ /]*\)\.so|-l\1|g' ${D}${libdir}/pkgconfig/open62541.pc
 }
