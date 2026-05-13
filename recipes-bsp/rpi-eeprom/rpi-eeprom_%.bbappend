@@ -24,7 +24,7 @@ do_install:class-native() {
 # SoC family for EEPROM firmware selection per machine
 RPI_EEPROM_SOC:raspberrypi5 = "2712"
 RPI_EEPROM_SOC:raspberrypi4 = "2711"
-VARIANT="latest"
+VARIANT = "latest"
 
 inherit deploy
 
