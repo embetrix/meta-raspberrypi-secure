@@ -2,9 +2,9 @@ name: OELINT
 
 on:
   push:
-    branches: [ "scarthgap" ]
+    branches: [ "wrynose" ]
   pull_request:
-    branches: [ "scarthgap" ]
+    branches: [ "wrynose" ]
 
 jobs:
   oelint:
@@ -19,5 +19,5 @@ jobs:
 
       - name: OE Recipe Lint
         run: |
-          oelint-adv --exit-zero --rulefile .oelint-rulefile.json --release scarthgap \
+          oelint-adv --exit-zero --rulefile .oelint-rulefile.json --release wrynose \
             $(find . -name '*.bb' -o -name '*.bbappend' -o -name '*.bbclass' -o -name '*.inc' | grep -v /layers/)
