@@ -41,6 +41,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     python3 \
     python3-pexpect \
     python3-pip \
+    pipx \
     rsync \
     socat \
     sudo \
@@ -56,11 +57,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     zstd && \
     rm -rf /var/lib/apt/lists/*
 
-# Add kas tool
+# Add kas tool (installed system-wide via pipx into /usr/local)
 ARG KAS_VERSION=5.2
-RUN pip3 install --upgrade pip && \
-    pip3 install --no-input kas${KAS_VERSION:+==$KAS_VERSION} \
-    --break-system-packages
+ENV PIPX_HOME=/opt/pipx
+ENV PIPX_BIN_DIR=/usr/local/bin
+RUN pipx install kas${KAS_VERSION:+==$KAS_VERSION}
 
 # Fix error "Please use a locale setting which supports utf-8."
 RUN locale-gen en_US.UTF-8
