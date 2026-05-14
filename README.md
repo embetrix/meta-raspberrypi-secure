@@ -21,7 +21,7 @@ A Yocto layer that provides a security-hardened baseline for Raspberry Pi images
 
 ## Secure Boot Flow
 
-[![asciicast](https://asciinema.org/a/FUd4YCK60ENseCNN.svg)](https://asciinema.org/a/FUd4YCK60ENseCNN)
+[![asciicast](https://asciinema.org/a/jbYmoKMJjbeX6UBD.svg)](https://asciinema.org/a/jbYmoKMJjbeX6UBD)
 
 ## Quick Start
 
