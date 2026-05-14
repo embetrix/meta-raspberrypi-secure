@@ -117,17 +117,39 @@ fi
 # SSH CA key pair (ed25519)
 SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
+SSH_CLIENT_KEY="$KEY_DIR/ssh_client"
+SSH_CLIENT_PUB="$KEY_DIR/ssh_client.pub"
+SSH_ROOT_KEY="$KEY_DIR/ssh_root"
+SSH_ROOT_PUB="$KEY_DIR/ssh_root.pub"
 KAS_FRAGMENT="${2:-$PWD/kas-signing-keys.yml}"
+# ssh-keygen requires a valid passwd entry:
+# create a temporary one in CI for the current uid if missing
+getent passwd "$(id -u)" >/dev/null 2>&1 || echo "build:x:$(id -u):$(id -g)::/tmp:/sbin/nologin" >> /etc/passwd
 if [ -f "$SSH_CA_KEY" ]; then
     echo "  Skipping SSH CA key pair (already exists)"
 else
     echo "  Generating SSH CA key pair (ed25519) ..."
-    # ssh-keygen requires a valid passwd entry:
-    # create a temporary one in CI for the current uid if missing
-    getent passwd "$(id -u)" >/dev/null 2>&1 || echo "build:x:$(id -u):$(id -g)::/tmp:/sbin/nologin" >> /etc/passwd
     HOME=/tmp ssh-keygen -t ed25519 -f "$SSH_CA_KEY" -N "" -C "$ORG SSH CA" -q
     chmod 600 "$SSH_CA_KEY"
     chmod 644 "$SSH_CA_PUB"
+fi
+
+if [ -f "$SSH_CLIENT_KEY" ]; then
+    echo "  Skipping SSH client key pair (already exists)"
+else
+    echo "  Generating SSH client key pair (ed25519) ..."
+    HOME=/tmp ssh-keygen -t ed25519 -f "$SSH_CLIENT_KEY" -N "" -C "$ORG SSH client" -q
+    chmod 600 "$SSH_CLIENT_KEY"
+    chmod 644 "$SSH_CLIENT_PUB"
+fi
+
+if [ -f "$SSH_ROOT_KEY" ]; then
+    echo "  Skipping SSH root key pair (already exists)"
+else
+    echo "  Generating SSH root key pair (ed25519) ..."
+    HOME=/tmp ssh-keygen -t ed25519 -f "$SSH_ROOT_KEY" -N "" -C "$ORG SSH root" -q
+    chmod 600 "$SSH_ROOT_KEY"
+    chmod 644 "$SSH_ROOT_PUB"
 fi
 
 # Auto-generate a ready-to-use kas fragment with resolved key paths.
