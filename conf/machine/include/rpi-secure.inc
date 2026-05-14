@@ -36,13 +36,13 @@ CONSOLE_SELECT   = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '${CONS
 # Kernel Command Line
 CMDLINE_ROOTFS  = "ro"
 IMA_APPRAISE    = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'log', d)}"
-EVM_MODE        = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforce', 'fix', d)}"
+EVM             = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '', 'evm=fix', d)}"
 VERITY_MODE     = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'restart', 'ignore', d)}"
 SELINUX_ENFORCE = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
 TRUSTED_SRC    ?= "rpifwcrypto"
 
 CMDLINE:append  = " ${CONSOLE_SELECT} \
-                     ima_appraise=${IMA_APPRAISE} evm=${EVM_MODE} \
+                     ima_appraise=${IMA_APPRAISE} ${EVM} \
                      security=selinux enforcing=${SELINUX_ENFORCE} \
                      trusted.source=${TRUSTED_SRC} \
                      verity_mode=${VERITY_MODE}"
