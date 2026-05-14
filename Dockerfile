@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV USER build
 ENV DEBIAN_FRONTEND noninteractive
@@ -59,7 +59,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 # Add kas tool
 ARG KAS_VERSION=5.2
 RUN pip3 install --upgrade pip && \
-    pip3 install --no-input kas${KAS_VERSION:+==$KAS_VERSION}
+    pip3 install --no-input kas${KAS_VERSION:+==$KAS_VERSION} \
+    --break-system-packages
 
 # Fix error "Please use a locale setting which supports utf-8."
 RUN locale-gen en_US.UTF-8
