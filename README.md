@@ -5,7 +5,7 @@
 
 A Yocto layer that provides a security-hardened baseline for Raspberry Pi images, extending [meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi/tree/wrynose?h=wrynose) layer with secure boot, verified and encrypted storage, runtime integrity and a hardened kernel and userspace.
 
-> **Disclaimer:** This layer is a starting point, not a finished secure product. You are still responsible for threat modeling your product, removing unused software and services, tailoring defaults (SELinux, firewall, USBGuard, SW Updates, keys management) to your use case and independently testing the results. Moreover the maintainers accept no liability for bricked devices from incorrect OTP fuse programming, lost or leaked signing keys or misconfiguration. Provided as is with no warranty and no certification implied (see [LICENSE](LICENSE)).
+> **Disclaimer:** This layer is a starting point, not a finished secure product. You are still responsible for threat modeling your product, removing unused software and services, tailoring defaults (SELinux, firewall, USBGuard, SW Updates, keys management) to your use case, performing license compliance checks, monitoring and remediating CVEs for all included software and independently testing the results. Moreover the maintainers accept no liability for bricked devices from incorrect OTP fuse programming, lost or leaked signing keys or misconfiguration. Provided as is with no warranty and no certification implied (see [LICENSE](LICENSE)).
 
 ## Features
 
