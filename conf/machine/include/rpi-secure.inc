@@ -103,5 +103,3 @@ IMAGE_EXTRA_PARTITION_FILES += "${@bb.utils.contains('RPI_EEPROM_AUTO_PROVISION'
                                'recovery.bin pieeprom.bin.signed;pieeprom.upd pieeprom.upd.hashsig;pieeprom.sig', \
                                '', d)}"
 
-# Licenses accepted for this machine configuration 
-LICENSE_FLAGS_ACCEPTED += "synaptics-killswitch"
