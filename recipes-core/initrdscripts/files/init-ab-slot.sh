@@ -48,5 +48,4 @@ get_boot_slot() {
 	BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT}"
 	BLOBS_DEV="/dev/${BASE_DEV}${SEP}${BLOBS_PART}"
 	DATA_DEV="/dev/${BASE_DEV}${SEP}${DATA_PART}"
-	BACKUPS_DEV="/dev/${BASE_DEV}${SEP}${BACKUPS_PART}"
 }

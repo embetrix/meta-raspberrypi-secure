@@ -23,12 +23,10 @@ BLOBS_DEV=""
 ROOT_DEV=""
 UPDATE_DEV=""
 DATA_DEV=""
-BACKUPS_DEV=""
 
 ROOT_DM_NAME="root"
 UPDATE_DM_NAME="update"
 DATA_DM_NAME="data"
-BACKUPS_DM_NAME="backups"
 VERITY_DM_NAME="verity-root"
 
 ROOT_MNT="/root"
@@ -36,7 +34,6 @@ BOOT_MNT="/boot"
 BOOTUPDATE_MNT="/var/boot-update"
 BLOBS_MNT="/blobs"
 DATA_MNT="/var/data"
-BACKUPS_MNT="/var/backups"
 
 # Replaced by the actual value in the do_install
 ROOTFS_TYPE="__ROOTFS_TYPE___"
@@ -56,7 +53,7 @@ HW_SERIAL="/proc/device-tree/serial-number"
 
 MACHINE_ID=""
 
-# Partition numbers for A/B slots, data and backups
+# Partition numbers for A/B slots and data
 # following wic configuration in rpi-secure.wks
 BOOT=1
 BOOT_SLOT_A=2
@@ -65,7 +62,6 @@ BLOBS_PART=4
 ROOT_SLOT_A=5
 ROOT_SLOT_B=6
 DATA_PART=7
-BACKUPS_PART=8
 
 TIMEOUT=40
 
@@ -138,9 +134,6 @@ mount -t "${ROOTFS_TYPE}" -o "$OPT_ROOT" "$ROOT_BLOCK_DEV" "$ROOT_MNT" \
 
 # Mount data partition
 mount_dmcrypt_data "$DATA_DEV" "$DATA_DM_NAME" "data" "$ROOT_MNT$DATA_MNT" "$OPT_PART"
-
-# Mount backups partition
-mount_dmcrypt_data "$BACKUPS_DEV" "$BACKUPS_DM_NAME" "backups" "$ROOT_MNT$BACKUPS_MNT" "$OPT_PART"
 
 fsck.vfat -y -w "$BOOT_DEV" || klog "fsck on $BOOT_DEV returned $?"
 mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
