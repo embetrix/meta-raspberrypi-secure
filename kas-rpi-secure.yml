@@ -63,6 +63,10 @@ repos:
     url: "https://github.com/embetrix/meta-avb.git"
     branch: wrynose
     path: "layers/meta-avb"
+  meta-sca:
+    url: "https://github.com/priv-kweihmann/meta-sca.git"
+    branch: master
+    path: "layers/meta-sca"
 env:
   SECURITY_PROFILE: "dev"
 local_conf_header:
