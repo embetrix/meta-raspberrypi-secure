@@ -13,6 +13,9 @@ PREFERRED_VERSION_nginx = "1.29%"
 # Prefer avahi-libnss-mdns for mDNS support
 PREFERRED_RPROVIDER_libnss-mdns = "avahi-libnss-mdns"
 
+# Disable syslog as it is not needed as we use journald
+VIRTUAL-RUNTIME_base-utils-syslog = ""
+
 # Security profile "dev" or "prod"
 RPI_SECURITY_PROFILE ?= "dev"
 
@@ -50,7 +53,7 @@ require conf/distro/include/cve-extra-exclusions.inc
 
 # Enable SCA checks
 INHERIT += "sca"
-SCA_ENABLE="${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
+SCA_ENABLE = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '1', '0', d)}"
 #SCA_WARNING_LEVEL = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'error', 'warning', d)}"
 SCA_WARNING_LEVEL = "warning"
 SCA_AUTO_INH_ON_IMAGE = "1"
