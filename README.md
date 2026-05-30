@@ -57,6 +57,12 @@ Two options:
 DISTRO = "rpi-secure"
 ```
 
+or add to your distro config:
+
+```conf
+require conf/distro/include/rpi-secure.inc
+```
+
 #### Standalone build
 
 Using [kas](https://kas.readthedocs.io/en/latest/userguide/getting-started.html) directly:
