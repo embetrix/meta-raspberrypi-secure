@@ -23,13 +23,6 @@ repos:
     path: "layers/bitbake"
     layers:
       bitbake: disabled
-  meta-yocto:
-    url: https://git.yoctoproject.org/meta-yocto.git
-    branch: wrynose
-    path: "layers/meta-yocto"
-    layers:
-      meta-poky:
-      meta-yocto-bsp:
   meta-raspberrypi:
     url: "https://git.yoctoproject.org/git/meta-raspberrypi.git"
     branch: master
