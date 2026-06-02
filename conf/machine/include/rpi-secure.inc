@@ -83,6 +83,7 @@ MACHINE_EXTRA_RRECOMMENDS += " \
                         raspi-utils-raspinfo \
                         raspi-utils-rpieepromab \
                         raspi-utils-rpifwcrypto \
+                        libubootenv-bin \
                         "
 
 # WKS file
