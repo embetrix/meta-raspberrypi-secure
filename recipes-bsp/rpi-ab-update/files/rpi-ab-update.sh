@@ -164,10 +164,14 @@ confirm_update() {
 
     echo "Confirming slot $ACTIVE_SLOT as permanent default..."
 
-    # Update autoboot.txt
-    tmpfile=$(mktemp) || die "Failed to create temp file"
+    # Write the replacement next to the target on the same vfat filesystem so
+    # it can be atomically swapped into place. A swap is required (rather than an
+    # in-place cp) to avoid the truncate-then-write window that can corrupt
+    # autoboot.txt on power loss. RENAME_EXCHANGE is supported on vfat since
+    # Linux v6.x and coreutils 'mv --exchange' exposes it
+    newfile="${AUTOBOOT_TXT}.new"
 
-    cat > "$tmpfile" <<EOF
+    cat > "$newfile" <<EOF
 [all]
 tryboot_a_b=1
 boot_partition=$ACTIVE_PART
@@ -176,9 +180,13 @@ boot_partition=$ACTIVE_PART
 boot_partition=$INACTIVE_PART
 EOF
 
-    cp "$tmpfile" "$AUTOBOOT_TXT" || die "Failed to update $AUTOBOOT_TXT"
     sync
-    rm -f "$tmpfile"
+
+    # Atomically exchange the new file with the live autoboot.txt, then drop the
+    # old contents
+    mv --exchange "$newfile" "$AUTOBOOT_TXT" || die "Failed to swap $AUTOBOOT_TXT"
+    sync
+    rm -f "$newfile"
 
     echo "Slot $ACTIVE_SLOT is now the permanent default."
 }
