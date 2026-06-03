@@ -48,4 +48,7 @@ get_boot_slot() {
 	BOOT_DEV="/dev/${BASE_DEV}${SEP}${BOOT}"
 	BLOBS_DEV="/dev/${BASE_DEV}${SEP}${BLOBS_PART}"
 	DATA_DEV="/dev/${BASE_DEV}${SEP}${DATA_PART}"
+
+    # Symlink boot device to a known location
+    ln -sf /dev/${BASE_DEV} /dev/bootdev
 }
