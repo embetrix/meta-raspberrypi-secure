@@ -3,7 +3,8 @@
 
 DISTRO = "rpi-secure"
 DISTRO_NAME = "rpi-secure"
-DISTRO_VERSION = "1.0"
+INHERIT += "rpi-secure-version"
+DISTRO_VERSION := "${RPI_SECURE_VERSION}"
 
 # Distro Features
 DISTRO_FEATURES  += "systemd polkit ima integrity security selinux tpm2"
