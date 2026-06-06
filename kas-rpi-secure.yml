@@ -7,24 +7,24 @@ machine: "raspberrypi5"
 distro: rpi-secure
 target:
   - rpi-secure-image-base
-  - rpi-secure-image-demo
+  - rpi-secure-image-base-update
 repos:
   # It's current revision will be used to perform the build.
   meta-raspberrypi-secure:
   openembedded-core:
-    url: https://git.openembedded.org/openembedded-core.git
+    url: https://github.com/openembedded/openembedded-core.git
     branch: wrynose
     path: "layers/openembedded-core"
     layers:
       meta:
   bitbake:
-    url: https://git.openembedded.org/bitbake.git
+    url: https://github.com/openembedded/bitbake.git
     branch: "2.18"
     path: "layers/bitbake"
     layers:
       bitbake: disabled
   meta-raspberrypi:
-    url: "https://git.yoctoproject.org/git/meta-raspberrypi.git"
+    url: "https://github.com/agherzan/meta-raspberrypi.git"
     branch: master
     path: "layers/meta-raspberrypi"
   meta-openembedded:
