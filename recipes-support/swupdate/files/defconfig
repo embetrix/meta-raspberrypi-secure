@@ -1,0 +1,169 @@
+
+#
+# SWUpdate Settings
+#
+
+#
+# General Configuration
+#
+CONFIG_CURL=y
+CONFIG_CURL_SSL=y
+CONFIG_SYSTEMD=y
+CONFIG_DEFAULT_CONFIG_FILE="/etc/swupdate/swupdate.cfg"
+CONFIG_SCRIPTS=y
+# CONFIG_HW_COMPATIBILITY is not set
+CONFIG_SW_VERSIONS_FILE="/etc/sw-versions"
+
+#
+# Socket Paths
+#
+CONFIG_SOCKET_CTRL_PATH=""
+CONFIG_SOCKET_PROGRESS_PATH=""
+# end of Socket Paths
+
+# CONFIG_MTD is not set
+CONFIG_LUA=y
+CONFIG_LUAPKG="lua"
+# end of General Configuration
+
+s
+#
+# Debugging Options
+#
+# CONFIG_DEBUG is not set
+# CONFIG_WERROR is not set
+# CONFIG_NOCLEANUP is not set
+# end of Debugging Options
+# end of SWUpdate Settings
+
+#
+# Bootloader support
+#
+
+#
+# Bootloader Interfaces
+#
+# CONFIG_BOOTLOADER_NONE is not set
+# CONFIG_BOOTLOADER_EBG is not set
+CONFIG_UBOOT=y
+CONFIG_UBOOT_FWENV="/etc/fw_env.config"
+CONFIG_UBOOT_DEFAULTENV="/etc/u-boot-initial-env"
+# CONFIG_BOOTLOADER_GRUB is not set
+# CONFIG_BOOTLOADER_CBOOT is not set
+# end of Bootloader Interfaces
+
+CONFIG_BOOTLOADER_DEFAULT_UBOOT=y
+# CONFIG_BOOTLOADER_STATIC_LINKED is not set
+CONFIG_UPDATE_STATE_CHOICE_BOOTLOADER=y
+CONFIG_UPDATE_STATE_BOOTLOADER="ustate"
+
+#
+# Interfaces
+#
+CONFIG_DOWNLOAD=y
+CONFIG_DOWNLOAD_SSL=y
+CONFIG_CHANNEL_CURL=y
+CONFIG_SURICATTA=y
+
+#
+# Features
+#
+CONFIG_SURICATTA_SSL=y
+# end of Features
+
+#
+# Server
+#
+CONFIG_SURICATTA_HAWKBIT=y
+# CONFIG_SURICATTA_LUA is not set
+# CONFIG_SURICATTA_GENERAL is not set
+# end of Server
+
+CONFIG_WEBSERVER=y
+CONFIG_MONGOOSE=y
+# CONFIG_MONGOOSEIPV6 is not set
+# CONFIG_MONGOOSESSL is not set
+
+#
+# Security
+#
+
+#
+# Crypto libraries
+#
+CONFIG_SSL_IMPL_OPENSSL=y
+# CONFIG_SSL_IMPL_WOLFSSL is not set
+# CONFIG_SSL_IMPL_MBEDTLS is not set
+# CONFIG_SSL_IMPL_GPGME is not set
+# CONFIG_PKCS11 is not set
+# end of Crypto libraries
+
+CONFIG_SWUPDATE_CRYPTO=y
+CONFIG_HASH_VERIFY=y
+# CONFIG_SIGNED_IMAGES is not set
+
+#
+# Encryption
+#
+# CONFIG_ENCRYPTED_IMAGES is not set
+# end of Encryption
+
+CONFIG_CHANNEL_CURL_SSL=y
+
+#
+# Compressors (zlib always on)
+#
+CONFIG_GUNZIP=y
+# CONFIG_XZ is not set
+# CONFIG_ZSTD is not set
+# CONFIG_LZ4 is not set
+
+#
+# Parsers
+#
+
+#
+# Parser Features
+#
+CONFIG_LIBCONFIG=y
+CONFIG_PARSERROOT=""
+# CONFIG_LUAEXTERNAL is not set
+# CONFIG_SETSWDESCRIPTION is not set
+# end of Parser Features
+
+#
+# Handlers
+#
+
+#
+# Image Handlers
+#
+CONFIG_ARCHIVE=y
+CONFIG_LOCALE=y
+CONFIG_BOOTLOADERHANDLER=y
+# CONFIG_COPY is not set
+# CONFIG_DELTA is not set
+# CONFIG_DISKPART is not set
+# CONFIG_DISKFORMAT_HANDLER is not set
+CONFIG_LUASCRIPTHANDLER=y
+# CONFIG_EMBEDDED_LUA_HANDLER is not set
+# CONFIG_EMMC_HANDLER is not set
+CONFIG_RAW=y
+# CONFIG_RDIFFHANDLER is not set
+# CONFIG_READBACKHANDLER is not set
+# CONFIG_REMOTE_HANDLER is not set
+# CONFIG_SHELLSCRIPTHANDLER is not set
+# CONFIG_SWUFORWARDER_HANDLER is not set
+# CONFIG_UCFWHANDLER is not set
+# CONFIG_UNIQUEUUID is not set
+# end of Image Handlers
+
+#
+# Containers
+#
+
+#
+# Update containers
+#
+# CONFIG_DOCKER is not set
+# end of Update containers

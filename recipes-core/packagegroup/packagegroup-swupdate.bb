@@ -12,6 +12,7 @@ PACKAGES = "${PN}"
 SUMMARY:packagegroup-swupdate = "swupdate support"
 
 RDEPENDS:packagegroup-swupdate = " \
+    swupdate \
     swupdate-client \
     swupdate-ipc \
     swupdate-progress \
