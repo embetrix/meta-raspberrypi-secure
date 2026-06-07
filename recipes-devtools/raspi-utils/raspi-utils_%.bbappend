@@ -1,6 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRCREV = "b4074df7b79010c747ac4c4b00eca5819fcdf9d4"
+SRCREV = "8903f297141461854ad421bdf90846ad030bdcc7"
 
 # Add rpifwcrypto tool for OTP key management
 DEPENDS += "gnutls"
