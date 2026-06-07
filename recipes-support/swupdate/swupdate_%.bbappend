@@ -2,8 +2,8 @@ FILESEXTRAPATHS:append := "${THISDIR}/files:"
 
 SRC_URI:append = " \
      file://swupdate.cfg \
-     file://swupdate-www.pwd \
      file://background.jpg \
+     file://swupdate-progress-tryboot.conf \
      "
 
 inherit useradd
@@ -26,7 +26,14 @@ do_install:append() {
     fi
 
     install -m 755 ${UNPACKDIR}/background.jpg   ${D}/www/images/background.jpg
-    install -m 644 ${UNPACKDIR}/swupdate-www.pwd ${D}/www/swupdate-www.pwd
+
+    # Override swupdate-progress reboot to use RPi tryboot
+    install -d ${D}${systemd_system_unitdir}/swupdate-progress.service.d
+    install -m 644 ${UNPACKDIR}/swupdate-progress-tryboot.conf \
+        ${D}${systemd_system_unitdir}/swupdate-progress.service.d/tryboot.conf
 }
 
 FILES:${PN} += "${sysconfdir}/swupdate"
+FILES:${PN}-progress += "${systemd_system_unitdir}/swupdate-progress.service.d"
+
+RDEPENDS:${PN}-www += "rpi-device-certs"
