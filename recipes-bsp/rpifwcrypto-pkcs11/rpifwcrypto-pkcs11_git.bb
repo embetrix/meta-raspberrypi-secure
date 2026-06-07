@@ -6,14 +6,14 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=9d121eb775096c0ba619421933ef0736"
 SRC_URI = "git://github.com/embetrix/rpifwcrypto-pkcs11.git;protocol=https;branch=master \
            file://99-vcio.rules \
           "
-SRCREV = "d7becadf2fdf37896fb03eb25ec72b70a67a0483"
+SRCREV = "942f6d2acec9cda964da01339dca923217820448"
 
 inherit cmake useradd
 
 DEPENDS = "raspi-utils"
 
 USERADD_PACKAGES = "${PN}"
-GROUPADD_PARAM:${PN} = "-r vcio"
+GROUPADD_PARAM:${PN} = "-r rpifwcrypto"
 
 do_install:append() {
     install -d ${D}${sysconfdir}/udev/rules.d

@@ -1,1 +1,1 @@
-KERNEL=="vcio", OWNER="root", GROUP="vcio", MODE="0640"
+KERNEL=="vcio_crypto", OWNER="root", GROUP="rpifwcrypto", MODE="0640"
