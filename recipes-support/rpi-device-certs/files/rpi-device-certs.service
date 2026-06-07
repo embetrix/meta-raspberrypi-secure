@@ -1,0 +1,16 @@
+[Unit]
+Description=device certificates creation service
+After=network-online.target
+Wants=network-online.target
+Before=nginx.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/etc/certs
+ExecStart=/usr/bin/rpi-device-certs --force
+Restart=on-failure
+RestartSec=3
+
+[Install]   
+WantedBy=multi-user.target
