@@ -36,4 +36,4 @@ do_install:append() {
 FILES:${PN} += "${sysconfdir}/swupdate"
 FILES:${PN}-progress += "${systemd_system_unitdir}/swupdate-progress.service.d"
 
-RDEPENDS:${PN}-www += "rpi-device-certs"
+RDEPENDS:${PN}-www += "nginx"
