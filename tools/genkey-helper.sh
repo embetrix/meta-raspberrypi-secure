@@ -114,6 +114,44 @@ else
     chmod 644 "$MODSIGN_X509"
 fi
 
+# SWUpdate CMS signing private key (EC prime256v1)
+SWUPDATE_CMS_KEY="$KEY_DIR/privkey_swupdate.pem"
+if [ -f "$SWUPDATE_CMS_KEY" ]; then
+    echo "  Skipping SWUpdate CMS signing key (already exists)"
+else
+    echo "  Generating SWUpdate CMS signing key (EC prime256v1) ..."
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 \
+        -out "$SWUPDATE_CMS_KEY" 2>/dev/null
+    chmod 600 "$SWUPDATE_CMS_KEY"
+fi
+
+# SWUpdate CMS signing x509 certificate (PEM)
+SWUPDATE_CMS_CERT="$KEY_DIR/x509_swupdate.pem"
+if [ -f "$SWUPDATE_CMS_CERT" ]; then
+    echo "  Skipping SWUpdate CMS x509 certificate (already exists)"
+else
+    echo "  Generating SWUpdate CMS x509 certificate (PEM) ..."
+    openssl req -new -x509 -sha256 -days "$DAYS" -batch \
+        -subj "/CN=$CN-swupdate dev/O=$ORG" \
+        -addext "basicConstraints=critical,CA:FALSE" \
+        -addext "keyUsage=digitalSignature" \
+        -addext "extendedKeyUsage=critical,codeSigning" \
+        -addext "subjectKeyIdentifier=hash" \
+        -key "$SWUPDATE_CMS_KEY" -outform PEM -out "$SWUPDATE_CMS_CERT" 2>/dev/null
+    chmod 644 "$SWUPDATE_CMS_CERT"
+fi
+
+# SWUpdate AES encryption key file (AES-256-CBC key + iv)
+SWUPDATE_AES_FILE="$KEY_DIR/swupdate-aes.key"
+if [ -f "$SWUPDATE_AES_FILE" ]; then
+    echo "  Skipping SWUpdate AES key file (already exists)"
+else
+    echo "  Generating SWUpdate AES key file (AES-256-CBC) ..."
+    openssl enc -aes-256-cbc -k "$(openssl rand -hex 32)" -P -md sha1 -nosalt 2>/dev/null \
+        | tr -d ' ' > "$SWUPDATE_AES_FILE"
+    chmod 600 "$SWUPDATE_AES_FILE"
+fi
+
 # SSH CA key pair (ed25519)
 SSH_CA_KEY="$KEY_DIR/ssh_ca_key"
 SSH_CA_PUB="$KEY_DIR/ssh_ca_key.pub"
@@ -168,6 +206,9 @@ local_conf_header:
         IMA_EVM_X509             = "$IMA_X509"
         MODSIGN_PRIVKEY          = "$MODSIGN_PRIVKEY"
         MODSIGN_X509             = "$MODSIGN_X509"
+        SWUPDATE_CMS_KEY         = "$SWUPDATE_CMS_KEY"
+        SWUPDATE_CMS_CERT        = "$SWUPDATE_CMS_CERT"
+        SWUPDATE_AES_FILE        = "$SWUPDATE_AES_FILE"
         OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
 EOF
 chmod 600 "$KAS_FRAGMENT"
@@ -187,6 +228,9 @@ IMA_EVM_PRIVKEY          = "$IMA_PRIVKEY"
 IMA_EVM_X509             = "$IMA_X509"
 MODSIGN_PRIVKEY          = "$MODSIGN_PRIVKEY"
 MODSIGN_X509             = "$MODSIGN_X509"
+SWUPDATE_CMS_KEY         = "$SWUPDATE_CMS_KEY"
+SWUPDATE_CMS_CERT        = "$SWUPDATE_CMS_CERT"
+SWUPDATE_AES_FILE        = "$SWUPDATE_AES_FILE"
 OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
 EOF
 echo "#######################################################"
