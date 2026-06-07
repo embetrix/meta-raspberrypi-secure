@@ -1,0 +1,51 @@
+From 70ba2618bb9067a15f03c8f7d0b2b0aa852ab244 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Sun, 7 Jun 2026 14:37:08 +0200
+Subject: [PATCH] char: broadcom: vcio: Split HMAC SHA256 tag into separate
+ vcio_hmac node
+
+Move GET_CRYPTO_HMAC_SHA256 (0x00030092) out of the general crypto tag
+list into a new vcio_crypto_hmac_tags array, exposed via a dedicated
+/dev/vcio_hmac node. This allows finer-grained access control over
+HMAC operations independent of the other crypto mailbox tags.
+
+Upstream-Status: Pending
+
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ drivers/char/broadcom/vcio.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/char/broadcom/vcio.c b/drivers/char/broadcom/vcio.c
+index b40d4e779d10..a7e19ceabdfe 100644
+--- a/drivers/char/broadcom/vcio.c
++++ b/drivers/char/broadcom/vcio.c
+@@ -76,12 +76,16 @@ static const u32 vcio_crypto_tags[] = {
+ 	0x00030090, /* GET_CRYPTO_KEY_STATUS */
+ 	0x00038090, /* SET_CRYPTO_KEY_STATUS */
+ 	0x00030091, /* GET_CRYPTO_ECDSA_SIGN */
+-	0x00030092, /* GET_CRYPTO_HMAC_SHA256 */
+ 	0x00030093, /* GET_CRYPTO_PUBLIC_KEY */
+ 	0x00030094, /* GET_CRYPTO_PRIVATE_KEY */
+ 	0x00030095, /* GET_CRYPTO_GEN_ECDSA */
+ };
+ 
++/* Tags permitted via /dev/vcio_hmac. */
++static const u32 vcio_hmac_tags[] = {
++	0x00030092, /* GET_CRYPTO_HMAC_SHA256 */
++};
++
+ struct vcio_group {
+ 	const char *name;
+ 	const u32 *tags;
+@@ -99,6 +103,7 @@ static const struct vcio_group vcio_groups[] = {
+ 	VCIO_GROUP(ab),
+ 	VCIO_GROUP(gencmd),
+ 	VCIO_GROUP(crypto),
++	VCIO_GROUP(hmac),
+ };
+ 
+ struct vcio_dev {
+-- 
+2.43.0
+

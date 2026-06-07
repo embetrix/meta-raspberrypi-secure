@@ -9,6 +9,7 @@ inherit kernel-trusted-keys
 
 SRC_URI += "file://patches/v6.18/0001-security-keys-add-rpi-firmware-crypto-trusted-key-so.patch \
             file://patches/v6.18/0002-dm-verity-add-CONFIG_DM_VERITY_REQUIRE_ROOTHASH_SIG.patch \
+            file://patches/v6.18/0003-char-broadcom-vcio-split-HMAC-SHA256-tag-into-separa.patch \
             file://dm-crypt-verity.cfg \
             file://ext4.cfg \
             file://erofs.cfg \
