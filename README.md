@@ -143,6 +143,7 @@ The key is accessible via the [rpifwcrypto-pkcs11](https://github.com/embetrix/r
 - [meta-selinux](https://git.yoctoproject.org/meta-selinux/log/?h=wrynose)
 - [meta-avb](https://github.com/embetrix/meta-avb/tree/wrynose)
 - [meta-sca](https://github.com/priv-kweihmann/meta-sca/tree/master)
+- [meta-swupdate](https://github.com/sbabic/meta-swupdate/tree/wrynose)
 
 ## Supported Hardware
 
