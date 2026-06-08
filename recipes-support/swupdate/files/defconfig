@@ -26,7 +26,6 @@ CONFIG_LUA=y
 CONFIG_LUAPKG="lua"
 # end of General Configuration
 
-s
 #
 # Debugging Options
 #
@@ -100,12 +99,31 @@ CONFIG_SSL_IMPL_OPENSSL=y
 
 CONFIG_SWUPDATE_CRYPTO=y
 CONFIG_HASH_VERIFY=y
-# CONFIG_SIGNED_IMAGES is not set
+CONFIG_SIGNED_IMAGES=y
+
+#
+# Signature verification algorithm
+#
+# CONFIG_SIGALG_RAWRSA is not set
+# CONFIG_SIGALG_RSAPSS is not set
+CONFIG_SIGALG_CMS=y
+# end of Signature verification algorithm
+
+#
+# CMS / PKCS#7 signature verification options
+#
+# CONFIG_CMS_IGNORE_EXPIRED_CERTIFICATE is not set
+# CONFIG_CMS_IGNORE_CERTIFICATE_PURPOSE is not set
+# CONFIG_CMS_SKIP_UNKNOWN_SIGNERS is not set
+# CONFIG_CMS_IGNORE_ADDITIONAL_CERTS is not set
+# end of CMS / PKCS#7 signature verification options
 
 #
 # Encryption
 #
-# CONFIG_ENCRYPTED_IMAGES is not set
+CONFIG_ENCRYPTED_IMAGES=y
+# CONFIG_ENCRYPTED_SW_DESCRIPTION is not set
+CONFIG_ENCRYPTED_IMAGES_HARDEN_LOGGING=y
 # end of Encryption
 
 CONFIG_CHANNEL_CURL_SSL=y

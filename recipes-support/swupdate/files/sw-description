@@ -4,18 +4,20 @@ software =
 
 		files: (
 			{
-				name     = "boot.img";
-				version  = "@@RPI_SECURE_VERSION@@";
-				filename = "boot.img";
-				path     = "/var/boot-update/boot.img";
-				sha256   = "$swupdate_get_sha256(boot.img)";
+				name      = "boot.img";
+				version   = "@@RPI_SECURE_VERSION@@";
+				filename  = "boot.img";
+				path      = "/var/boot-update/boot.img";
+				encrypted = true;
+				sha256    = "$swupdate_get_sha256(boot.img)";
 			},
 			{
-				name     = "boot.sig";
-				version  = "@@RPI_SECURE_VERSION@@";
-				filename = "boot.sig";
-				path     = "/var/boot-update/boot.sig";
-				sha256   = "$swupdate_get_sha256(boot.sig)";
+				name      = "boot.sig";
+				version   = "@@RPI_SECURE_VERSION@@";
+				filename  = "boot.sig";
+				path      = "/var/boot-update/boot.sig";
+				encrypted = true;
+				sha256    = "$swupdate_get_sha256(boot.sig)";
             }
         );
 
@@ -27,6 +29,7 @@ software =
 				device     = "/dev/mapper/update";
 				type       = "raw";
 				compressed = "zlib";
+				encrypted  = true;
 				sha256     = "$swupdate_get_sha256(@@IMAGE@@-@@MACHINE@@.rootfs.@@ROOTFS_TYPE@@.avbverity.gz)";
 			}
 		);

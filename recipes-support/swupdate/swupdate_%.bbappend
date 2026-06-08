@@ -19,10 +19,20 @@ do_install:append() {
     install -m 644 ${UNPACKDIR}/swupdate.cfg ${D}${sysconfdir}/swupdate/swupdate.cfg
 
     # Certificates are added if configured with artifacts signing
-    if [ -z "${SWUPDATE_SIGNING}" ] && [ -f "${SWUPDATE_CMS_CERT}" ]; then
-        install -d ${D}${sysconfdir}/swupdate/crts
-        install -m 644 "${SWUPDATE_CMS_CERT}" ${D}${sysconfdir}/swupdate/crts/
-        sed -i '/public-key-file/c\\t\public-key-file = "${sysconfdir}/swupdate/crts/'$(basename ${SWUPDATE_CMS_CERT})'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
+    if [ "${SWUPDATE_SIGNING}" = "CMS" ] && [ -f "${SWUPDATE_CMS_CERT}" ]; then
+        install -d ${D}${sysconfdir}/swupdate/
+        install -m 644 "${SWUPDATE_CMS_CERT}" ${D}${sysconfdir}/swupdate/
+        sed -i '/public-key-file/c\\t\public-key-file = "${sysconfdir}/swupdate/'$(basename ${SWUPDATE_CMS_CERT})'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
+    fi
+
+    if [ -f "${SWUPDATE_AES_FILE}" ]; then
+        install -d ${D}${sysconfdir}/swupdate/
+        aes_keyfile="$(basename ${SWUPDATE_AES_FILE})"
+        # Reformat openssl key/iv into the single-line "<key> <iv>" swupdate expects
+        echo -n "$(grep key ${SWUPDATE_AES_FILE} | cut -d '=' -f 2) $(grep iv ${SWUPDATE_AES_FILE} | cut -d '=' -f 2)" \
+            > ${UNPACKDIR}/${aes_keyfile}
+        install -m 0400 ${UNPACKDIR}/${aes_keyfile} ${D}${sysconfdir}/swupdate/${aes_keyfile}
+        sed -i '/aes-key-file/c\\t\ aes-key-file = "${sysconfdir}/swupdate/'${aes_keyfile}'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
     fi
 
     install -m 755 ${UNPACKDIR}/background.jpg   ${D}/www/images/background.jpg

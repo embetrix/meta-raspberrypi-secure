@@ -45,6 +45,9 @@ IMAGE_CLASSES += "avb-verity"
 IMAGE_FSTYPES += " ${ROOTFS_TYPE}.avbverity.gz"
 AVB_ROOT_HASH_SIGN ?= "1"
 
+# SWUpdate configuration
+SWUPDATE_SIGNING = "CMS"
+
 # Include image build information
 INHERIT += "image-buildinfo"
 

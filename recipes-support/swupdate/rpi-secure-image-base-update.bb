@@ -8,7 +8,6 @@ inherit swupdate
 # Note: sw-description is mandatory
 SRC_URI = "file://sw-description"
 IMAGE = "rpi-secure-image-base"
-IMAGE_FSTYPES += "${ROOTFS_TYPE}.avbverity.gz"
 
 # IMAGE_DEPENDS: list of Yocto images that contains a root filesystem
 # it will be ensured they are built before creating swupdate image
@@ -24,4 +23,9 @@ SWUPDATE_IMAGES += "rpi-secure-image-base"
 # taken to be put in the compound image
 SWUPDATE_IMAGES_FSTYPES[rpi-secure-image-base] = "-${MACHINE}.rootfs.${ROOTFS_TYPE}.avbverity.gz"
 
-do_rootfs[nostamp] = "1"
+# Encryption is per-artifact 
+SWUPDATE_IMAGES_ENCRYPTED[rpi-secure-image-base] = "1"
+SWUPDATE_IMAGES_ENCRYPTED[boot.img] = "1"
+SWUPDATE_IMAGES_ENCRYPTED[boot.sig] = "1"
+
+do_swuimage[nostamp] = "1"
