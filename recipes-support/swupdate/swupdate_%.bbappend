@@ -1,9 +1,9 @@
 FILESEXTRAPATHS:append := "${THISDIR}/files:"
 
 SRC_URI:append = " \
+     file://0001-tools-optional-reboot-into-RPi-tryboot-mode.patch \
      file://swupdate.cfg \
      file://background.jpg \
-     file://swupdate-progress-tryboot.conf \
      "
 
 inherit useradd
@@ -36,11 +36,6 @@ do_install:append() {
     fi
 
     install -m 755 ${UNPACKDIR}/background.jpg   ${D}/www/images/background.jpg
-
-    # Override swupdate-progress reboot to use RPi tryboot
-    install -d ${D}${systemd_system_unitdir}/swupdate-progress.service.d
-    install -m 644 ${UNPACKDIR}/swupdate-progress-tryboot.conf \
-        ${D}${systemd_system_unitdir}/swupdate-progress.service.d/tryboot.conf
 }
 
 FILES:${PN} += "${sysconfdir}/swupdate"

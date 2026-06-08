@@ -1,0 +1,107 @@
+From 010b50d00829e978724350dda4e898ef06b49d95 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Mon, 8 Jun 2026 15:42:57 +0200
+Subject: [PATCH] tools: optional reboot into RPi tryboot mode
+
+Add CONFIG_REBOOT_RPI_TRYBOOT. When enabled, swupdate-progress and
+swupdate-ipc invoke the raw reboot syscall with LINUX_REBOOT_CMD_RESTART2
+and the "0 tryboot" argument instead of reboot(RB_AUTOBOOT), so the
+Raspberry Pi firmware starts in tryboot mode on the next boot. Default
+behaviour is unchanged.
+
+Upstream-Status: Pending
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ Kconfig                   | 12 ++++++++++++
+ tools/swupdate-ipc.c      | 11 +++++++++++
+ tools/swupdate-progress.c | 10 ++++++++++
+ 3 files changed, 33 insertions(+)
+
+diff --git a/Kconfig b/Kconfig
+index 8b6139de..3fed5f3d 100644
+--- a/Kconfig
++++ b/Kconfig
+@@ -179,6 +179,18 @@ config SCRIPTS
+ 	  in the image. For security reason, this option
+ 	  can be switched off.
+ 
++config REBOOT_RPI_TRYBOOT
++	bool "Reboot into Raspberry Pi tryboot mode"
++	depends on HAVE_LINUX
++	default n
++	help
++	  When SWUpdate's helper tools (swupdate-progress, swupdate-ipc)
++	  reboot the system after a successful update, pass the "0 tryboot"
++	  argument to the kernel reboot syscall instead of issuing a plain
++	  reboot. The Raspberry Pi firmware will start in tryboot mode on
++	  the next boot. Tryboot mode is single-shot: it only applies to
++	  the next boot so committing or rolling back is your responsibility.
++
+ config HW_COMPATIBILITY
+ 	bool "check for hardware / software compatibility"
+ 	default n
+diff --git a/tools/swupdate-ipc.c b/tools/swupdate-ipc.c
+index f3738193..338a5021 100644
+--- a/tools/swupdate-ipc.c
++++ b/tools/swupdate-ipc.c
+@@ -24,6 +24,10 @@
+ #include <sys/un.h>
+ #include <sys/select.h>
+ #include <sys/reboot.h>
++#ifdef CONFIG_REBOOT_RPI_TRYBOOT
++#include <sys/syscall.h>
++#include <linux/reboot.h>
++#endif
+ #include <arpa/inet.h>
+ #include <netinet/in.h>
+ #include <ifaddrs.h>
+@@ -657,9 +661,16 @@ static int sysrestart(cmd_t  __attribute__((__unused__)) *cmd, int argc, char *a
+ 			restart_system(ndevs);
+ 			sleep(5);
+ 			sync();
++#ifdef CONFIG_REBOOT_RPI_TRYBOOT
++			if (syscall(SYS_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
++				    LINUX_REBOOT_CMD_RESTART2, "0 tryboot") < 0) {
++				fprintf(stdout, "Please reset the board.\n");
++			}
++#else
+ 			if (reboot(RB_AUTOBOOT) < 0) { /* It should never happen */
+ 				fprintf(stdout, "Please reset the board.\n");
+ 			}
++#endif
+ 			break;
+ 		case FAILURE:
+ 			ndevs = 0;
+diff --git a/tools/swupdate-progress.c b/tools/swupdate-progress.c
+index 94cd84e1..69ee859d 100644
+--- a/tools/swupdate-progress.c
++++ b/tools/swupdate-progress.c
+@@ -20,6 +20,10 @@
+ #include <sys/un.h>
+ #include <sys/select.h>
+ #include <sys/reboot.h>
++#ifdef CONFIG_REBOOT_RPI_TRYBOOT
++#include <sys/syscall.h>
++#include <linux/reboot.h>
++#endif
+ #include <arpa/inet.h>
+ #include <netinet/in.h>
+ #include <pthread.h>
+@@ -201,8 +205,14 @@ static void reboot_device(const char* reboot_script)
+ 	} else {
+ 		sleep(5);
+ 		sync();
++#ifdef CONFIG_REBOOT_RPI_TRYBOOT
++		if (syscall(SYS_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
++			    LINUX_REBOOT_CMD_RESTART2, "0 tryboot") >= 0)
++			return;
++#else
+ 		if (reboot(RB_AUTOBOOT) >= 0)
+ 			return;
++#endif
+ 	}
+ 
+ 	fprintf(stdout, "Please reset the board.\n");
+-- 
+2.43.0
+
