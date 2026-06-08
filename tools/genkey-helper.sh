@@ -131,11 +131,14 @@ if [ -f "$SWUPDATE_CMS_CERT" ]; then
     echo "  Skipping SWUpdate CMS x509 certificate (already exists)"
 else
     echo "  Generating SWUpdate CMS x509 certificate (PEM) ..."
+    # CMS verification (OpenSSL CMS_verify) checks the signer cert against the
+    # S/MIME signing purpose; emailProtection (1.3.6.1.5.5.7.3.4) is required.
+    # codeSigning is rejected as "unsuitable certificate purpose"
     openssl req -new -x509 -sha256 -days "$DAYS" -batch \
         -subj "/CN=$CN-swupdate dev/O=$ORG" \
         -addext "basicConstraints=critical,CA:FALSE" \
         -addext "keyUsage=digitalSignature" \
-        -addext "extendedKeyUsage=critical,codeSigning" \
+        -addext "extendedKeyUsage=1.3.6.1.5.5.7.3.4" \
         -addext "subjectKeyIdentifier=hash" \
         -key "$SWUPDATE_CMS_KEY" -outform PEM -out "$SWUPDATE_CMS_CERT" 2>/dev/null
     chmod 644 "$SWUPDATE_CMS_CERT"
