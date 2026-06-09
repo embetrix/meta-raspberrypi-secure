@@ -49,6 +49,7 @@ pipeline {
                 }
                 archiveArtifacts artifacts: "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-${params.MACHINE}.rootfs-*-${params.SECURITY_PROFILE}.*," +
                                              "build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-update-${params.MACHINE}.rootfs-*-${params.SECURITY_PROFILE}.swu," +
+                                             "build/tmp/deploy/images/${params.MACHINE}/rpi-eeprom-update-${params.MACHINE}.rootfs-*-${params.SECURITY_PROFILE}.swu," +
                                              "build/tmp/deploy/images/${params.MACHINE}/boot.img," +
                                              "build/tmp/deploy/images/${params.MACHINE}/boot.sig",
                                              excludes: "**/*.ext3,**/*.ext4,**/*.rootfs.wic",
