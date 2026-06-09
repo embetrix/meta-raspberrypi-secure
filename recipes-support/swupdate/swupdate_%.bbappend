@@ -35,14 +35,13 @@ do_install:append() {
         # provisioned at production on TPM or sealed using rpifwcrypto
         # then extracted and set at runtime using : swupdate-ipc aes
         install -m 0400 ${UNPACKDIR}/${aes_keyfile} ${D}${sysconfdir}/swupdate/${aes_keyfile}
-        sed -i '/aes-key-file/c\\t\ aes-key-file = "${sysconfdir}/swupdate/'${aes_keyfile}'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
+        sed -i '/aes-key-file/c\\t\aes-key-file = "${sysconfdir}/swupdate/'${aes_keyfile}'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
     fi
 
     install -m 755 ${UNPACKDIR}/background.jpg   ${D}/www/images/background.jpg
 }
 
 FILES:${PN} += "${sysconfdir}/swupdate"
-FILES:${PN}-progress += "${systemd_system_unitdir}/swupdate-progress.service.d"
 
 RDEPENDS:${PN} += "raspi-utils"
 RDEPENDS:${PN}-www += "nginx"
