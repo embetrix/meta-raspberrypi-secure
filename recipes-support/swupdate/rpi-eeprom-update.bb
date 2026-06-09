@@ -6,12 +6,9 @@ SECTION = "swupdate"
 inherit swupdate
 
 # Image that produces the signed EEPROM artifacts in DEPLOY_DIR_IMAGE
-SWU_IMAGE ?= "rpi-secure-image-base"
-IMAGE = "${SWU_IMAGE}"
-IMAGE_DEPENDS = "${SWU_IMAGE} rpi-eeprom"
+IMAGE_DEPENDS = "rpi-secure-image-base rpi-eeprom"
 
 SRC_URI = "file://sw-description"  
-
 
 SWUPDATE_IMAGES = "pieeprom.bin.signed pieeprom.upd.sig recovery.bin"
 SWUPDATE_IMAGES_ENCRYPTED[pieeprom.bin.signed] = "1"
