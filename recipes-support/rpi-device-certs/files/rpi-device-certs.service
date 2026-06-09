@@ -8,7 +8,7 @@ Before=nginx.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/etc/certs
-ExecStart=/usr/bin/rpi-device-certs --force
+ExecStart=/usr/bin/rpi-device-certs
 Restart=on-failure
 RestartSec=3
 
