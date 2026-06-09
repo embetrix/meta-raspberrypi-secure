@@ -31,6 +31,9 @@ do_install:append() {
         # Reformat openssl key/iv into the single-line "<key> <iv>" swupdate expects
         echo -n "$(grep key ${SWUPDATE_AES_FILE} | cut -d '=' -f 2) $(grep iv ${SWUPDATE_AES_FILE} | cut -d '=' -f 2)" \
             > ${UNPACKDIR}/${aes_keyfile}
+        # ideally we should retriever encryption key from secure storage
+        # provisioned at production on TPM or sealed using rpifwcrypto
+        # then extracted and set at runtime using : swupdate-ipc aes
         install -m 0400 ${UNPACKDIR}/${aes_keyfile} ${D}${sysconfdir}/swupdate/${aes_keyfile}
         sed -i '/aes-key-file/c\\t\ aes-key-file = "${sysconfdir}/swupdate/'${aes_keyfile}'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
     fi
