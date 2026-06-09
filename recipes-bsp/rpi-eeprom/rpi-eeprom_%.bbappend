@@ -1,6 +1,6 @@
 # Update to latest rpi-eeprom firmware that supports firmware crypto
-SRCREV = "a34ba1bcc4f46a2f4c7f3b1e806a238fdacd3698"
-PV = "v2026.02.23-git${SRCPV}"
+SRCREV = "e25fc5dcb8eb072eafb745cd546c3d9f73d102b5"
+PV = "v2026.05.11-git${SRCPV}"
 
 # Add missing rdepends for findmnt used by the rpi-eeprom-update to determine the boot partition
 RDEPENDS:${PN} += "util-linux-findmnt"
