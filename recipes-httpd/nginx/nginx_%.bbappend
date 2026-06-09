@@ -1,10 +1,13 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI:append = " \ 
+SRC_URI:append = " \
                file://nginx-override.conf \
+               file://nginx.path \
                file://default_server.site"
 
 RDEPENDS:${PN} += "rpi-device-certs"
+
+SYSTEMD_SERVICE:${PN} += "nginx.path"
 
 NGINX_USERNAME ?= "rpi"
 # Use a pre-generated password hash with openssl:
@@ -18,9 +21,11 @@ do_install:append() {
 
     install -d ${D}${systemd_unitdir}/system/nginx.service.d
     install -m 0644 ${UNPACKDIR}/nginx-override.conf ${D}${systemd_unitdir}/system/nginx.service.d/
+    install -m 0644 ${UNPACKDIR}/nginx.path ${D}${systemd_unitdir}/system/
     install -m 0644 ${UNPACKDIR}/default_server.site ${D}${sysconfdir}/nginx/sites-available/default_server
 
 }
 
 FILES:${PN} += "${sysconfdir}/nginx/.htpasswd \
-                ${systemd_unitdir}/system/nginx.service.d"
+                ${systemd_unitdir}/system/nginx.service.d \
+                ${systemd_unitdir}/system/nginx.path"

@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for RPi device certificate before starting nginx
+
+[Path]
+PathExists=/etc/certs/rpi-device-cert.pem
+PathModified=/etc/certs/rpi-device-cert.pem
+Unit=nginx.service
+
+[Install]
+WantedBy=multi-user.target
