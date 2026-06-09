@@ -43,3 +43,8 @@ python () {
 }
 
 do_swuimage[nostamp] = "1"
+
+# Also build the standalone EEPROM-only update alongside the rootfs/boot
+# compound image. The two .swu files are applied separately so the EEPROM
+# recovery flash does not consume the rootfs A/B tryboot one-shot.
+do_build[depends] += "rpi-eeprom-update:do_build"
