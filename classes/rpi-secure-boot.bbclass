@@ -49,6 +49,7 @@ RPI_SECURE_BOOT_SPACE_MAX ?= "131072"
 RPI_SECURE_BOOTIMG = "${DEPLOY_DIR_IMAGE}/boot.img"
 RPI_SECURE_BOOTIMG_SIG = "${DEPLOY_DIR_IMAGE}/boot.sig"
 RPI_SECURE_BOOTIMG_ARCHIVE = "${DEPLOY_DIR_IMAGE}/boot-signed.tar.gz"
+RPI_SECURE_BOOT_EEPROM_ARCHIVE = "${DEPLOY_DIR_IMAGE}/pieeprom-signed.tar.gz"
 RPI_SECURE_BOOT_CONFIG = "${DEPLOY_DIR_IMAGE}/bootconf.txt"
 RPI_SECURE_BOOT_CONFIG_SIG = "${DEPLOY_DIR_IMAGE}/bootconf.sig"
 RPI_SECURE_BOOT_EEPROM = "${DEPLOY_DIR_IMAGE}/pieeprom.bin"
@@ -236,6 +237,14 @@ IMAGE_CMD:rpi-secure-boot () {
         tar -czf ${RPI_SECURE_BOOTIMG_ARCHIVE} \
             -C ${DEPLOY_DIR_IMAGE} boot.img boot.sig \
             || bbfatal "Failed to create boot archive ${RPI_SECURE_BOOTIMG_ARCHIVE}"
+
+        # Package signed EEPROM + signature + recovery.bin into a single archive
+        # pieeprom.bin.signed is stored as pieeprom.upd to match auto-update 
+        # expectations of recovery.bin
+        tar -czf ${RPI_SECURE_BOOT_EEPROM_ARCHIVE} \
+            --transform='s|^pieeprom\.bin\.signed$|pieeprom.upd|' \
+            -C ${DEPLOY_DIR_IMAGE} pieeprom.bin.signed pieeprom.upd.sig recovery.bin \
+            || bbfatal "Failed to create EEPROM archive ${RPI_SECURE_BOOT_EEPROM_ARCHIVE}"
 
     fi
 }

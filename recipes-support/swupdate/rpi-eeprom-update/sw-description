@@ -4,28 +4,13 @@ software =
 
 		files: (
 			{
-				name      = "pieeprom.bin.signed";
+				name      = "pieeprom-signed";
 				version   = "@@RPI_SECURE_VERSION@@";
-				filename  = "pieeprom.bin.signed";
-				path      = "/boot/pieeprom.upd";
+				filename  = "pieeprom-signed.tar.gz";
+				path      = "/boot";
+				type	  = "archive";
 				encrypted = true;
-				sha256    = "$swupdate_get_sha256(pieeprom.bin.signed)";
-            },
-			{
-				name      = "pieeprom.upd.sig";
-				version   = "@@RPI_SECURE_VERSION@@";
-				filename  = "pieeprom.upd.sig";
-				path      = "/boot/pieeprom.sig";
-				encrypted = true;
-				sha256    = "$swupdate_get_sha256(pieeprom.upd.sig)";
-            },
-			{
-				name      = "recovery.bin";
-				version   = "@@RPI_SECURE_VERSION@@";
-				filename  = "recovery.bin";
-				path      = "/boot/recovery.bin";
-				encrypted = true;
-				sha256    = "$swupdate_get_sha256(recovery.bin)";
+				sha256    = "$swupdate_get_sha256(pieeprom-signed.tar.gz)";
             }
         );
 }
