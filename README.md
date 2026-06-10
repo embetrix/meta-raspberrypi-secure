@@ -14,6 +14,7 @@ A Yocto layer that provides a security-hardened baseline for Raspberry Pi images
 - Encrypted writable data partitions (dm-crypt + trusted key bound to the SoC)
 - Runtime integrity via IMA/EVM
 - A/B partitioning for atomic updates of boot and root slots
+- OTA Update using SWUpdate
 - Hardened kernel & userspace (SELinux, sysctl, systemd, OpenSSH, busybox)
 - Network & USB protection (default-drop firewall, USBGuard)
 - Optional TPM 2.0 support (Infineon SLB9670)
@@ -27,7 +28,7 @@ A Yocto layer that provides a security-hardened baseline for Raspberry Pi images
 
 ### 1. Generate signing keys
 
-Generates Secure-boot, AVB-DMVerity, IMA/EVM, Kernel-Modules and SSH-CA keys and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
+Generates Secure-boot, AVB-DMVerity, IMA/EVM, Kernel-Modules, SWUpdate and SSH-CA keys and writes a ready-to-use kas fragment `kas-signing-keys.yml`:
 
 ```sh
 ./tools/genkey-helper.sh
@@ -133,6 +134,26 @@ rpi-fw-crypto genkey --key-id 1 --alg ec
 > **Warning:** This is irreversible. The key is written once into OTP memory and can never be changed or erased.
 
 The key is accessible via the [rpifwcrypto-pkcs11](https://github.com/embetrix/rpifwcrypto-pkcs11) PKCS#11 module for device identity and TLS operations and via the kernel trusted key subsystem for storage encryption (dm-crypt).
+
+### 7. Software Update
+
+The image ships [SWUpdate](https://github.com/sbabic/swupdate) with its web interface, exposed over HTTPS through an nginx reverse proxy (TLS terminated with the device-unique key from step 6 and behind basic auth, default user `rpi`).
+
+Open the SWUpdate web UI in a browser:
+
+```
+https://<device-ip>/swupdate/
+```
+
+Upload the `.swu` artifacts built alongside the image (signed with the SWUpdate key from step 1 and encrypted):
+
+```sh
+build/tmp/deploy/images/<MACHINE>/rpi-secure-image-base-update-<MACHINE>.rootfs.swu
+```
+
+<img src="img/swupdate.jpeg" alt="SWUpdate web interface" width="70%" />
+
+> **Note:** The EEPROM update are shipped as separate `.swu` file and can be applied independently: upload them one at a time so the EEPROM recovery flash does not consume the tryboot one-shot.
 
 ## Layers dependencies
 
