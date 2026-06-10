@@ -243,6 +243,7 @@ IMAGE_CMD:rpi-secure-boot () {
         # expectations of recovery.bin
         tar -czf ${RPI_SECURE_BOOT_EEPROM_ARCHIVE} \
             --transform='s|^pieeprom\.bin\.signed$|pieeprom.upd|' \
+            --transform='s|^pieeprom\.upd\.sig$|pieeprom.sig|' \
             -C ${DEPLOY_DIR_IMAGE} pieeprom.bin.signed pieeprom.upd.sig recovery.bin \
             || bbfatal "Failed to create EEPROM archive ${RPI_SECURE_BOOT_EEPROM_ARCHIVE}"
 
