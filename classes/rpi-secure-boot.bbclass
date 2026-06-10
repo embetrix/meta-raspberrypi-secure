@@ -48,6 +48,7 @@ RPI_SECURE_BOOT_SPACE_MAX ?= "131072"
 # Boot image/signature name
 RPI_SECURE_BOOTIMG = "${DEPLOY_DIR_IMAGE}/boot.img"
 RPI_SECURE_BOOTIMG_SIG = "${DEPLOY_DIR_IMAGE}/boot.sig"
+RPI_SECURE_BOOTIMG_ARCHIVE = "${DEPLOY_DIR_IMAGE}/boot-signed.tar.gz"
 RPI_SECURE_BOOT_CONFIG = "${DEPLOY_DIR_IMAGE}/bootconf.txt"
 RPI_SECURE_BOOT_CONFIG_SIG = "${DEPLOY_DIR_IMAGE}/bootconf.sig"
 RPI_SECURE_BOOT_EEPROM = "${DEPLOY_DIR_IMAGE}/pieeprom.bin"
@@ -230,6 +231,11 @@ IMAGE_CMD:rpi-secure-boot () {
 
         rpi-eeprom-digest -k ${SIGN_PUBKEY} -i ${RPI_SECURE_BOOT_EEPROM_RECOVERY} -v ${RPI_SECURE_BOOT_EEPROM_RECOVERY_SIG} \
                         || bbfatal "Signature verification failed for ${RPI_SECURE_BOOT_EEPROM_RECOVERY}"
+
+        # Package boot.img + boot.sig into a single archive for distribution
+        tar -czf ${RPI_SECURE_BOOTIMG_ARCHIVE} \
+            -C ${DEPLOY_DIR_IMAGE} boot.img boot.sig \
+            || bbfatal "Failed to create boot archive ${RPI_SECURE_BOOTIMG_ARCHIVE}"
 
     fi
 }

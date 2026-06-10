@@ -4,22 +4,15 @@ software =
 
 		files: (
 			{
-				name      = "boot.img";
+				name      = "boot-signed";
 				version   = "@@RPI_SECURE_VERSION@@";
-				filename  = "boot.img";
-				path      = "/var/boot-update/boot.img";
+				filename  = "boot-signed.tar.gz";
+				path      = "/var/boot-update/";
+				type      = "archive";
 				encrypted = true;
-				sha256    = "$swupdate_get_sha256(boot.img)";
-			},
-			{
-				name      = "boot.sig";
-				version   = "@@RPI_SECURE_VERSION@@";
-				filename  = "boot.sig";
-				path      = "/var/boot-update/boot.sig";
-				encrypted = true;
-				sha256    = "$swupdate_get_sha256(boot.sig)";
-            }
-        );
+				sha256    = "$swupdate_get_sha256(boot-signed.tar.gz)";
+			}
+		);
 
 		images:  (
 			{
