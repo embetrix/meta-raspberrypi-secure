@@ -22,7 +22,7 @@ do_install:append() {
     if [ "${SWUPDATE_SIGNING}" = "CMS" ] && [ -f "${SWUPDATE_CMS_CERT}" ]; then
         install -d ${D}${sysconfdir}/swupdate/
         install -m 644 "${SWUPDATE_CMS_CERT}" ${D}${sysconfdir}/swupdate/
-        sed -i '/public-key-file/c\\t\public-key-file = "${sysconfdir}/swupdate/'$(basename ${SWUPDATE_CMS_CERT})'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
+        sed -i 's|.*public-key-file.*|\tpublic-key-file = "${sysconfdir}/swupdate/'$(basename ${SWUPDATE_CMS_CERT})'";|' ${D}${sysconfdir}/swupdate/swupdate.cfg
     fi
 
     if [ -f "${SWUPDATE_AES_FILE}" ]; then
@@ -35,7 +35,7 @@ do_install:append() {
         # provisioned at production on TPM or sealed using rpifwcrypto
         # then extracted and set at runtime using : swupdate-ipc aes
         install -m 0400 ${UNPACKDIR}/${aes_keyfile} ${D}${sysconfdir}/swupdate/${aes_keyfile}
-        sed -i '/aes-key-file/c\\t\aes-key-file = "${sysconfdir}/swupdate/'${aes_keyfile}'";' ${D}${sysconfdir}/swupdate/swupdate.cfg
+        sed -i 's|.*aes-key-file.*|\taes-key-file = "${sysconfdir}/swupdate/'${aes_keyfile}'";|' ${D}${sysconfdir}/swupdate/swupdate.cfg
     fi
 
     install -m 755 ${UNPACKDIR}/background.jpg   ${D}/www/images/background.jpg
