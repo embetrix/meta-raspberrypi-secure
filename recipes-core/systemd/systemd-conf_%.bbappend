@@ -5,6 +5,7 @@ SRC_URI += "file://timesyncd.conf \
 			file://80-wlan.network \
 			file://rfkill-override.conf \
 			file://timesyncd-override.conf \
+			file://networkd-wait-online-override.conf \
 			${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.conf', '', d)} \
             "
 
@@ -26,9 +27,15 @@ do_install:append() {
 	install -d ${D}${systemd_system_unitdir}/systemd-timesyncd.service.d
 	install -m 644 ${UNPACKDIR}/timesyncd-override.conf \
 		${D}${systemd_system_unitdir}/systemd-timesyncd.service.d/override.conf
+
+	# Drop-in: wait for any (not all) managed links to come online
+	install -d ${D}${systemd_system_unitdir}/systemd-networkd-wait-online.service.d
+	install -m 644 ${UNPACKDIR}/networkd-wait-online-override.conf \
+		${D}${systemd_system_unitdir}/systemd-networkd-wait-online.service.d/override.conf
 }
 
 FILES:${PN} += "${sysconfdir}/sysctl.d \
 				${systemd_unitdir}/network \
 				${systemd_system_unitdir}/systemd-rfkill.service.d \
-				${systemd_system_unitdir}/systemd-timesyncd.service.d"
+				${systemd_system_unitdir}/systemd-timesyncd.service.d \
+				${systemd_system_unitdir}/systemd-networkd-wait-online.service.d"
