@@ -15,7 +15,10 @@ IMA_EVM_PRIVKEY          ?= "${RPI_SIGNING_KEYS_DIR}/privkey_ima.pem"
 IMA_EVM_X509             ?= "${RPI_SIGNING_KEYS_DIR}/x509_ima.der"
 MODSIGN_PRIVKEY          ?= "${RPI_SIGNING_KEYS_DIR}/privkey_modsign.pem"
 MODSIGN_X509             ?= "${RPI_SIGNING_KEYS_DIR}/x509_modsign.pem"
-
+SWUPDATE_CMS_KEY         ?= "${RPI_SIGNING_KEYS_DIR}/privkey_swupdate.pem"
+SWUPDATE_CMS_CERT        ?= "${RPI_SIGNING_KEYS_DIR}/x509_swupdate.pem"
+SWUPDATE_AES_FILE        ?= "${RPI_SIGNING_KEYS_DIR}/swupdate-aes.key"
+OPENSSH_CA_PUBKEY        ?= "${RPI_SIGNING_KEYS_DIR}/ssh_ca_key.pub"
 
 addhandler rpi_check_signing_keys
 rpi_check_signing_keys[eventmask] = "bb.event.BuildStarted"
@@ -28,12 +31,16 @@ python rpi_check_signing_keys() {
 
     key_defs = [
         ('RPI_SECURE_BOOT_SIGN_KEY', 'private key'),
-        ('AVB_SIGN_KEY',     'private key'),
-        ('AVB_X509',         'certificate'),
-        ('IMA_EVM_PRIVKEY',  'private key'),
-        ('IMA_EVM_X509',     'certificate'),
-        ('MODSIGN_PRIVKEY',  'private key'),
-        ('MODSIGN_X509',     'certificate'),
+        ('AVB_SIGN_KEY',             'private key'),
+        ('AVB_X509',                 'certificate'),
+        ('IMA_EVM_PRIVKEY',          'private key'),
+        ('IMA_EVM_X509',             'certificate'),
+        ('MODSIGN_PRIVKEY',          'private key'),
+        ('MODSIGN_X509',             'certificate'),
+        ('SWUPDATE_CMS_KEY',         'private key'),
+        ('SWUPDATE_CMS_CERT',        'certificate'),
+        ('SWUPDATE_AES_FILE',        'AES key'),
+        ('OPENSSH_CA_PUBKEY',        'SSH CA public key'),
     ]
 
     errors = []
