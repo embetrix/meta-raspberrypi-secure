@@ -60,7 +60,7 @@ DISTRO = "rpi-secure"
 or add to your distro config:
 
 ```conf
-require conf/distro/include/rpi-secure.inc
+require conf/distro/include/rpi-secure-distro.inc
 ```
 
 #### Standalone build
