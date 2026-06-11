@@ -16,6 +16,8 @@ RDEPENDS:packagegroup-dev = " \
     tcpdump \
     gdbserver \
     strace \
+    devmem2 \
+    i2c-tools \
     curl \
     opensc \
     curl \
