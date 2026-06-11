@@ -53,6 +53,9 @@ HW_SERIAL="/proc/device-tree/serial-number"
 
 MACHINE_ID=""
 
+WATCHDOG_DEV="/dev/watchdog0"
+WATCHDOG_PID=""
+
 # Partition numbers for A/B slots and data
 # following wic configuration in rpi-secure.wks
 BOOT=1
@@ -117,7 +120,9 @@ keyctl link @us @s
 setup_dmcrypt "$ROOT_DEV" "$ROOT_DM_NAME"
 
 if ! blkid -s TYPE "/dev/mapper/$ROOT_DM_NAME" >/dev/null 2>&1; then
+	watchdog_start
 	encrypt_rootfs "$ROOT_DM_NAME" "$UPDATE_DEV" "$UPDATE_DM_NAME"
+	watchdog_stop
 else
 	setup_dmcrypt "$UPDATE_DEV" "$UPDATE_DM_NAME"
 fi

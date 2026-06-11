@@ -41,3 +41,19 @@ await_blockdev() {
 		fatal "Timeout waiting for $1"
 	fi
 }
+
+watchdog_start() {
+
+	[ -e "$WATCHDOG_DEV" ] || return 0
+	klog "Starting watchdog feed on $WATCHDOG_DEV"
+	watchdog -F -T 15 -t 5 "$WATCHDOG_DEV" &
+	WATCHDOG_PID=$!
+}
+
+watchdog_stop() {
+
+	[ -n "$WATCHDOG_PID" ] || return 0
+	klog "Stopping watchdog feed (pid $WATCHDOG_PID)"
+	kill "$WATCHDOG_PID" 2>/dev/null
+	WATCHDOG_PID=""
+}
