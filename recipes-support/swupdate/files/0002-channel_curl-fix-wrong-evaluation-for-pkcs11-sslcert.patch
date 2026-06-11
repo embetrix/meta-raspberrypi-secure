@@ -1,0 +1,28 @@
+From 8ec02c6c4fda32ae28646b7f4e79ec3c580e4028 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Thu, 11 Jun 2026 11:14:54 +0200
+Subject: [PATCH V2 1/2] channel_curl: fix wrong evaluation for pkcs11 sslcert
+ detection
+
+Upstream-Status: Submitted
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ corelib/channel_curl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/corelib/channel_curl.c b/corelib/channel_curl.c
+index d37cf95b..39e730c7 100644
+--- a/corelib/channel_curl.c
++++ b/corelib/channel_curl.c
+@@ -646,7 +646,7 @@ channel_op_res_t channel_set_options(channel_t *this, channel_data_t *channel_da
+ 	 * and set curl engine and types accordingly
+ 	 */
+ 	bool keyUri = channel_data->sslkey ? strncasecmp(channel_data->sslkey, "pkcs11:", 7) == 0 : false;
+-	bool certUri = channel_data->sslkey ? strncasecmp(channel_data->sslcert, "pkcs11:", 7) == 0 : false;
++	bool certUri = channel_data->sslcert ? strncasecmp(channel_data->sslcert, "pkcs11:", 7) == 0 : false;
+ 
+ 	if (keyUri || certUri) {
+ 		if (curl_easy_setopt(channel_curl->handle, CURLOPT_SSLENGINE, "pkcs11") != CURLE_OK) {
+-- 
+2.43.0
+
