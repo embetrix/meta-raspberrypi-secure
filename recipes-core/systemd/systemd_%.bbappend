@@ -17,6 +17,7 @@ do_install:append() {
     fi
 
     # Enable hardware watchdog and reboot if systemd hangs for 15s
+    sed -i '/#WatchdogDevice=/c\\WatchdogDevice=/dev/watchdog0' ${D}${sysconfdir}/systemd/system.conf
     sed -i '/#RuntimeWatchdogSec=/c\\RuntimeWatchdogSec=15'  ${D}${sysconfdir}/systemd/system.conf
     sed -i '/#RebootWatchdogSec=/c\\RebootWatchdogSec=10min' ${D}${sysconfdir}/systemd/system.conf
 
