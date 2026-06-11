@@ -40,6 +40,7 @@ do_deploy:append() {
 
     if [ "${ENABLE_WATCHDOG}" = "1" ]; then
         echo "# Enable watchdog"   >>$CONFIG
+        echo "kernel_watchdog_timeout=90" >>$CONFIG
         # dtparam=watchdog is only recognized on RPi4 (BCM2711)
         # On RPi5 (BCM2712) is enabled by default
         case "${MACHINE}" in
