@@ -6,6 +6,8 @@ SRC_URI:append = " \
      file://0003-channel_curl-support-OpenSSL-provider-for-PKCS-11-UR.patch \
      file://swupdate.cfg \
      file://background.jpg \
+     file://index.html \
+     file://swupdate.min.css \
      "
 
 inherit useradd
@@ -39,8 +41,10 @@ do_install:append() {
         install -m 0400 ${UNPACKDIR}/${aes_keyfile} ${D}${sysconfdir}/swupdate/${aes_keyfile}
         sed -i 's|.*aes-key-file.*|\taes-key-file = "${sysconfdir}/swupdate/'${aes_keyfile}'";|' ${D}${sysconfdir}/swupdate/swupdate.cfg
     fi
-
-    install -m 755 ${UNPACKDIR}/background.jpg   ${D}/www/images/background.jpg
+    
+    # Polished swupdate web-UI
+    install -m 755 ${UNPACKDIR}/index.html         ${D}/www/index.html
+    install -m 644 ${UNPACKDIR}/swupdate.min.css   ${D}/www/css/swupdate.min.css
 }
 
 FILES:${PN} += "${sysconfdir}/swupdate"

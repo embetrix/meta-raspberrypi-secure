@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="color-scheme" content="light dark">
+
+  <link rel="icon" href="images/favicon.png" type="image/png">
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/dropzone.min.css">
+  <link rel="stylesheet" href="css/swupdate.min.css">
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/dropzone.min.js"></script>
+  <script src="js/swupdate.min.js"></script>
+
+  <title>SWUpdate &ndash; Software Update for Embedded Systems</title>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="SWUpdate">
+        <img src="images/logo.png" alt="">
+        <span class="brand-text"><span class="accent">SW</span>Update</span>
+      </a>
+      <nav>
+        <a id="swu-restart" class="icon-btn" href="#" title="Restart system" aria-label="Restart system">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12a9 9 0 1 1-3.5-7.1"/>
+            <path d="M21 4v5h-5"/>
+          </svg>
+          <span>Restart</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <h1><span class="accent">SW</span>Update</h1>
+      <p class="lead">Software update for embedded systems.</p>
+      <p class="muted">Upload an SWU image below, or restart the device from the top right.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <svg class="card-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <h2>Software update</h2>
+      </div>
+
+      <div class="card-body">
+        <form class="dropzone" id="dropzone" action="./upload" method="post" enctype="multipart/form-data">
+          <div class="dz-default dz-message">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="dz-headline">Drop an SWU file here</span>
+            <span class="dz-sub">or click to browse</span>
+          </div>
+        </form>
+
+        <div id="swu-idle" class="status status-idle">
+          <span class="status-dot"></span><span>Update not started.</span>
+        </div>
+        <div id="swu-run" class="status status-run" style="display: none;">
+          <span class="status-dot"></span><span>Updating may take a few minutes &mdash; please don&rsquo;t turn off the power.</span>
+        </div>
+        <div id="swu-success" class="status status-success" style="display: none;">
+          <span class="status-dot"></span><span>Updated successfully.</span>
+        </div>
+        <div id="swu-failure" class="status status-failure" style="display: none;">
+          <span class="status-dot"></span><span>Update failed.</span>
+        </div>
+        <div id="swu-done" class="status status-done" style="display: none;">
+          <span class="status-dot"></span><span>Restarting system.</span>
+        </div>
+
+        <div class="progress-row">
+          <i id="swu-progress-spinner" class="spinner invisible" role="status" aria-hidden="true"></i>
+          <strong id="swu-progress-run" style="display: none;">Updating</strong>
+          <span id="swu-progress-name" class="progress-name"></span>
+          <span id="swu-progress-value" class="progress-value"></span>
+        </div>
+        <div class="progress" role="progressbar">
+          <div id="swu-progress-bar" class="progress-bar progress-bar-striped"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <button class="card-header collapsible collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMessages" aria-expanded="false" aria-controls="collapseMessages" id="headingMessages">
+        <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+        <h2>Messages</h2>
+      </button>
+      <div id="collapseMessages" class="collapse" aria-labelledby="headingMessages">
+        <div class="card-body messages" id="messages"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="swu-restart-modal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body">
+          <i class="spinner spinner-lg" role="status" aria-hidden="true"></i>
+          <h5>The system will restart. Please wait &mdash; this takes about a minute.</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
