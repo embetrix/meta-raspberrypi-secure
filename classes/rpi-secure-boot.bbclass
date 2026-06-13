@@ -49,6 +49,7 @@ RPI_SECURE_BOOT_SPACE_MAX ?= "131072"
 RPI_SECURE_BOOTIMG = "${DEPLOY_DIR_IMAGE}/boot.img"
 RPI_SECURE_BOOTIMG_SIG = "${DEPLOY_DIR_IMAGE}/boot.sig"
 RPI_SECURE_BOOTIMG_ARCHIVE = "${DEPLOY_DIR_IMAGE}/boot-signed.tar.gz"
+RPI_SECURE_BOOTIMG_UNSIGNED_ARCHIVE = "${DEPLOY_DIR_IMAGE}/boot-unsigned.tar.gz"
 RPI_SECURE_BOOT_EEPROM_ARCHIVE = "${DEPLOY_DIR_IMAGE}/pieeprom-signed.tar.gz"
 RPI_SECURE_BOOT_CONFIG = "${DEPLOY_DIR_IMAGE}/bootconf.txt"
 RPI_SECURE_BOOT_CONFIG_SIG = "${DEPLOY_DIR_IMAGE}/bootconf.sig"
@@ -156,6 +157,12 @@ IMAGE_CMD:rpi-secure-boot () {
     rm -f ${WORKDIR}/boot.img
     mkfs.vfat -F32 -n "${BOOTDD_VOLUME_ID}" -S 512 -C ${WORKDIR}/boot.img ${BOOT_SIZE_KB}
     mcopy -s -i ${WORKDIR}/boot.img "${BOOT_STAGING}"/* ::/ || bbfatal "mcopy failed to populate boot.img"
+
+    # Package the staged boot content (unsigned) for distribution
+    tar -czf ${RPI_SECURE_BOOTIMG_UNSIGNED_ARCHIVE} \
+        -C "${BOOT_STAGING}" . \
+        || bbfatal "Failed to create unsigned boot archive ${RPI_SECURE_BOOTIMG_UNSIGNED_ARCHIVE}"
+
     rm -rf "${BOOT_STAGING}"
 
     cp ${WORKDIR}/boot.img ${RPI_SECURE_BOOTIMG}
