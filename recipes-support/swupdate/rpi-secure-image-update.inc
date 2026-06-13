@@ -20,11 +20,14 @@ IMAGE_DEPENDS = "${SWU_IMAGE}"
 
 # SWUPDATE_IMAGES: list of images that will be part of the compound image
 # the list can have any binaries and images must be in the DEPLOY directory
-SWUPDATE_IMAGES += " boot-signed"
+SWUPDATE_IMAGES += " boot-signed boot-unsigned"
 SWUPDATE_IMAGES += "${SWU_IMAGE}"
 
 SWUPDATE_IMAGES_FSTYPES[boot-signed] = ".tar.gz"
 SWUPDATE_IMAGES_ENCRYPTED[boot-signed] = "1"
+
+SWUPDATE_IMAGES_FSTYPES[boot-unsigned] = ".tar.gz"
+SWUPDATE_IMAGES_ENCRYPTED[boot-unsigned] = "1"
 
 # The per-image varflags below are keyed by the image name. BitBake does NOT
 # expand ${SWU_IMAGE} inside a varflag key, so set them via setVarFlag where

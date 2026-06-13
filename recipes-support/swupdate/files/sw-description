@@ -14,6 +14,16 @@ software =
 				encrypted = true;
 				sha256    = "$swupdate_get_sha256(boot-signed.tar.gz)";
 				install-if-different = true;
+			},
+			{
+				name      = "boot-unsigned";
+				version   = "@@RPI_SECURE_VERSION@@";
+				filename  = "boot-unsigned.tar.gz";
+				path      = "/var/boot-update/";
+				type      = "archive";
+				encrypted = true;
+				sha256    = "$swupdate_get_sha256(boot-unsigned.tar.gz)";
+				install-if-different = true;
 			}
 		);
 

@@ -1,2 +1,3 @@
-boot-signed __VERSION__
-rootfs      __VERSION__
+boot-signed   __VERSION__
+boot-unsigned __VERSION__
+rootfs        __VERSION__
