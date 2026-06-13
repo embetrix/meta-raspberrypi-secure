@@ -5,6 +5,7 @@ SRC_URI:append = " \
      file://0002-channel_curl-fix-wrong-evaluation-for-pkcs11-sslcert.patch \
      file://0003-channel_curl-support-OpenSSL-provider-for-PKCS-11-UR.patch \
      file://swupdate.cfg \
+     file://sw-versions \
      file://background.jpg \
      file://index.html \
      file://swupdate.min.css \
@@ -45,9 +46,13 @@ do_install:append() {
     # Polished swupdate web-UI
     install -m 755 ${UNPACKDIR}/index.html         ${D}/www/index.html
     install -m 644 ${UNPACKDIR}/swupdate.min.css   ${D}/www/css/swupdate.min.css
+
+    # Add swupdate version file with RPI_SECURE_VERSION
+    install -m 644 ${WORKDIR}/sw-versions   ${D}${sysconfdir}/sw-versions
+    sed -i 's|__VERSION__|${RPI_SECURE_VERSION}|g' ${D}${sysconfdir}/sw-versions
 }
 
-FILES:${PN} += "${sysconfdir}/swupdate"
+FILES:${PN} += "${sysconfdir}/swupdate ${sysconfdir}/sw-versions"
 
 RDEPENDS:${PN} += "raspi-utils"
 RDEPENDS:${PN}-www += "nginx"

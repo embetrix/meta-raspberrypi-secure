@@ -1,0 +1,2 @@
+boot-signed __VERSION__
+rootfs      __VERSION__
