@@ -2,6 +2,8 @@ software =
 {
 		version = "@@RPI_SECURE_VERSION@@";
 
+		hardware-compatibility: [ "@@MACHINE@@" ];
+
 		files: (
 			{
 				name      = "pieeprom-signed";

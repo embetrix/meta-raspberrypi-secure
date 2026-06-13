@@ -50,9 +50,15 @@ do_install:append() {
     # Add swupdate version file with RPI_SECURE_VERSION
     install -m 644 ${UNPACKDIR}/sw-versions   ${D}${sysconfdir}/sw-versions
     sed -i 's|__VERSION__|${RPI_SECURE_VERSION}|g' ${D}${sysconfdir}/sw-versions
+
+    # Add hwrevision file with SOC_FAMILY and MACHINE
+    echo "${SOC_FAMILY} ${MACHINE}" > ${D}${sysconfdir}/hwrevision
+    chmod 644 ${D}${sysconfdir}/hwrevision
 }
 
-FILES:${PN} += "${sysconfdir}/swupdate ${sysconfdir}/sw-versions"
+FILES:${PN} += "${sysconfdir}/swupdate \
+                ${sysconfdir}/sw-versions \
+                ${sysconfdir}/hwrevision"
 
 RDEPENDS:${PN} += "raspi-utils"
 RDEPENDS:${PN}-www += "nginx"
