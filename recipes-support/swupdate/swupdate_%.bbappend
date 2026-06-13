@@ -48,7 +48,7 @@ do_install:append() {
     install -m 644 ${UNPACKDIR}/swupdate.min.css   ${D}/www/css/swupdate.min.css
 
     # Add swupdate version file with RPI_SECURE_VERSION
-    install -m 644 ${WORKDIR}/sw-versions   ${D}${sysconfdir}/sw-versions
+    install -m 644 ${UNPACKDIR}/sw-versions   ${D}${sysconfdir}/sw-versions
     sed -i 's|__VERSION__|${RPI_SECURE_VERSION}|g' ${D}${sysconfdir}/sw-versions
 }
 
