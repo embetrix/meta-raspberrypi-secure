@@ -4,6 +4,38 @@ software =
 
 		hardware-compatibility: [ "@@MACHINE@@" ];
 
+		/*
+		 * Hook for the update_target_slot bootenv entry: its value is computed
+		 * at runtime as the inactive slot (read from the Raspberry Pi firmware
+		 * device-tree node). The hook sets image.version (the bootenv value);
+		 * the parser then stores it into the bootloader dictionary, committed
+		 * via the U-Boot handler on a successful update
+		 */
+		embedded-script = "
+		function set_target_slot(image)
+			local f = io.open('/proc/device-tree/chosen/bootloader/partition', 'rb')
+			if not f then
+				error('set_target_slot: cannot open boot slot device-tree node')
+			end
+			local data = f:read('*a')
+			f:close()
+			if not data or #data < 1 then
+				error('set_target_slot: empty boot slot device-tree node')
+			end
+			-- 4-byte big-endian integer: 2 = slot A active, 3 = slot B active
+			local active = string.byte(data, #data)
+			if active == 2 then
+				image.version = 'B'
+			elseif active == 3 then
+				image.version = 'A'
+			else
+				error('set_target_slot: unknown active boot slot ' .. tostring(active))
+			end
+			swupdate.trace('set_target_slot: update_target_slot=' .. image.version)
+			return true, image
+		end
+		"
+
 		files: (
 			{
 				name      = "boot-signed";
@@ -40,4 +72,17 @@ software =
 				install-if-different = true;
 			}
 		);
+
+		bootenv: (
+			{
+				name = "upgrade_available";
+				value = "1";
+			},
+			{
+				name  = "update_target_slot";
+				value = "X";   /* placeholder for the hook */
+				hook  = "set_target_slot";
+			}
+		);
+
 }
