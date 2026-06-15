@@ -153,7 +153,7 @@ build/tmp/deploy/images/<MACHINE>/rpi-secure-image-base-update-<MACHINE>.rootfs.
 
 <img src="img/swupdate.jpeg" alt="SWUpdate web interface" width="70%" />
 
-> **Note:** The EEPROM update are shipped as separate `.swu` file and can be applied independently: upload them one at a time so the EEPROM recovery flash does not consume the tryboot one-shot.
+> **Note:** The EEPROM update are shipped as separate `.swu` file and can be applied independently
 
 ## Layers dependencies
 
