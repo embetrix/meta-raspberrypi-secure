@@ -20,7 +20,9 @@ IMAGE_DEPENDS = "${SWU_IMAGE}"
 
 # SWUPDATE_IMAGES: list of images that will be part of the compound image
 # the list can have any binaries and images must be in the DEPLOY directory
-SWUPDATE_IMAGES += " boot-signed boot-unsigned"
+SWUPDATE_IMAGES += " boot-signed"
+# boot-unsigned is only shipped on the dev profile (secure boot not set);
+SWUPDATE_IMAGES += "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', 'boot-unsigned', '', d)}"
 SWUPDATE_IMAGES += "${SWU_IMAGE}"
 
 SWUPDATE_IMAGES_FSTYPES[boot-signed] = ".tar.gz"
@@ -45,6 +47,29 @@ python () {
 }
 
 do_swuimage[nostamp] = "1"
+
+# strip boot-unsigned entries from sw-description in case of non-dev profile
+python strip_boot_unsigned() {
+    import os
+    import re
+    import shutil
+
+    dst = os.path.join(d.getVar('S'), 'sw-description')
+    pristine = bb.utils.which(d.getVar('FILESPATH'), 'sw-description')
+    shutil.copyfile(pristine, dst)
+
+    if bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', True, False, d):
+        return
+
+    with open(dst) as f:
+        content = f.read()
+    # Drop the preceding comma plus the whole boot-unsigned entry; the block
+    # contains no nested braces so [^}] safely spans the entry incl. newlines.
+    content = re.sub(r',\s*\{[^}]*?"boot-unsigned"[^}]*?\}', '', content)
+    with open(dst, 'w') as f:
+        f.write(content)
+}
+do_swuimage[prefuncs] += "strip_boot_unsigned"
 
 # Also build the standalone EEPROM-only update alongside the rootfs/boot
 # compound image. The two .swu files are applied separately so the EEPROM
