@@ -18,6 +18,7 @@ RDEPENDS:${PN}:append = " \
                 e2fsprogs-e2fsck \
                 dosfstools \
                 libdevmapper \
+                libubootenv-bin \
                 raspi-utils-rpifwcrypto \
                 keyutils \
                 ima-evm-keys \

@@ -52,3 +52,119 @@ get_boot_slot() {
     # Symlink boot device to a known location
     ln -sf /dev/${BASE_DEV} /dev/bootdev
 }
+
+# Echo the other A/B boot partition number.
+_other_boot_part() {
+
+	case "$1" in
+		"$BOOT_SLOT_A") echo "$BOOT_SLOT_B" ;;
+		"$BOOT_SLOT_B") echo "$BOOT_SLOT_A" ;;
+	esac
+}
+
+# Validate autoboot.txt: tryboot_a_b=1 and distinct [all]/[tryboot]
+# boot_partition values, both in {A,B}. Returns 0 if valid.
+_autoboot_valid() {
+
+	[ -f "$1" ] || return 1
+
+	awk -v a="$BOOT_SLOT_A" -v b="$BOOT_SLOT_B" '
+		/^\[all\]/       { sec = "all" }
+		/^\[tryboot\]/   { sec = "tryboot" }
+		/^tryboot_a_b=1/ { tab = 1 }
+		/^boot_partition=/ {
+			v = $0; sub(/.*=/, "", v); sub(/[^0-9].*/, "", v)
+			if (sec == "all")     allp = v
+			if (sec == "tryboot") tryp = v
+		}
+		END {
+			if (tab == 1 && (allp == a || allp == b) && (tryp == a || tryp == b) && allp != tryp) exit 0
+			exit 1
+		}' "$1" 2>/dev/null
+}
+
+# Current running boot partition number from the firmware device-tree node.
+_running_boot_part() {
+
+	rh=$(hexdump -v -e '/1 "%02x"' "$BOOT_SLOT" 2>/dev/null || true)
+	case "$rh" in
+		00000002) echo "$BOOT_SLOT_A" ;;
+		00000003) echo "$BOOT_SLOT_B" ;;
+	esac
+}
+
+# check/repair a corrupt autoboot.txt while an update is pending:
+# With EEPROM partition walking a corrupt autoboot.txt does not brick: the
+# bootloader walks partitions, boots a slot with a valid boot.img, and we land
+# here. The boot is therefore not driven by autoboot.txt, so the intended layout
+# comes from the bootloader env (off the vfat), not the device tree. On a pending
+# update this forces a rollback to the known-good (previous) slot.
+#
+# Expects the selector partition already mounted at $ROOT_MNT$BOOT_MNT.
+check_autoboot() {
+
+	# Only relevant while an update is awaiting verification.
+	[ "$(fw_printenv -n upgrade_available 2>/dev/null)" = "1" ] || return 0
+
+	autoboot="$ROOT_MNT$BOOT_MNT/autoboot.txt"
+	_autoboot_valid "$autoboot" && return 0
+
+	klog "autoboot: autoboot.txt missing or corrupt, repairing (pending update -> rollback)"
+
+	target=$(fw_printenv -n update_target_slot 2>/dev/null || true)
+	case "$target" in
+		A) target_part="$BOOT_SLOT_A" ;;
+		B) target_part="$BOOT_SLOT_B" ;;
+		*) target_part="" ;;
+	esac
+
+	running_part=$(_running_boot_part)
+
+	if [ -n "$target_part" ]; then
+		# Known-good (previous) slot is the one we did NOT update.
+		active_part=$(_other_boot_part "$target_part")
+		candidate_part="$target_part"
+	else
+		# update_target_slot unknown: write a valid file for the running slot,
+		# do not force a rollback
+		klog "autoboot: update_target_slot unset, rebuilding for running slot $running_part"
+		active_part="$running_part"
+		candidate_part=$(_other_boot_part "$running_part")
+	fi
+
+	[ -n "$active_part" ] && [ -n "$candidate_part" ] || {
+		klog "autoboot: cannot determine slots, leaving autoboot.txt as-is"
+		return 0
+	}
+
+	tmp="$autoboot.new"
+	cat > "$tmp" <<EOF
+[all]
+tryboot_a_b=1
+boot_partition=$active_part
+
+[tryboot]
+boot_partition=$candidate_part
+EOF
+	sync
+	mv "$tmp" "$autoboot" || {
+		klog "autoboot: failed to write $autoboot"
+		rm -f "$tmp"
+		return 0
+	}
+	sync
+
+	klog "autoboot: restored [all]=$active_part [tryboot]=$candidate_part"
+
+	# Record the failed update and clear the pending state.
+	fw_setenv ustate 3            || klog "autoboot: failed to set ustate"
+	fw_setenv upgrade_available   || klog "autoboot: failed to clear upgrade_available"
+
+	# If the walk left us on a slot other than the known-good one, reboot so the
+	# now-valid autoboot.txt boots the known-good slot.
+	if [ -n "$running_part" ] && [ "$running_part" != "$active_part" ]; then
+		klog "autoboot: running slot $running_part != known-good $active_part, rebooting"
+		sync
+		reboot -f
+	fi
+}
