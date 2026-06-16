@@ -71,12 +71,10 @@ FILES:${PN} += "${sysconfdir}/swupdate \
                 ${sysconfdir}/sw-versions \
                 ${sysconfdir}/hwrevision"
 
-RDEPENDS:${PN} += "raspi-utils"
-RDEPENDS:${PN}-www += "nginx"
-
 # Verify a pending A/B update after boot (timer-triggered): 
 # confirm the slot if healthy, rollback otherwise
 SYSTEMD_SERVICE:${PN} += "ab-verify-slot.timer"
 FILES:${PN} += "${systemd_system_unitdir}/ab-verify-slot.service"
 
-RDEPENDS:${PN} += "libubootenv-bin rpi-ab-update swupdate-tools-ipc"
+RDEPENDS:${PN} += "raspi-utils libubootenv-bin rpi-ab-update swupdate-tools-ipc"
+RDEPENDS:${PN}-www += "nginx"
