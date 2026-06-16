@@ -15,13 +15,14 @@
 #
 # Decision (running slot is read from the firmware device-tree node):
 #   running == target + healthy   -> rpi-ab-update -c (make permanent), ustate=0
-#   running == target + unhealthy -> reboot (tryboot is one-shot -> falls back)
+#   running == target + unhealthy -> if tryboot, reboot to fall back else mark failed
 #   running != target             -> firmware already rolled back -> ustate=3
 #
 
 set -e
 
 BOOT_SLOT_DT="/proc/device-tree/chosen/bootloader/partition"
+TRYBOOT_DT="/proc/device-tree/chosen/bootloader/tryboot"
 
 die() {
 
@@ -46,6 +47,14 @@ detect_slot() {
     esac
 }
 
+# True if this boot used the one-shot tryboot (firmware falls back on next reboot)
+is_tryboot() {
+
+    [ -e "$TRYBOOT_DT" ] || return 1
+    th=$(hexdump -v -e '/1 "%02x"' "$TRYBOOT_DT" 2>/dev/null) || true
+    [ "$th" = "00000001" ]
+}
+
 # Healthy only if there are no failed systemd units
 is_healthy() {
 
@@ -58,6 +67,15 @@ is_healthy() {
     echo "Health check failed: failed systemd units:"
     echo "$failed"
     return 1
+}
+
+# Report the final update result to hawkBit via the suricatta IPC. Best-effort:
+# silently ignored if suricatta is disabled or the daemon is not running
+# Args: <finished: success|failure> <status: state.h value> <message>
+report_hawkbit() {
+
+    swupdate-ipc sendtohawkbit 0 "$2" "$1" closed "$3" 2>/dev/null \
+        || echo "hawkbit: feedback not sent (suricatta off or daemon down)"
 }
 
 ua=$(get_env upgrade_available)
@@ -76,6 +94,7 @@ if [ "$ACTIVE_SLOT" != "$target" ]; then
     echo "ROLLBACK: expected slot '$target' but running '$ACTIVE_SLOT' update failed"
     fw_setenv upgrade_available
     fw_setenv ustate 3   # STATE_FAILED
+    report_hawkbit failure 3 "A/B update rolled back: slot $target did not boot"
     exit 0
 fi
 
@@ -85,11 +104,21 @@ if is_healthy; then
     fw_setenv upgrade_available
     fw_setenv ustate   # STATE_OK
     echo "Update to slot $ACTIVE_SLOT CONFIRMED successful"
+    report_hawkbit success 0 "A/B update confirmed on slot $ACTIVE_SLOT"
 else
-    # tryboot is one-shot: a plain reboot returns to the previous slot.
-    # Leave upgrade_available=1 (and ustate at STATE_INSTALLED) so the fallback
-    # boot is detected as a ROLLBACK and sets ustate=3 there.
-    echo "Update unhealthy on slot $ACTIVE_SLOT rebooting to rollback..."
-    sync
-    reboot
+    echo "Update unhealthy on slot $ACTIVE_SLOT"
+    if is_tryboot; then
+        # tryboot is one-shot: a plain reboot returns to the previous slot.
+        # Leave upgrade_available/ustate so the fallback boot logs the ROLLBACK.
+        echo "rebooting to rollback to the previous slot..."
+        sync
+        reboot
+    else
+        # Not a tryboot boot: this slot is already the permanent default, so a
+        # reboot would loop back here. Cannot auto-roll back; mark it failed.
+        echo "WARNING: slot already permanent (not tryboot), cannot auto-rollback"
+        fw_setenv ustate 3   # STATE_FAILED
+        fw_setenv upgrade_available
+        report_hawkbit failure 3 "A/B update unhealthy on slot $ACTIVE_SLOT (already permanent)"
+    fi
 fi

@@ -1,5 +1,7 @@
 [Unit]
 Description=Verify pending A/B update slot (confirm or rollback)
+After=swupdate.service
+Wants=swupdate.service
 
 [Service]
 Type=oneshot

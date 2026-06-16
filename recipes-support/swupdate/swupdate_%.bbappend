@@ -79,4 +79,4 @@ RDEPENDS:${PN}-www += "nginx"
 SYSTEMD_SERVICE:${PN} += "ab-verify-slot.timer"
 FILES:${PN} += "${systemd_system_unitdir}/ab-verify-slot.service"
 
-RDEPENDS:${PN} += "libubootenv-bin rpi-ab-update"
+RDEPENDS:${PN} += "libubootenv-bin rpi-ab-update swupdate-tools-ipc"
