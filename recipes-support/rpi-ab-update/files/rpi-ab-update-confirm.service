@@ -1,6 +1,0 @@
-[Unit]
-Description=Confirm A/B tryboot slot
-
-[Service]
-Type=oneshot
-ExecStart=/usr/sbin/rpi-ab-update -c

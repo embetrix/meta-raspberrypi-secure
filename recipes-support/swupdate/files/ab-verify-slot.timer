@@ -1,0 +1,9 @@
+[Unit]
+Description=Verify pending A/B update slot timer after boot
+
+[Timer]
+# Soak window to give services time to start or fail before confirming
+OnBootSec=180s
+
+[Install]
+WantedBy=timers.target

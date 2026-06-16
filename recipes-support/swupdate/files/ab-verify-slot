@@ -1,0 +1,95 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+#
+# ab-verify-slot: verify a pending A/B update on the first boot into the
+# updated slot then either confirm it or rollback
+#
+# SWUpdate sets these U-Boot env variables on a successful install:
+#   upgrade_available  = 1     an update is awaiting verification
+#   update_target_slot = A|B   the slot the update was written to
+#   ustate             = 1     SWUpdate update state STATE_INSTALLED
+#
+# This clears upgrade_available and moves ustate to STATE_OK (0) on a confirmed
+# update or STATE_FAILED (3) on a rollback.
+#
+# Decision (running slot is read from the firmware device-tree node):
+#   running == target + healthy   -> rpi-ab-update -c (make permanent), ustate=0
+#   running == target + unhealthy -> reboot (tryboot is one-shot -> falls back)
+#   running != target             -> firmware already rolled back -> ustate=3
+#
+
+set -e
+
+BOOT_SLOT_DT="/proc/device-tree/chosen/bootloader/partition"
+
+die() {
+
+    echo "ERROR: $1" >&2
+    exit 1
+}
+
+get_env() {
+
+    fw_printenv -n "$1" 2>/dev/null || true
+}
+
+detect_slot() {
+
+    [ -e "$BOOT_SLOT_DT" ] || die "Boot slot DT node not available"
+
+    boot_hex=$(hexdump -v -e '/1 "%02x"' "$BOOT_SLOT_DT" 2>/dev/null) || true
+    case "$boot_hex" in
+        00000002) ACTIVE_SLOT="A" ;;
+        00000003) ACTIVE_SLOT="B" ;;
+        *) die "Unknown boot slot: $boot_hex" ;;
+    esac
+}
+
+# Healthy only if there are no failed systemd units
+is_healthy() {
+
+    failed=$(systemctl --failed --no-legend 2>/dev/null)
+    if [ -z "$failed" ]; then
+        echo "Health check passed: no failed systemd units"
+        return 0
+    fi
+
+    echo "Health check failed: failed systemd units:"
+    echo "$failed"
+    return 1
+}
+
+ua=$(get_env upgrade_available)
+if [ "$ua" != "1" ]; then
+    echo "No pending update (upgrade_available='${ua:-unset}') normal boot"
+    exit 0
+fi
+
+detect_slot
+target=$(get_env update_target_slot)
+echo "Pending update: target slot '${target:-unset}' running slot '$ACTIVE_SLOT'"
+
+if [ "$ACTIVE_SLOT" != "$target" ]; then
+    # The firmware did not boot the target slot: the tryboot one-shot lapsed
+    # and we fell back to the previous slot.
+    echo "ROLLBACK: expected slot '$target' but running '$ACTIVE_SLOT' update failed"
+    fw_setenv upgrade_available
+    fw_setenv ustate 3   # STATE_FAILED
+    exit 0
+fi
+
+if is_healthy; then
+    # Reuse the existing slot-switch logic to make the slot permanent.
+    rpi-ab-update -c
+    fw_setenv upgrade_available
+    fw_setenv ustate   # STATE_OK
+    echo "Update to slot $ACTIVE_SLOT CONFIRMED successful"
+else
+    # tryboot is one-shot: a plain reboot returns to the previous slot.
+    # Leave upgrade_available=1 (and ustate at STATE_INSTALLED) so the fallback
+    # boot is detected as a ROLLBACK and sets ustate=3 there.
+    echo "Update unhealthy on slot $ACTIVE_SLOT rebooting to rollback..."
+    sync
+    reboot
+fi

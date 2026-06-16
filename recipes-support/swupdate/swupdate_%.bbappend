@@ -9,6 +9,9 @@ SRC_URI:append = " \
      file://background.jpg \
      file://index.html \
      file://swupdate.min.css \
+     file://ab-verify-slot \
+     file://ab-verify-slot.service \
+     file://ab-verify-slot.timer \
      "
 
 inherit useradd
@@ -54,6 +57,14 @@ do_install:append() {
     # Add hwrevision file with SOC_FAMILY and MACHINE
     echo "${SOC_FAMILY} ${MACHINE}" > ${D}${sysconfdir}/hwrevision
     chmod 644 ${D}${sysconfdir}/hwrevision
+
+    # A/B update slot verification: script + service + timer
+    install -d ${D}${sbindir}
+    install -m 0755 ${UNPACKDIR}/ab-verify-slot ${D}${sbindir}/ab-verify-slot
+
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ab-verify-slot.service ${D}${systemd_system_unitdir}/
+    install -m 0644 ${UNPACKDIR}/ab-verify-slot.timer   ${D}${systemd_system_unitdir}/
 }
 
 FILES:${PN} += "${sysconfdir}/swupdate \
@@ -62,3 +73,10 @@ FILES:${PN} += "${sysconfdir}/swupdate \
 
 RDEPENDS:${PN} += "raspi-utils"
 RDEPENDS:${PN}-www += "nginx"
+
+# Verify a pending A/B update after boot (timer-triggered): 
+# confirm the slot if healthy, rollback otherwise
+SYSTEMD_SERVICE:${PN} += "ab-verify-slot.timer"
+FILES:${PN} += "${systemd_system_unitdir}/ab-verify-slot.service"
+
+RDEPENDS:${PN} += "libubootenv-bin rpi-ab-update"

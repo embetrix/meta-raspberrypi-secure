@@ -1,0 +1,6 @@
+[Unit]
+Description=Verify pending A/B update slot (confirm or rollback)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/ab-verify-slot
