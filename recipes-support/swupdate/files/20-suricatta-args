@@ -1,0 +1,20 @@
+# Build the suricatta (hawkBit) arguments for swupdate.sh
+# Sourced by /usr/lib/swupdate/swupdate.sh. Setting SWUPDATE_SURICATTA_ARGS to a
+# non-empty value is what enables suricatta (adds `-u` to the swupdate command)
+#
+# Server url, tenant, device id and gateway token are read from an env file that
+# can be provisioned per device without rebuilding the image. The device id
+# defaults to the hostname.
+
+SURICATTA_ENV="/etc/swupdate/suricatta.conf"
+[ -f "$SURICATTA_ENV" ] && . "$SURICATTA_ENV"
+
+# Device/controller id: env override wins, otherwise use the hostname
+SURICATTA_ID="${SURICATTA_ID:-$(hostname)}"
+
+SWUPDATE_SURICATTA_ARGS="-i ${SURICATTA_ID}"
+
+# Append the remaining options only when provided.
+[ -n "${SURICATTA_URL}" ]            && SWUPDATE_SURICATTA_ARGS="${SWUPDATE_SURICATTA_ARGS} -u ${SURICATTA_URL}"
+[ -n "${SURICATTA_TENANT}" ]         && SWUPDATE_SURICATTA_ARGS="${SWUPDATE_SURICATTA_ARGS} -t ${SURICATTA_TENANT}"
+[ -n "${SURICATTA_GATEWAY_TOKEN}" ]  && SWUPDATE_SURICATTA_ARGS="${SWUPDATE_SURICATTA_ARGS} -g ${SURICATTA_GATEWAY_TOKEN}"
