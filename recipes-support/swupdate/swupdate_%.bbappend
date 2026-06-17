@@ -5,6 +5,8 @@ SRC_URI:append = " \
      file://0002-channel_curl-fix-wrong-evaluation-for-pkcs11-sslcert.patch \
      file://0003-channel_curl-support-OpenSSL-provider-for-PKCS-11-UR.patch \
      file://swupdate.cfg \
+     file://suricatta.conf \
+     file://20-suricatta-args \
      file://sw-versions \
      file://background.jpg \
      file://index.html \
@@ -25,6 +27,14 @@ do_install:append() {
 
     install -d ${D}${sysconfdir}/swupdate
     install -m 644 ${UNPACKDIR}/swupdate.cfg ${D}${sysconfdir}/swupdate/swupdate.cfg
+
+    # Per-device suricatta (hawkBit) settings: device id (defaults to hostname)
+    # and gateway token, provisionable at runtime without rebuilding the image.
+    install -m 600 ${UNPACKDIR}/suricatta.conf ${D}${sysconfdir}/swupdate/suricatta.conf
+
+    # conf.d snippet sourced by swupdate.sh to build the suricatta args
+    install -d ${D}${libdir}/swupdate/conf.d
+    install -m 644 ${UNPACKDIR}/20-suricatta-args ${D}${libdir}/swupdate/conf.d/20-suricatta-args
 
     # Certificates are added if configured with artifacts signing
     if [ "${SWUPDATE_SIGNING}" = "CMS" ] && [ -f "${SWUPDATE_CMS_CERT}" ]; then
@@ -70,6 +80,8 @@ do_install:append() {
 FILES:${PN} += "${sysconfdir}/swupdate \
                 ${sysconfdir}/sw-versions \
                 ${sysconfdir}/hwrevision"
+
+CONFFILES:${PN} += "${sysconfdir}/swupdate/suricatta.conf"
 
 # Verify a pending A/B update after boot (timer-triggered): 
 # confirm the slot if healthy, rollback otherwise
