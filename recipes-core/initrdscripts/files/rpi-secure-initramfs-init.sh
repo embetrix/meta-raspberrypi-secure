@@ -48,6 +48,7 @@ KEY_SZ=32
 
 BOOT_SLOT="/proc/device-tree/chosen/bootloader/partition"
 BOOT_MODE="/proc/device-tree/chosen/bootloader/boot-mode"
+BOOT_TRYBOOT="/proc/device-tree/chosen/bootloader/tryboot"
 
 HW_SERIAL="/proc/device-tree/serial-number"
 
@@ -146,6 +147,9 @@ mount -t vfat -o $OPT_PART $BOOT_DEV "$ROOT_MNT$BOOT_MNT" \
 
 # check autoboot.txt possible corruption or invalid
 check_autoboot
+
+# On a tryboot boot with a pending update mark SWUpdate state as testing
+mark_update_testing
 
 fsck.vfat -y -w "$BOOTUPDATE_DEV" || klog "fsck on $BOOTUPDATE_DEV returned $?"
 mount -t vfat -o $OPT_PART $BOOTUPDATE_DEV "$ROOT_MNT$BOOTUPDATE_MNT" \

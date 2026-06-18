@@ -83,6 +83,28 @@ _autoboot_valid() {
 		}' "$1" 2>/dev/null
 }
 
+# True if the firmware booted the one-shot tryboot slot.
+_in_tryboot() {
+
+	[ -e "$BOOT_TRYBOOT" ] || return 1
+	th=$(hexdump -v -e '/1 "%02x"' "$BOOT_TRYBOOT" 2>/dev/null || true)
+	[ "$th" = "00000001" ]
+}
+
+# On a tryboot boot with a pending update move SWUpdate's ustate to
+# STATE_TESTING (2) before userspace (and suricatta) start
+mark_update_testing() {
+
+	[ "$(fw_printenv -n upgrade_available 2>/dev/null)" = "1" ] || return 0
+	_in_tryboot || return 0
+
+	# Already testing: nothing to do (avoid a redundant env write).
+	[ "$(fw_printenv -n ustate 2>/dev/null)" = "2" ] && return 0
+
+	klog "ab-slot: tryboot with pending update, marking ustate=2 (testing)"
+	fw_setenv ustate 2 || klog "ab-slot: failed to set ustate=2"
+}
+
 # Current running boot partition number from the firmware device-tree node.
 _running_boot_part() {
 
