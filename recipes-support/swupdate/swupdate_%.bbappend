@@ -20,9 +20,9 @@ SRC_URI:append = " \
 inherit useradd
 
 USERADD_PACKAGES = "${PN}"
-GROUPADD_PARAM:${PN}  = "-g 4001 swupdate-www; -g 4002 swupdate-backend"
-USERADD_PARAM:${PN}   = "-g 4001 -u 4001  --system --no-create-home -s /bin/false swupdate-www;  \
-			             -g 4002 -u 4002  --system --no-create-home -s /bin/false swupdate-backend;"
+GROUPADD_PARAM:${PN} = "-g 4001 swupdate-www; -g 4002 swupdate-backend"
+USERADD_PARAM:${PN}  = "-u 4001 -g 4001 --system --no-create-home -s /bin/false swupdate-www; \
+                        -u 4002 -g 4002 --system --no-create-home -s /bin/false swupdate-backend"
 
 do_install:append() {
 
