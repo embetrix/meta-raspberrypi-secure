@@ -4,6 +4,7 @@ SRC_URI:append = " \
      file://0001-tools-optional-reboot-into-RPi-tryboot-mode.patch \
      file://0002-channel_curl-fix-wrong-evaluation-for-pkcs11-sslcert.patch \
      file://0003-channel_curl-support-OpenSSL-provider-for-PKCS-11-UR.patch \
+     file://0004-channel_curl-fix-HASH_final-return-value-check.patch \
      file://swupdate.cfg \
      file://suricatta.conf \
      file://20-suricatta-args \
