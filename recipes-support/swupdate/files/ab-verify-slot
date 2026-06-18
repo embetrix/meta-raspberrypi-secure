@@ -89,9 +89,18 @@ target=$(get_env update_target_slot)
 echo "Pending update: target slot '${target:-unset}' running slot '$ACTIVE_SLOT'"
 
 if [ "$ACTIVE_SLOT" != "$target" ]; then
-    # The firmware did not boot the target slot: the tryboot one-shot lapsed
-    # and we fell back to the previous slot.
+    # The firmware did not boot the target slot: either the tryboot one-shot
+    # lapsed and we fell back, or autoboot.txt's [tryboot] pointed at the slot
+    # we are already on. Either way the update slot was never validated and the
+    # slot we are running now IS the known-good system.
     echo "ROLLBACK: expected slot '$target' but running '$ACTIVE_SLOT' update failed"
+    # Make the running slot the permanent default so a later plain reboot cannot
+    # drift to the unvalidated slot and future updates tryboot the correct
+    # (inactive) slot. Resyncs [all] when we got here via a stale tryboot;
+    # no-op when not in tryboot (autoboot.txt already matches the running slot).
+    if is_tryboot; then
+        rpi-ab-update -c
+    fi
     fw_setenv upgrade_available
     fw_setenv ustate 3   # STATE_FAILED
     report_hawkbit failure 3 "A/B update rolled back: slot $target did not boot"
