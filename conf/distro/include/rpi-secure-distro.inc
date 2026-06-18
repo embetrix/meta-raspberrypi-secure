@@ -7,7 +7,7 @@ INHERIT += "rpi-secure-version"
 DISTRO_VERSION := "${RPI_SECURE_VERSION}"
 
 # replace datetime in image version by predictable git tag derived version
-IMAGE_VERSION_SUFFIX = "-${RPI_SECURE_VERSION}-${RPI_SECURITY_PROFILE}"
+IMAGE_VERSION_SUFFIX = "-${RPI_SECURITY_PROFILE}_${RPI_SECURE_VERSION}"
 
 # Distro Features
 DISTRO_FEATURES  += "systemd polkit ima integrity security selinux tpm2"
