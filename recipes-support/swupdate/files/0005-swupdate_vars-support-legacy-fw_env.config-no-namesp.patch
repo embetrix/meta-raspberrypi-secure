@@ -1,0 +1,53 @@
+From 645d0cdae3b35a361006cb34903688a01cf17797 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Mon, 22 Jun 2026 15:43:31 +0200
+Subject: [PATCH] swupdate_vars: support legacy fw_env.config (no namespace)
+
+swupdate_vars_initialize() unconditionally calls libuboot_get_namespace()
+and rejects an empty namespace, which fails on a legacy fw_env.config
+(no named namespaces). This breaks hawkBit action_id persistence and
+deployments are never acknowledged.
+
+Skip libuboot_get_namespace() when no namespace was requested. The ctx
+from libuboot_read_config_ext() is already valid for the legacy single
+namespace.
+
+Upstream-Status: Pending
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ core/swupdate_vars.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/core/swupdate_vars.c b/core/swupdate_vars.c
+index b2074946..2e2662ab 100644
+--- a/core/swupdate_vars.c
++++ b/core/swupdate_vars.c
+@@ -35,8 +35,6 @@ int swupdate_vars_initialize(struct uboot_ctx **ctx, const char *namespace)
+ 	int ret;
+ 
+ 	if (!namespace || !strlen(namespace)) {
+-		if(!namespace_default)
+-			return -EINVAL;
+ 		namespace = namespace_default;
+ 	}
+ 
+@@ -46,10 +44,12 @@ int swupdate_vars_initialize(struct uboot_ctx **ctx, const char *namespace)
+ 		return -EINVAL;
+ 	}
+ 
+-	*ctx = libuboot_get_namespace(*ctx, namespace);
+-	if (!*ctx) {
+-		ERROR("Cannot get namespace %s from %s", namespace, get_fwenv_config());
+-		return -EINVAL;
++	if (namespace && strlen(namespace)) {
++		*ctx = libuboot_get_namespace(*ctx, namespace);
++		if (!*ctx) {
++			ERROR("Cannot get namespace %s from %s", namespace, get_fwenv_config());
++			return -EINVAL;
++		}
+ 	}
+ 
+ 	if (libuboot_open(*ctx) < 0) {
+-- 
+2.43.0
+
