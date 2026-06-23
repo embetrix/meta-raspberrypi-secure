@@ -18,3 +18,11 @@ SWUPDATE_SURICATTA_ARGS="-i ${SURICATTA_ID}"
 [ -n "${SURICATTA_URL}" ]            && SWUPDATE_SURICATTA_ARGS="${SWUPDATE_SURICATTA_ARGS} -u ${SURICATTA_URL}"
 [ -n "${SURICATTA_TENANT}" ]         && SWUPDATE_SURICATTA_ARGS="${SWUPDATE_SURICATTA_ARGS} -t ${SURICATTA_TENANT}"
 [ -n "${SURICATTA_GATEWAY_TOKEN}" ]  && SWUPDATE_SURICATTA_ARGS="${SWUPDATE_SURICATTA_ARGS} -g ${SURICATTA_GATEWAY_TOKEN}"
+
+# A freshly installed A/B update is awaiting verification: 
+# Override the initial state suricatta reports
+# to hawkBit with STATE_WAIT (-c 6) so the deployment is held pending instead of
+# re-processed and ab-verify-slot resolves it to success/failure
+if [ "$(fw_printenv -n ustate 2>/dev/null)" = "1" ]; then
+    SWUPDATE_SURICATTA_ARGS="${SWUPDATE_SURICATTA_ARGS} -c 6"
+fi
