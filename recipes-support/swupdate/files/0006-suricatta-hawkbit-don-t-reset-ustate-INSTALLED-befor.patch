@@ -1,0 +1,51 @@
+From dfcc97f879ef72ad738d86a98347eee0d065fbaa Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Tue, 23 Jun 2026 14:36:51 +0200
+Subject: [PATCH] suricatta/hawkbit: don't reset ustate=INSTALLED before app
+ confirmation
+
+server_handle_initial_state() unconditionally wrote STATE_OK after
+posting "Testing Pending", defeating the guard in
+server_has_pending_action() that should suppress re-processing during
+reboot.
+
+Upstream-Status: Pending
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ suricatta/server_hawkbit.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/suricatta/server_hawkbit.c b/suricatta/server_hawkbit.c
+index a9d09ac5..50beba2e 100644
+--- a/suricatta/server_hawkbit.c
++++ b/suricatta/server_hawkbit.c
+@@ -919,11 +919,13 @@ server_op_res_t server_handle_initial_state(update_state_t stateovrrd)
+ 	const char *reply_result;
+ 	const char *reply_execution;
+ 	const char *reply_message;
++	bool reset_state = true;
+ 	switch (state) {
+ 	case STATE_INSTALLED:
+ 		reply_result = reply_status_result_finished.none;
+ 		reply_execution = reply_status_execution.proceeding;
+ 		reply_message = "Update Installed, Testing Pending.";
++		reset_state = false;
+ 		break;
+ 	case STATE_TESTING:
+ 		reply_result = reply_status_result_finished.success;
+@@ -970,8 +972,11 @@ server_op_res_t server_handle_initial_state(update_state_t stateovrrd)
+ 
+ 	/* NOTE (Re-)setting STATE_KEY=STATE_OK == '0' instead of deleting it
+ 	 *      as it may be required for the switchback/recovery U-Boot logics.
++	 *      Keep STATE_INSTALLED so server_has_pending_action() can suppress
++	 *      re-processing the same deployment until the application confirms
++	 *      via the activation IPC.
+ 	 */
+-	if ((result = save_state(STATE_OK)) != SERVER_OK) {
++	if (reset_state && (result = save_state(STATE_OK)) != SERVER_OK) {
+ 		ERROR("Error while resetting update state on persistent "
+ 		      "storage.\n");
+ 		return result;
+-- 
+2.43.0
+
