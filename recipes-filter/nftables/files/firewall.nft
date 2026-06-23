@@ -18,8 +18,8 @@ flush ruleset
 define SSH       = 22
 define HTTP      = 80
 define HTTPS     = 443
-define CRL6      = { 2a01:4f9:6b:150f::2 }  (IPv6)
-define CRL4      = { 65.108.125.168 }       (IPv4)
+define CRL6      = { 2a01:4f9:6b:150f::2 }  # IPv6
+define CRL4      = { 65.108.125.168 }       # IPv4
 define DNS       = 53
 define NTP       = 123
 define DHCP4_S   = 67
@@ -102,7 +102,7 @@ table inet filter {
 
         # Allowed outbound services
         tcp dport $HTTPS accept
-        # Plain HTTP to CRL server only (URL path not filterable at L3/L4)
+        # Plain HTTP to CRL server only
         ip  daddr $CRL4 tcp dport $HTTP accept
         ip6 daddr $CRL6 tcp dport $HTTP accept
         udp dport $NTP accept
