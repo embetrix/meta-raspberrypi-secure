@@ -19,7 +19,7 @@ with the mbedtls backend.
 
 Fixes: 9b4671d3 ("fix(openssl): correctly handle failure of EVP_DigestFinal")
 
-Upstream-Status: Submitted
+Upstream-Status: Backport [https://github.com/sbabic/swupdate/commit/2196dcfbc39c3c30320309409e6fc875d42cd8d4]
 Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
 ---
  corelib/channel_curl.c | 2 +-
