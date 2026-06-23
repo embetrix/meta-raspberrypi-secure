@@ -1,4 +1,4 @@
-From dfcc97f879ef72ad738d86a98347eee0d065fbaa Mon Sep 17 00:00:00 2001
+From 50d0b6a15ed7f61701e4e1ef504dfb7e1ad815a5 Mon Sep 17 00:00:00 2001
 From: Ayoub Zaki <ayoub.zaki@embetrix.com>
 Date: Tue, 23 Jun 2026 14:36:51 +0200
 Subject: [PATCH] suricatta/hawkbit: don't reset ustate=INSTALLED before app
@@ -12,11 +12,11 @@ reboot.
 Upstream-Status: Pending
 Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
 ---
- suricatta/server_hawkbit.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ suricatta/server_hawkbit.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
 
 diff --git a/suricatta/server_hawkbit.c b/suricatta/server_hawkbit.c
-index a9d09ac5..50beba2e 100644
+index a9d09ac5..649f6f18 100644
 --- a/suricatta/server_hawkbit.c
 +++ b/suricatta/server_hawkbit.c
 @@ -919,11 +919,13 @@ server_op_res_t server_handle_initial_state(update_state_t stateovrrd)
@@ -33,7 +33,18 @@ index a9d09ac5..50beba2e 100644
  		break;
  	case STATE_TESTING:
  		reply_result = reply_status_result_finished.success;
-@@ -970,8 +972,11 @@ server_op_res_t server_handle_initial_state(update_state_t stateovrrd)
+@@ -964,14 +966,20 @@ server_op_res_t server_handle_initial_state(update_state_t stateovrrd)
+ 		return result;
+ 
+ 	/*
+-	 * Everything fine, reset action_id if any
++	 * Everything fine, reset action_id if any.
++	 * On STATE_INSTALLED keep it: the application's activation IPC
++	 * (sendtohawkbit) still needs it to acknowledge the deployment.
+ 	 */
+-	swupdate_vars_set("action_id", NULL, NULL);
++	if (reset_state)
++		swupdate_vars_set("action_id", NULL, NULL);
  
  	/* NOTE (Re-)setting STATE_KEY=STATE_OK == '0' instead of deleting it
  	 *      as it may be required for the switchback/recovery U-Boot logics.
@@ -46,6 +57,18 @@ index a9d09ac5..50beba2e 100644
  		ERROR("Error while resetting update state on persistent "
  		      "storage.\n");
  		return result;
+@@ -2194,8 +2202,10 @@ static server_op_res_t server_activation_ipc(ipc_message *msg)
+ 		server_hawkbit.update_state = STATE_OK;
+ 
+ 		/*
+-		 * Save the state
++		 * Save the state and clear the persisted action_id now that
++		 * the application has acknowledged the deployment outcome.
+ 		 */
++		swupdate_vars_set("action_id", NULL, NULL);
+ 		if ((result = save_state(STATE_OK)) != SERVER_OK) {
+ 			ERROR("Error while resetting update state on persistent "
+ 			"storage.\n");
 -- 
 2.43.0
 
