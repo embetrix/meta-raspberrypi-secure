@@ -68,7 +68,7 @@ pipeline {
                 expression { params.HAWKBIT == 'yes' }
             }
             steps {
-               sh "tools/deploy-swu-hawkbit.sh build/tmp/deploy/images/${params.IMAGE}-update-${params.MACHINE}.rootfs-${params.SECURITY_PROFILE}_*.swu ${HAWKBIT_URL} ${HAWKBIT_USERNAME} ${HAWKBIT_PASSWORD}"
+               sh "tools/deploy-swu-hawkbit.sh build/tmp/deploy/images/${params.MACHINE}/${params.IMAGE}-update-${params.MACHINE}.rootfs-${params.SECURITY_PROFILE}_*.swu ${HAWKBIT_URL} ${HAWKBIT_USERNAME} ${HAWKBIT_PASSWORD}"
             }
         }
 
