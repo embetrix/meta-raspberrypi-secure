@@ -5,15 +5,20 @@
 # deploy a .swu file to hawkbit server
 # Usage: ./deploy-swu-hawkbit.sh <path-to-swu-file> <hawkbit-url> <hawkbit-username> <hawkbit-password>
 #
-IMG_FILE=$1
+SWU_FILE=$1
 HAWKBIT_URL=$2
 HAWKBIT_USERNAME=$3
 HAWKBIT_PASSWORD=$4
 
+if [ ! -f "$SWU_FILE" ]; then
+    echo "ERROR: SWU file not found: $SWU_FILE" >&2
+    exit 1
+fi
+
 VENDOR="embetrix"
 
-PREFIX=$(basename $IMG_FILE | awk -F _ '{ print $1 }')
-VERSION=$(basename $IMG_FILE | awk -F _ '{ print $2 }' | awk -F .swu '{ print $1 }')
+PREFIX=$(basename $SWU_FILE | awk -F _ '{ print $1 }')
+VERSION=$(basename $SWU_FILE | awk -F _ '{ print $2 }' | awk -F .swu '{ print $1 }')
 DATE=$(date "+%Y-%m-%d-%H-%M-%S")
 
 id=$(curl -s "$HAWKBIT_URL/rest/v1/softwaremodules"  -X POST -u $HAWKBIT_USERNAME:$HAWKBIT_PASSWORD \
@@ -30,7 +35,7 @@ curl -s "$HAWKBIT_URL/rest/v1/softwaremodules" -i -X GET -u $HAWKBIT_USERNAME:$H
 
 curl -s "$HAWKBIT_URL/rest/v1/softwaremodules/${id}/artifacts" -i -X POST -u $HAWKBIT_USERNAME:$HAWKBIT_PASSWORD \
 		-H 'Content-Type: multipart/form-data' \
-		-F 'file=@'${IMG_FILE}''
+		-F 'file=@'${SWU_FILE}''
 
 curl -s "$HAWKBIT_URL/rest/v1/distributionsets/" -i -X POST -u $HAWKBIT_USERNAME:$HAWKBIT_PASSWORD \
             -H 'Content-Type: application/json;charset=UTF-8' \
