@@ -103,7 +103,7 @@ if [ "$ACTIVE_SLOT" != "$target" ]; then
     fi
     fw_setenv upgrade_available
     fw_setenv ustate 3   # STATE_FAILED
-    report_hawkbit failure 3 "A/B update rolled back: slot $target did not boot"
+    report_hawkbit failure 3 "A/B update rolled back: slot $target did not boot correctly"
     exit 0
 fi
 
