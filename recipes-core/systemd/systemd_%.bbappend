@@ -6,7 +6,7 @@ RRECOMMENDS:${PN} += "${PN}-journal-upload ${PN}-container"
 # Ship systemd-journal-upload but leave it disabled 
 # enable explicitly when a log server is configured 
 # in journal-upload.conf
-SYSTEMD_AUTO_ENABLE:${PN}-journal-upload = "disable"
+#SYSTEMD_AUTO_ENABLE:${PN}-journal-upload = "disable"
 
 do_install:append() {
 
