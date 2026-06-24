@@ -10,10 +10,14 @@ pipeline {
         choice choices: ['rpi-secure-image-base', 'rpi-secure-image-demo'], description: 'select image', name: 'IMAGE'
         choice choices: ['dev', 'prod'], description: 'select security profile', name: 'SECURITY_PROFILE'
         choice choices: ['no', 'yes'], description: 'clean workspace', name: 'CLEAN'
+        choice choices: ['no', 'yes'], description: 'deploy to hawkbit', name: 'HAWKBIT'
     }
     environment {
         KAS_CLONE_DEPTH = "1"
         SECURITY_PROFILE = "${params.SECURITY_PROFILE}"
+        HAWKBIT_USERNAME      = credentials('HAWKBIT_USERNAME')
+        HAWKBIT_PASSWORD      = credentials('HAWKBIT_PASSWORD')
+        HAWKBIT_URL           = 'https://embetrix.works/hawkbit'
     }
 
     stages {
@@ -56,6 +60,15 @@ pipeline {
                                              followSymlinks: false,
                                              fingerprint: true,
                                              onlyIfSuccessful: true
+            }
+        }
+
+        stage('Deploy-Hawkbit') {
+            when {
+                expression { params.HAWKBIT == 'yes' }
+            }
+            steps {
+               sh "tools/deploy-swu-hawkbit.sh build/tmp/deploy/images/${params.IMAGE}-update-${params.MACHINE}.rootfs-${params.SECURITY_PROFILE}_*.swu ${HAWKBIT_URL} ${HAWKBIT_USERNAME} ${HAWKBIT_PASSWORD}"
             }
         }
 
