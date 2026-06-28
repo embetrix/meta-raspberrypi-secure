@@ -38,10 +38,16 @@ do_install:append() {
     install -m 644 ${UNPACKDIR}/20-suricatta-args ${D}${libdir}/swupdate/conf.d/20-suricatta-args
 
     # Certificates are added if configured with artifacts signing
-    if [ "${SWUPDATE_SIGNING}" = "CMS" ] && [ -f "${SWUPDATE_CMS_CERT}" ]; then
+    # SWUPDATE_CMS_CERT may be a space-separated list
+    if [ "${SWUPDATE_SIGNING}" = "CMS" ] && [ -n "${SWUPDATE_CMS_CERT}" ]; then
         install -d ${D}${sysconfdir}/swupdate/
-        install -m 644 "${SWUPDATE_CMS_CERT}" ${D}${sysconfdir}/swupdate/
-        sed -i 's|.*public-key-file.*|\tpublic-key-file = "${sysconfdir}/swupdate/'$(basename ${SWUPDATE_CMS_CERT})'";|' ${D}${sysconfdir}/swupdate/swupdate.cfg
+        cms_bundle="x509_swupdate.pem"
+        : > ${D}${sysconfdir}/swupdate/${cms_bundle}
+        for cms_cert in ${SWUPDATE_CMS_CERT}; do
+            cat "${cms_cert}" >> ${D}${sysconfdir}/swupdate/${cms_bundle}
+        done
+        chmod 644 ${D}${sysconfdir}/swupdate/${cms_bundle}
+        sed -i 's|.*public-key-file.*|\tpublic-key-file = "${sysconfdir}/swupdate/'${cms_bundle}'";|' ${D}${sysconfdir}/swupdate/swupdate.cfg
     fi
 
     if [ -f "${SWUPDATE_AES_FILE}" ]; then
