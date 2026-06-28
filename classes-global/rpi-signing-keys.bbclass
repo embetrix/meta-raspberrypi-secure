@@ -43,11 +43,20 @@ python rpi_check_signing_keys() {
         ('OPENSSH_CA_PUBKEY',        'SSH CA public key'),
     ]
 
+    # These may hold a space-separated list of files (e.g. a classical
+    # plus a pqc so every entry must exist)
+    list_vars = ('SWUPDATE_CMS_KEY', 'SWUPDATE_CMS_CERT')
+
     errors = []
     for name, desc in key_defs:
-        path = d.getVar(name)
-        if not path or not os.path.isfile(path):
+        value = d.getVar(name)
+        paths = value.split() if (value and name in list_vars) else [value]
+        if not value:
             errors.append("  %s (%s not found)" % (name, desc))
+            continue
+        for path in paths:
+            if not os.path.isfile(path):
+                errors.append("  %s (%s not found: %s)" % (name, desc, path))
 
     if errors:
         bb.fatal("Signing keys are missing:\n" + "\n".join(errors) + "\n\n" \
