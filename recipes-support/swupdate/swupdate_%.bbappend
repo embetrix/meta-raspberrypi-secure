@@ -42,7 +42,6 @@ do_install:append() {
     if [ "${SWUPDATE_SIGNING}" = "CMS" ] && [ -n "${SWUPDATE_CMS_CERT}" ]; then
         install -d ${D}${sysconfdir}/swupdate/
         cms_bundle="x509_swupdate.pem"
-        : > ${D}${sysconfdir}/swupdate/${cms_bundle}
         for cms_cert in ${SWUPDATE_CMS_CERT}; do
             cat "${cms_cert}" >> ${D}${sysconfdir}/swupdate/${cms_bundle}
         done
@@ -56,7 +55,7 @@ do_install:append() {
         # Reformat openssl key/iv into the single-line "<key> <iv>" swupdate expects
         echo -n "$(grep key ${SWUPDATE_AES_FILE} | cut -d '=' -f 2) $(grep iv ${SWUPDATE_AES_FILE} | cut -d '=' -f 2)" \
             > ${UNPACKDIR}/${aes_keyfile}
-        # ideally we should retriever encryption key from secure storage
+        # ideally we should retrieve encryption key from secure storage
         # provisioned at production on TPM or sealed using rpifwcrypto
         # then extracted and set at runtime using : swupdate-ipc aes
         install -m 0400 ${UNPACKDIR}/${aes_keyfile} ${D}${sysconfdir}/swupdate/${aes_keyfile}
