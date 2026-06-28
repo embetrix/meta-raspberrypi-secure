@@ -201,18 +201,18 @@ header:
 
 local_conf_header:
     signing_keys: |
-        RPI_SIGNING_KEYS_DIR     = "$KEY_DIR"
-        RPI_SECURE_BOOT_SIGN_KEY = "$SECBOOT_KEY"
-        AVB_SIGN_KEY             = "$AVB_SIGN_KEY"
-        AVB_X509                 = "$AVB_X509"
-        IMA_EVM_PRIVKEY          = "$IMA_PRIVKEY"
-        IMA_EVM_X509             = "$IMA_X509"
-        MODSIGN_PRIVKEY          = "$MODSIGN_PRIVKEY"
-        MODSIGN_X509             = "$MODSIGN_X509"
-        SWUPDATE_CMS_KEY         = "$SWUPDATE_CMS_KEY"
-        SWUPDATE_CMS_CERT        = "$SWUPDATE_CMS_CERT"
-        SWUPDATE_AES_FILE        = "$SWUPDATE_AES_FILE"
-        OPENSSH_CA_PUBKEY        = "$SSH_CA_PUB"
+        RPI_SIGNING_KEYS_DIR     ?= "$KEY_DIR"
+        RPI_SECURE_BOOT_SIGN_KEY ?= "$SECBOOT_KEY"
+        AVB_SIGN_KEY             ?= "$AVB_SIGN_KEY"
+        AVB_X509                 ?= "$AVB_X509"
+        IMA_EVM_PRIVKEY          ?= "$IMA_PRIVKEY"
+        IMA_EVM_X509             ?= "$IMA_X509"
+        MODSIGN_PRIVKEY          ?= "$MODSIGN_PRIVKEY"
+        MODSIGN_X509             ?= "$MODSIGN_X509"
+        SWUPDATE_CMS_KEY         ?= "$SWUPDATE_CMS_KEY"
+        SWUPDATE_CMS_CERT        ?= "$SWUPDATE_CMS_CERT"
+        SWUPDATE_AES_FILE        ?= "$SWUPDATE_AES_FILE"
+        OPENSSH_CA_PUBKEY        ?= "$SSH_CA_PUB"
 EOF
 chmod 600 "$KAS_FRAGMENT"
 
