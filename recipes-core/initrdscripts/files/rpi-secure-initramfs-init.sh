@@ -14,7 +14,7 @@
 
 #set -x
 umask 077
-export PATH=$PATH:/sbin:/usr/sbin
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
 BOOT_DEV=""
 BOOTACTIVE_DEV=""
