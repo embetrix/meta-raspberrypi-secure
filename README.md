@@ -158,7 +158,7 @@ build/tmp/deploy/images/<MACHINE>/rpi-secure-image-base-update-<MACHINE>.rootfs.
 ## Layers dependencies
 
 - [openembedded-core (core)](https://git.openembedded.org/openembedded-core/log/?h=wrynose)
-- [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=master)
+- [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=wrynose)
 - [meta-openembedded](https://github.com/openembedded/meta-openembedded/tree/wrynose)
 - [meta-security](https://git.yoctoproject.org/meta-security/log/?h=wrynose)
 - [meta-selinux](https://git.yoctoproject.org/meta-selinux/log/?h=wrynose)
