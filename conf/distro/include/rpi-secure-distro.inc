@@ -12,9 +12,6 @@ IMAGE_VERSION_SUFFIX = "-${RPI_SECURITY_PROFILE}_${RPI_SECURE_VERSION}"
 # Distro Features
 DISTRO_FEATURES  += "systemd polkit ima integrity security selinux tpm2"
 
-# Preferred kernel version
-PREFERRED_VERSION_linux-raspberrypi = "6.18.%"
-
 # Prefer nginx 1.29.x mainline for OpenSSL Provider support
 PREFERRED_VERSION_nginx = "1.29%"
 
