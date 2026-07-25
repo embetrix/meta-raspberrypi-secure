@@ -62,7 +62,7 @@ repos:
     path: "layers/meta-swupdate"
   meta-sca:
     url: "https://github.com/priv-kweihmann/meta-sca.git"
-    branch: master
+    branch: wrynose
     path: "layers/meta-sca"
 env:
   SECURITY_PROFILE: "dev"
