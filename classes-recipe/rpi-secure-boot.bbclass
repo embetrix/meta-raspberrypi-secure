@@ -23,6 +23,9 @@
 #
 #   Keys can be generated with tools/genkey-helper.sh
 #
+#   To gzip-compress the staged ${SDIMG_KERNELIMAGE}
+#   KERNELIMAGE_COMPRESS = "1"
+#
 #   To deploy boot.img/boot.sig to the boot partition via wic add:
 #   IMAGE_BOOT_FILES += "boot.img boot.sig"
 #   This remains backward compatible when secure boot signing is disabled.
@@ -44,6 +47,11 @@ SECURE_BOOT_FILES_EXCLUDE ?= ""
 # Keep this larger than the sdcard_image-rpi default to leave room for
 # bundled initramfs kernels and Raspberry Pi firmware files.
 RPI_SECURE_BOOT_SPACE_MAX ?= "131072"
+
+# Optional gzip compression of the file staged as ${SDIMG_KERNELIMAGE} in
+# boot.img. The Raspberry Pi bootloader auto-detects gzip magic bytes and
+# decompresses at boot
+KERNELIMAGE_COMPRESS ?= "1"
 
 # Boot image/signature name
 RPI_SECURE_BOOTIMG = "${DEPLOY_DIR_IMAGE}/boot.img"
@@ -114,8 +122,19 @@ IMAGE_CMD:rpi-secure-boot () {
             cp ${DEPLOY_DIR_IMAGE}/${DEPLOY_FILE} "${BOOT_STAGING}/${DEST_FILENAME}"
         done
     fi
+    # Stage a file as ${SDIMG_KERNELIMAGE}, gzip-compressing it first when
+    # KERNELIMAGE_COMPRESS is enabled.
+    compress_kernelimage() {
+        if [ "${KERNELIMAGE_COMPRESS}" = "1" ]; then
+            gzip -c "$1" > "${BOOT_STAGING}/${SDIMG_KERNELIMAGE}" \
+                || bbfatal "Failed to gzip $1 into ${BOOT_STAGING}/${SDIMG_KERNELIMAGE}"
+        else
+            cp "$1" "${BOOT_STAGING}/${SDIMG_KERNELIMAGE}"
+        fi
+    }
+
     if [ "${RPI_USE_U_BOOT}" = "1" ]; then
-        cp ${DEPLOY_DIR_IMAGE}/u-boot.bin "${BOOT_STAGING}/${SDIMG_KERNELIMAGE}"
+        compress_kernelimage ${DEPLOY_DIR_IMAGE}/u-boot.bin
         cp ${DEPLOY_DIR_IMAGE}/boot.scr "${BOOT_STAGING}/boot.scr"
         if [ ! -z "${INITRAMFS_IMAGE}" -a "${INITRAMFS_IMAGE_BUNDLE}" = "1" ]; then
             cp ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin "${BOOT_STAGING}/${KERNEL_IMAGETYPE}"
@@ -124,9 +143,9 @@ IMAGE_CMD:rpi-secure-boot () {
         fi
     else
         if [ ! -z "${INITRAMFS_IMAGE}" -a "${INITRAMFS_IMAGE_BUNDLE}" = "1" ]; then
-            cp ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin "${BOOT_STAGING}/${SDIMG_KERNELIMAGE}"
+            compress_kernelimage ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${INITRAMFS_LINK_NAME}.bin
         else
-            cp ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE} "${BOOT_STAGING}/${SDIMG_KERNELIMAGE}"
+            compress_kernelimage ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}
         fi
     fi
 
