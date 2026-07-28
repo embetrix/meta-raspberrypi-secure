@@ -1,4 +1,4 @@
-FILESEXTRAPATHS:append := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI:append = " \
      file://0001-tools-optional-reboot-into-RPi-tryboot-mode.patch \
