@@ -4,7 +4,7 @@ Date: Thu, 11 Jun 2026 11:30:35 +0200
 Subject: [PATCH V2 2/2] channel_curl: support OpenSSL provider for PKCS#11
  URIs on curl >= 8.12.0
 
-Upstream-Status: Submitted
+Upstream-Status: Backport [https://github.com/sbabic/swupdate/commit/6727e29998e0b9edf354fbdfa9860aa5a1acb712]
 Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
 ---
  corelib/channel_curl.c | 20 ++++++++++++++------

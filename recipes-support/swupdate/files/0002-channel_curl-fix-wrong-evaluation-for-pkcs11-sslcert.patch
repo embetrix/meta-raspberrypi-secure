@@ -4,7 +4,7 @@ Date: Thu, 11 Jun 2026 11:14:54 +0200
 Subject: [PATCH V2 1/2] channel_curl: fix wrong evaluation for pkcs11 sslcert
  detection
 
-Upstream-Status: Submitted
+Upstream-Status: Backport [https://github.com/sbabic/swupdate/commit/de23aa6432689d1ce36cd4264bf604c762b2bb39]
 Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
 ---
  corelib/channel_curl.c | 2 +-
