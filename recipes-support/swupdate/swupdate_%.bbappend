@@ -5,6 +5,7 @@ SRC_URI:append = " \
      file://0002-channel_curl-fix-wrong-evaluation-for-pkcs11-sslcert.patch \
      file://0003-channel_curl-support-OpenSSL-provider-for-PKCS-11-UR.patch \
      file://0005-swupdate_vars-support-legacy-fw_env.config-no-namesp.patch \
+     file://0006-crypto-CMS-add-CONFIG_CMS_REQUIRE_HYBRID_PQC-to-requ.patch \
      file://swupdate.cfg \
      file://suricatta.conf \
      file://20-suricatta-args \
