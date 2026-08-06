@@ -28,7 +28,23 @@ PKCS11_TOKEN="${PKCS11_TOKEN:-RPi%20OTP%20key}"
 SERVER_KEY_ID="${SERVER_KEY_ID:-%01}"
 SERVER_KEY_URI="pkcs11:object=${PKCS11_TOKEN};id=${SERVER_KEY_ID};type=private"
 
-if [ ! -f rpi-device-cert.pem ]; then
+GEN_CERT=1
+if [ -f rpi-device-cert.pem ]; then
+    NOT_BEFORE=$(openssl x509 -in rpi-device-cert.pem -noout -startdate | cut -d= -f2)
+    NOT_AFTER=$(openssl x509 -in rpi-device-cert.pem -noout -enddate | cut -d= -f2)
+    START_EPOCH=$(date -d "$NOT_BEFORE" +%s)
+    END_EPOCH=$(date -d "$NOT_AFTER" +%s)
+    HALF_LIFE=$(( (END_EPOCH - START_EPOCH) / 2 ))
+    # -checkend fails if the cert expires within HALF_LIFE seconds from now,
+    # which covers both "already expired" and "more than half expired"
+    if openssl x509 -in rpi-device-cert.pem -noout -checkend "$HALF_LIFE" >/dev/null 2>&1; then
+        GEN_CERT=0
+    else
+        echo "Certificate expired or more than half expired, regenerating"
+    fi
+fi
+
+if [ "$GEN_CERT" -eq 1 ]; then
     # pkcs11-provider reconstructs EC keys with explicit curve parameters:
     # browsers reject these so reencode as named curve (prime256v1)
     openssl pkey -provider pkcs11 -provider default -pubin \
