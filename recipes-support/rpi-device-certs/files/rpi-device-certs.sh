@@ -6,6 +6,7 @@
 # Usage: rpi-device-certs.sh [--force]
 #   --force: regenerate all device certificates even if they already exist
 
+CERT_VALIDITY=90 # days
 
 if [ "$1" = "--force" ]; then
     echo "Force mode: regenerating all device certificates"
@@ -64,7 +65,7 @@ if [ "$GEN_CERT" -eq 1 ]; then
             -force_pubkey rpi-device-pubkey.pem \
             -signkey "$SERVER_KEY_URI" \
             -provider pkcs11 -provider default \
-            -out rpi-device-cert.pem -days 365 \
+            -out rpi-device-cert.pem -days $CERT_VALIDITY \
             -copy_extensions copyall || exit 1
 
     rm -f rpi-device-pubkey.pem rpi-device-cert.csr
