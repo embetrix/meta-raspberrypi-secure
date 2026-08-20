@@ -16,7 +16,7 @@ signature.
 It only affects hybrid signing and is off by default. It needs every
 signer to be trusted.
 
-Upstream-Status: Submitted [https://patchwork.ozlabs.org/project/swupdate/patch/20260729133837.70478-1-ayoub.zaki@embetrix.com/]
+Upstream-Status: Backport [https://github.com/sbabic/swupdate/commit/ca6a85de51166d9774429d3bb2f7cd17e39540c5]
 Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
 ---
  crypto/Kconfig                       | 13 ++++++
