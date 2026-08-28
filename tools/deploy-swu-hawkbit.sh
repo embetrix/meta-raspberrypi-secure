@@ -21,7 +21,7 @@ PREFIX=$(basename $SWU_FILE | awk -F _ '{ print $1 }')
 VERSION=$(basename $SWU_FILE | awk -F _ '{ print $2 }' | awk -F .swu '{ print $1 }')
 DATE=$(date "+%Y-%m-%d-%H-%M-%S")
 
-id=$(curl -s "$HAWKBIT_URL/rest/v1/softwaremodules"  -X POST -u $HAWKBIT_USERNAME:$HAWKBIT_PASSWORD \
+RESPONSE=$(curl -s -w '\n%{http_code}' "$HAWKBIT_URL/rest/v1/softwaremodules" -X POST -u "$HAWKBIT_USERNAME:$HAWKBIT_PASSWORD" \
 		-H 'Content-Type: application/hal+json;charset=UTF-8' \
 		-d '[ {
 	            "vendor" : "'${VENDOR}'",
@@ -29,15 +29,30 @@ id=$(curl -s "$HAWKBIT_URL/rest/v1/softwaremodules"  -X POST -u $HAWKBIT_USERNAM
 	            "description" : "'${PREFIX}'",
 	            "type" : "os",
 	            "version" : "'${VERSION}'"
-		    }]' |  jq '.[] | .id')
+		    }]')
+HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 
-curl -s "$HAWKBIT_URL/rest/v1/softwaremodules" -i -X GET -u $HAWKBIT_USERNAME:$HAWKBIT_PASSWORD
+if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+    echo "ERROR: softwaremodules POST failed with HTTP $HTTP_CODE" >&2
+    echo "$BODY" >&2
+    exit 1
+fi
 
-curl -s "$HAWKBIT_URL/rest/v1/softwaremodules/${id}/artifacts" -i -X POST -u $HAWKBIT_USERNAME:$HAWKBIT_PASSWORD \
+id=$(echo "$BODY" | jq -e '.[] | .id')
+if [ -z "$id" ]; then
+    echo "ERROR: could not parse software module id from response:" >&2
+    echo "$BODY" >&2
+    exit 1
+fi
+
+curl -s "$HAWKBIT_URL/rest/v1/softwaremodules" -i -X GET -u "$HAWKBIT_USERNAME:$HAWKBIT_PASSWORD"
+
+curl -s "$HAWKBIT_URL/rest/v1/softwaremodules/${id}/artifacts" -i -X POST -u "$HAWKBIT_USERNAME:$HAWKBIT_PASSWORD" \
 		-H 'Content-Type: multipart/form-data' \
 		-F 'file=@'${SWU_FILE}''
 
-curl -s "$HAWKBIT_URL/rest/v1/distributionsets/" -i -X POST -u $HAWKBIT_USERNAME:$HAWKBIT_PASSWORD \
+curl -s "$HAWKBIT_URL/rest/v1/distributionsets/" -i -X POST -u "$HAWKBIT_USERNAME:$HAWKBIT_PASSWORD" \
             -H 'Content-Type: application/json;charset=UTF-8' \
             -d '[ {
                     "requiredMigrationStep" : false,
