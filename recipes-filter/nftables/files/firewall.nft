@@ -18,8 +18,8 @@ flush ruleset
 define SSH       = 22
 define HTTP      = 80
 define HTTPS     = 443
-define CRL6      = { 2a01:4f9:6b:150f::2 }  # IPv6
-define CRL4      = { 65.108.125.168 }       # IPv4
+define CRL6      = { 2606:4700:3032::6815:5664, 2606:4700:3034::ac43:d9d3 }
+define CRL4      = { 104.21.86.100, 172.67.217.211 }
 define DNS       = 53
 define NTP       = 123
 define DHCP4_S   = 67
