@@ -17,7 +17,7 @@ pipeline {
         SECURITY_PROFILE = "${params.SECURITY_PROFILE}"
         HAWKBIT_USERNAME      = credentials('HAWKBIT_USERNAME')
         HAWKBIT_PASSWORD      = credentials('HAWKBIT_PASSWORD')
-        HAWKBIT_URL           = 'https://embetrix.works/hawkbit'
+        HAWKBIT_URL           = 'https://api.embetrix.works/hawkbit'
     }
 
     stages {
