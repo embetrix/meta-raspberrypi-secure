@@ -1,0 +1,140 @@
+From 12a5e59a4f19a7846b19baae245260cfe8be4939 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Mon, 31 Aug 2026 17:39:05 +0200
+Subject: [PATCH] channel: add tls_group option to restrict TLS key exchange
+ groups
+
+Add "tls_group" option mapped to curl CURLOPT_SSL_EC_CURVES taking
+a colon separated list example tls_group = "X25519MLKEM768:secp256r1".
+The handshake will fail if the server supports none of the listed groups.
+Needs at least libcurl 7.73.0 version
+
+Upstream-Status: Submitted [https://patchwork.ozlabs.org/project/swupdate/patch/20260831154235.278721-1-ayoub.zaki@embetrix.com/]
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ corelib/channel_curl.c       | 24 ++++++++++++++++++++++++
+ corelib/server_utils.c       |  3 +++
+ doc/source/hawkbit-setup.rst |  1 +
+ include/channel_curl.h       |  1 +
+ suricatta/server_lua.c       |  3 +++
+ suricatta/suricatta.lua      |  1 +
+ 6 files changed, 33 insertions(+)
+
+diff --git a/corelib/channel_curl.c b/corelib/channel_curl.c
+index f02e79ca..a23d23d1 100644
+--- a/corelib/channel_curl.c
++++ b/corelib/channel_curl.c
+@@ -777,6 +777,30 @@ channel_op_res_t channel_set_options(channel_t *this, channel_data_t *channel_da
+ 		}
+ 	}
+ 
++	/*
++	 * Check if the TLS key exchange groups are specified, the
++	 * server is required to support one of them. Setting this fails the
++	 * handshake instead of falling back to another group, so it can be
++	 * used to enforce a group
++	 */
++	if (channel_data->tls_group) {
++#if LIBCURL_VERSION_NUM >= 0x074900 /* 7.73.0 */
++		if (curl_easy_setopt(channel_curl->handle,
++				      CURLOPT_SSL_EC_CURVES,
++				      channel_data->tls_group) != CURLE_OK) {
++			ERROR("tls_group set to %s, but not supported by the TLS backend",
++			      channel_data->tls_group);
++			result = CHANNEL_EINIT;
++			goto cleanup;
++		}
++#else
++		ERROR("tls_group set to %s but libcurl %s is too old, minimum 7.73.0 versio required",
++		      channel_data->tls_group, LIBCURL_VERSION);
++		result = CHANNEL_EINIT;
++		goto cleanup;
++#endif
++	}
++
+ 	if (channel_data->auth_token != NULL) {
+ 		if (((channel_curl->header = curl_slist_append(
+ 				channel_curl->header, channel_data->auth_token)) == NULL)) {
+diff --git a/corelib/server_utils.c b/corelib/server_utils.c
+index 13923d50..dbf934ba 100644
+--- a/corelib/server_utils.c
++++ b/corelib/server_utils.c
+@@ -50,6 +50,9 @@ int channel_settings(void *elem, void *data)
+ 	GET_FIELD_STRING_RESET(LIBCFG_PARSER, elem, "ciphers", tmp);
+ 	if (strlen(tmp))
+ 		SETSTRING(chan->ciphers, tmp);
++	GET_FIELD_STRING_RESET(LIBCFG_PARSER, elem, "tls_group", tmp);
++	if (strlen(tmp))
++		SETSTRING(chan->tls_group, tmp);
+ 	GET_FIELD_STRING_RESET(LIBCFG_PARSER, elem, "sslcert", tmp);
+ 	if (strlen(tmp))
+ 		SETSTRING(chan->sslcert, tmp);
+diff --git a/doc/source/hawkbit-setup.rst b/doc/source/hawkbit-setup.rst
+index 2892c819..c060fb1d 100644
+--- a/doc/source/hawkbit-setup.rst
++++ b/doc/source/hawkbit-setup.rst
+@@ -81,6 +81,7 @@ Recipe
+    url = "https://hb.domain:8443";
+    nocheckcert = false;
+    cafile = "/etc/swupdate/priv-cachain.pem"; /* CA + sub CA in one file */
++   /* tls_group = "X25519MLKEM768"; restrict the TLS key exchange groups */
+    /* sslkey = anon client: do not set; */
+    /* sslcert = anon client: do not set; */
+   ...
+diff --git a/include/channel_curl.h b/include/channel_curl.h
+index f4855ce2..0f652ee2 100644
+--- a/include/channel_curl.h
++++ b/include/channel_curl.h
+@@ -59,6 +59,7 @@ typedef struct {
+ 	char *sslkeypassword;
+ 	char *sslcert;
+ 	char *ciphers;
++	char *tls_group;	/* TLS key exchange groups */
+ 	char *proxy;
+ 	char *info;
+ 	char *auth_token;
+diff --git a/suricatta/server_lua.c b/suricatta/server_lua.c
+index 63e7aed4..d7f3dab4 100644
+--- a/suricatta/server_lua.c
++++ b/suricatta/server_lua.c
+@@ -523,6 +523,7 @@ static void channel_push_options(lua_State *L, channel_data_t *channel_data)
+ 	push_to_table(L, "sslkeypassword",     channel_data->sslkeypassword);
+ 	push_to_table(L, "sslcert",            channel_data->sslcert);
+ 	push_to_table(L, "ciphers",            channel_data->ciphers);
++	push_to_table(L, "tls_group",          channel_data->tls_group);
+ 	if (channel_data->proxy && channel_data->proxy == USE_PROXY_ENV) {
+ 		push_to_table(L, "proxy",      "");
+ 	} else {
+@@ -570,6 +571,7 @@ static void channel_set_options(lua_State *L, channel_data_t *channel_data)
+ 	get_from_table(L, "sslkeypassword",     channel_data->sslkeypassword, COPY_DEST);
+ 	get_from_table(L, "sslcert",            channel_data->sslcert, COPY_DEST);
+ 	get_from_table(L, "ciphers",            channel_data->ciphers, COPY_DEST);
++	get_from_table(L, "tls_group",          channel_data->tls_group, COPY_DEST);
+ 	get_from_table(L, "info",               channel_data->info, COPY_DEST);
+ 	get_from_table(L, "auth_token",         channel_data->auth_token, COPY_DEST);
+ 	get_from_table(L, "content_type",       channel_data->content_type, COPY_DEST);
+@@ -626,6 +628,7 @@ static void channel_free_options(channel_data_t *channel_data)
+ 	free(channel_data->sslkeypassword);
+ 	free(channel_data->sslcert);
+ 	free(channel_data->ciphers);
++	free(channel_data->tls_group);
+ 	if (channel_data->proxy && channel_data->proxy != USE_PROXY_ENV) {
+ 		free(channel_data->proxy);
+ 	}
+diff --git a/suricatta/suricatta.lua b/suricatta/suricatta.lua
+index 01020759..e503f12b 100644
+--- a/suricatta/suricatta.lua
++++ b/suricatta/suricatta.lua
+@@ -235,6 +235,7 @@ suricatta.channel = {
+     --- @field sslkey              string | nil   `CURLOPT_SSLKEY` - private key file for TLS and SSL client cert
+     --- @field sslcert             string | nil   `CURLOPT_SSLCERT` - SSL client certificate
+     --- @field ciphers             string | nil   `CURLOPT_SSL_CIPHER_LIST` - ciphers to use for TLS
++    --- @field tls_group           string | nil   `CURLOPT_SSL_EC_CURVES` - TLS key exchange groups to require
+     --- @field proxy               string | nil   `CURLOPT_PROXY` - proxy to use
+     --- @field info                string | nil   `swupdate_request`'s info field as in `include/network_ipc.h`
+     --- @field auth_token          string | nil   String appended to Header
+
+base-commit: 9000ecb52677da7d9676a61b729bab57dba99674
+-- 
+2.43.0
+
