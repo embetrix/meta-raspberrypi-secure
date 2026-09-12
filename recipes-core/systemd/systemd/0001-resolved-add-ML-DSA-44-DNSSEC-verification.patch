@@ -3,22 +3,24 @@ From: Ayoub Zaki <ayoub.zaki@embetrix.com>
 Date: Sat, 12 Sep 2026 12:03:31 +0200
 Subject: [PATCH] resolved: add ML-DSA-44 DNSSEC verification
 
-Most deployed DNSSEC signature algorithms are vulnerable to a
-cryptographically relevant quantum computer. ML-DSA-44 is the
-smallest FIPS 204 parameter set and has the lowest DNS transport
-cost among the ML-DSA variants.
+Classical DNSSEC signature algorithms such as RSA and ECDSA are
+vulnerable to attacks from cryptographically relevant quantum
+computers. Introduce ML-DSA-44 as a post-quantum DNSSEC signature
+algorithm.
 
 Specification:
 https://datatracker.ietf.org/doc/draft-westerbaan-dnssec-mldsa/01/
 
 Add DNSSEC algorithm 18 verification through OpenSSL. Import the raw
-1,312-byte public key and verify canonical RRSIG data directly using
+1312-byte public key and verify canonical RRSIG data directly using
 pure ML-DSA with an empty context. Reject keys and signatures whose
-sizes differ from 1,312 bytes and 2,420 bytes respectively.
+sizes differ from 1312 bytes and 2420 bytes respectively.
 
-Return unsupported-algorithm with OpenSSL older than 3.5. Compile the
-verification path only when OpenSSL 3.5 APIs are available.
+Return unsupported-algorithm when ML-DSA is unavailable. Add the
+draft vector with coverage for data mutation, signature mutation,
+invalid lengths and unavailable crypto support.
 
+Upstream-Status: Pending
 Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
 ---
  src/resolve/resolved-dns-dnssec.c | 69 +++++++++++++++++++++++++++++++
