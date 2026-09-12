@@ -1,0 +1,159 @@
+From a2687dfae27c2a2114f8e60eacff8a751ba99511 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Sat, 12 Sep 2026 12:03:31 +0200
+Subject: [PATCH] resolved: add ML-DSA-44 DNSSEC verification
+
+Most deployed DNSSEC signature algorithms are vulnerable to a
+cryptographically relevant quantum computer. ML-DSA-44 is the
+smallest FIPS 204 parameter set and has the lowest DNS transport
+cost among the ML-DSA variants.
+
+Specification:
+https://datatracker.ietf.org/doc/draft-westerbaan-dnssec-mldsa/01/
+
+Add DNSSEC algorithm 18 verification through OpenSSL. Import the raw
+1,312-byte public key and verify canonical RRSIG data directly using
+pure ML-DSA with an empty context. Reject keys and signatures whose
+sizes differ from 1,312 bytes and 2,420 bytes respectively.
+
+Return unsupported-algorithm with OpenSSL older than 3.5. Compile the
+verification path only when OpenSSL 3.5 APIs are available.
+
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ src/resolve/resolved-dns-dnssec.c | 69 +++++++++++++++++++++++++++++++
+ src/shared/dns-rr.c               |  1 +
+ src/shared/dns-rr.h               |  4 +-
+ 3 files changed, 73 insertions(+), 1 deletion(-)
+
+diff --git a/src/resolve/resolved-dns-dnssec.c b/src/resolve/resolved-dns-dnssec.c
+index 537370f0a9..c0f5882c4c 100644
+--- a/src/resolve/resolved-dns-dnssec.c
++++ b/src/resolve/resolved-dns-dnssec.c
+@@ -26,6 +26,8 @@ REENABLE_WARNING;
+ 
+ #define VERIFY_RRS_MAX 256
+ #define MAX_KEY_SIZE (32*1024)
++#define MLDSA44_PUBLIC_KEY_SIZE 1312
++#define MLDSA44_SIGNATURE_SIZE  2420
+ 
+ /* Permit a maximum clock skew of 1h 10min. This should be enough to deal with DST confusion */
+ #define SKEW_MAX (1*USEC_PER_HOUR + 10*USEC_PER_MINUTE)
+@@ -378,6 +380,71 @@ static int dnssec_eddsa_verify(
+                         dnskey->dnskey.key, key_size);
+ }
+ 
++static int dnssec_mldsa_verify(
++                const void *data,
++                size_t data_size,
++                DnsResourceRecord *rrsig,
++                DnsResourceRecord *dnskey) {
++
++#if OPENSSL_VERSION_NUMBER >= 0x30500000L
++        _cleanup_(EVP_MD_CTX_freep) EVP_MD_CTX *ctx = NULL;
++        _cleanup_(EVP_PKEY_freep) EVP_PKEY *evkey = NULL;
++        unsigned long error;
++        int r;
++#endif
++
++        assert(data);
++        assert(data_size > 0);
++        assert(rrsig);
++        assert(dnskey);
++
++        if (dnskey->dnskey.key_size != MLDSA44_PUBLIC_KEY_SIZE)
++                return -EINVAL;
++
++        if (rrsig->rrsig.signature_size != MLDSA44_SIGNATURE_SIZE)
++                return -EINVAL;
++
++#if OPENSSL_VERSION_NUMBER < 0x30500000L
++        return -EOPNOTSUPP;
++#else
++        evkey = EVP_PKEY_new_raw_public_key_ex(
++                        NULL,
++                        "ML-DSA-44",
++                        NULL,
++                        dnskey->dnskey.key,
++                        dnskey->dnskey.key_size);
++        if (!evkey) {
++                error = ERR_get_error();
++                if (error != 0 && ERR_GET_REASON(error) == ERR_R_MALLOC_FAILURE)
++                        return -ENOMEM;
++
++                return log_debug_errno(SYNTHETIC_ERRNO(EOPNOTSUPP),
++                                       "Failed to import ML-DSA-44 public key: 0x%lx", error);
++        }
++
++        ctx = EVP_MD_CTX_new();
++        if (!ctx)
++                return -ENOMEM;
++
++        /* ML-DSA DNSSEC uses pure ML-DSA with the default empty context, not HashML-DSA. */
++        if (EVP_DigestVerifyInit(ctx, NULL, NULL, NULL, evkey) <= 0)
++                return log_debug_errno(SYNTHETIC_ERRNO(EIO),
++                                       "Failed to initialize ML-DSA-44 verification: 0x%lx", ERR_get_error());
++
++        r = EVP_DigestVerify(
++                        ctx,
++                        rrsig->rrsig.signature,
++                        rrsig->rrsig.signature_size,
++                        data,
++                        data_size);
++        if (r < 0)
++                return log_debug_errno(SYNTHETIC_ERRNO(EIO),
++                                       "ML-DSA-44 signature verification failed: 0x%lx", ERR_get_error());
++
++        return r;
++#endif
++}
++
+ static int md_add_uint8(EVP_MD_CTX *ctx, uint8_t v) {
+         return EVP_DigestUpdate(ctx, &v, sizeof(v));
+ }
+@@ -628,6 +695,8 @@ static int dnssec_rrset_verify_sig(
+         unsigned hash_size;
+ 
+         switch (rrsig->rrsig.algorithm) {
++        case DNSSEC_ALGORITHM_MLDSA44:
++                return dnssec_mldsa_verify(sig_data, sig_size, rrsig, dnskey);
+         case DNSSEC_ALGORITHM_ED25519:
+                 return dnssec_eddsa_verify(
+                                 rrsig->rrsig.algorithm,
+diff --git a/src/shared/dns-rr.c b/src/shared/dns-rr.c
+index 0fa730c13b..69666ab756 100644
+--- a/src/shared/dns-rr.c
++++ b/src/shared/dns-rr.c
+@@ -2529,6 +2529,7 @@ static const char* const dnssec_algorithm_table[_DNSSEC_ALGORITHM_MAX_DEFINED] =
+         [DNSSEC_ALGORITHM_ECDSAP384SHA384]    = "ECDSAP384SHA384",
+         [DNSSEC_ALGORITHM_ED25519]            = "ED25519",
+         [DNSSEC_ALGORITHM_ED448]              = "ED448",
++        [DNSSEC_ALGORITHM_MLDSA44]            = "MLDSA44",
+         [DNSSEC_ALGORITHM_INDIRECT]           = "INDIRECT",
+         [DNSSEC_ALGORITHM_PRIVATEDNS]         = "PRIVATEDNS",
+         [DNSSEC_ALGORITHM_PRIVATEOID]         = "PRIVATEOID",
+diff --git a/src/shared/dns-rr.h b/src/shared/dns-rr.h
+index 56c30cf880..be385e109b 100644
+--- a/src/shared/dns-rr.h
++++ b/src/shared/dns-rr.h
+@@ -18,7 +18,8 @@
+ 
+ /* DNSSEC algorithm identifiers, see
+  * http://tools.ietf.org/html/rfc4034#appendix-A.1 and
+- * https://www.iana.org/assignments/dns-sec-alg-numbers/dns-sec-alg-numbers.xhtml */
++ * https://www.iana.org/assignments/dns-sec-alg-numbers/dns-sec-alg-numbers.xhtml and
++ * https://datatracker.ietf.org/doc/html/draft-westerbaan-dnssec-mldsa-01 */
+ enum {
+         DNSSEC_ALGORITHM_RSAMD5 = 1,
+         DNSSEC_ALGORITHM_DH,
+@@ -34,6 +35,7 @@ enum {
+         DNSSEC_ALGORITHM_ECDSAP384SHA384 = 14, /* RFC 6605 */
+         DNSSEC_ALGORITHM_ED25519 = 15,         /* RFC 8080 */
+         DNSSEC_ALGORITHM_ED448 = 16,           /* RFC 8080 */
++        DNSSEC_ALGORITHM_MLDSA44 = 18,
+         DNSSEC_ALGORITHM_INDIRECT = 252,
+         DNSSEC_ALGORITHM_PRIVATEDNS,
+         DNSSEC_ALGORITHM_PRIVATEOID,
+-- 
+2.43.0
+
