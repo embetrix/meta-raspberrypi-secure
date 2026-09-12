@@ -39,6 +39,7 @@ do_install:append() {
 }
 
 FILES:${PN} += "${sysconfdir}/sysctl.d \
+				${sysconfdir}/systemd/resolved.conf \
 				${systemd_unitdir}/network \
 				${systemd_system_unitdir}/systemd-rfkill.service.d \
 				${systemd_system_unitdir}/systemd-timesyncd.service.d \
