@@ -6,6 +6,7 @@ SRC_URI += "file://timesyncd.conf \
 			file://rfkill-override.conf \
 			file://timesyncd-override.conf \
 			file://networkd-wait-online-override.conf \
+			file://resolved.conf \
 			${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.conf', '', d)} \
             "
 
@@ -14,6 +15,9 @@ do_install:append() {
 		install -d ${D}${sysconfdir}/sysctl.d
 		install -m 644 ${UNPACKDIR}/security-harden.conf ${D}${sysconfdir}/sysctl.d/90-security-harden.conf
 	fi
+
+	install -d ${D}${sysconfdir}/systemd
+	install -m 644 ${UNPACKDIR}/resolved.conf ${D}${sysconfdir}/systemd/resolved.conf
 
 	install -d ${D}/${systemd_unitdir}/network
 	install -m 644 ${UNPACKDIR}/80-wlan.network ${D}/${systemd_unitdir}/network/
@@ -35,6 +39,7 @@ do_install:append() {
 }
 
 FILES:${PN} += "${sysconfdir}/sysctl.d \
+				${sysconfdir}/systemd/resolved.conf \
 				${systemd_unitdir}/network \
 				${systemd_system_unitdir}/systemd-rfkill.service.d \
 				${systemd_system_unitdir}/systemd-timesyncd.service.d \

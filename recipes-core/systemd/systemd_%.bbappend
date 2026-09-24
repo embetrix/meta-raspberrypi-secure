@@ -1,3 +1,7 @@
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
+
+SRC_URI:append = " file://0001-resolved-add-ML-DSA-44-DNSSEC-verification.patch"
+
 PACKAGECONFIG:append = " journal-upload"
 PACKAGECONFIG:remove = "osc-context"
 
