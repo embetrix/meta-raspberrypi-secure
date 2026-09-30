@@ -7,6 +7,7 @@ SRC_URI:append = " \
      file://0005-swupdate_vars-support-legacy-fw_env.config-no-namesp.patch \
      file://0006-crypto-CMS-add-CONFIG_CMS_REQUIRE_HYBRID_PQC-to-requ.patch \
      file://0007-channel-add-tls_group-option-to-restrict-TLS-key-exc.patch \
+     file://0008-Add-optional-SELinux-contexts-for-built-in-subproces.patch \
      file://swupdate.cfg \
      file://suricatta.conf \
      file://20-suricatta-args \
@@ -20,6 +21,8 @@ SRC_URI:append = " \
      "
 
 inherit useradd
+
+DEPENDS:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', 'libselinux', '', d)}"
 
 USERADD_PACKAGES = "${PN}"
 GROUPADD_PARAM:${PN} = "-g 4001 swupdate-www; -g 4002 swupdate-backend"

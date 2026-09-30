@@ -1,0 +1,388 @@
+From 663900e33e6335503d5be82b47141da4f5a5a973 Mon Sep 17 00:00:00 2001
+From: Ayoub Zaki <ayoub.zaki@embetrix.com>
+Date: Wed, 30 Sep 2026 19:49:49 +0200
+Subject: [PATCH] Add optional SELinux contexts for built-in subprocesses
+
+Add CONFIG_SELINUX and selinux-context settings for Suricatta, the web
+server and downloaders.
+Startup will fail if a context cannot be set.
+
+Upstream-Status: Pending
+Signed-off-by: Ayoub Zaki <ayoub.zaki@embetrix.com>
+---
+ Kconfig                             | 17 +++++++++++++++++
+ Makefile.deps                       |  8 ++++++++
+ Makefile.flags                      |  4 ++++
+ core/pctl.c                         | 36 +++++++++++++++++++++++++++++++++---
+ core/swupdate.c                     | 20 ++++++++++++++++----
+ corelib/swupdate_settings.c         | 26 ++++++++++++++++++++++++++
+ doc/source/swupdate.rst             | 24 ++++++++++++++++++++++++
+ examples/configuration/swupdate.cfg |  9 +++++++++
+ include/pctl.h                      |  1 +
+ include/swupdate_settings.h         |  2 ++
+ 10 files changed, 140 insertions(+), 7 deletions(-)
+
+diff --git a/Kconfig b/Kconfig
+index 615a622a..c6c0b3cc 100644
+--- a/Kconfig
++++ b/Kconfig
+@@ -97,6 +97,10 @@ config HAVE_LIBSYSTEMD
+ 	bool
+ 	option env="HAVE_LIBSYSTEMD"
+ 
++config HAVE_LIBSELINUX
++	bool
++	option env="HAVE_LIBSELINUX"
++
+ config HAVE_LIBCRYPTO
+ 	bool
+ 	option env="HAVE_LIBCRYPTO"
+@@ -161,6 +165,19 @@ config SYSTEMD
+ comment "systemd support needs libsystemd"
+ 	depends on !HAVE_LIBSYSTEMD && HAVE_LINUX
+ 
++config SELINUX
++	bool "enable SELinux subprocess contexts"
++	depends on HAVE_LINUX && HAVE_LIBSELINUX
++	default n
++	help
++	  Allow Suricatta, web-server and downloaders to use
++	  contexts specified by selinux-context in their configuration
++	  sections.
++	  Requires libselinux and a policy permitting the transitions.
++
++comment "SELinux support needs libselinux"
++	depends on !HAVE_LIBSELINUX && HAVE_LINUX
++
+ config DEFAULT_CONFIG_FILE
+ 	string "File with default settings"
+ 	default "/etc/swupdate.cfg"
+diff --git a/Makefile.deps b/Makefile.deps
+index 35f1bd6b..794e8eed 100644
+--- a/Makefile.deps
++++ b/Makefile.deps
+@@ -90,6 +90,14 @@ export HAVE_LIBSYSTEMD = n
+ endif
+ endif
+ 
++ifeq ($(HAVE_LIBSELINUX),)
++ifeq ($(HAVE_LINUX),y)
++export HAVE_LIBSELINUX = y
++else
++export HAVE_LIBSELINUX = n
++endif
++endif
++
+ ifeq ($(HAVE_LIBCRYPTO),)
+ export HAVE_LIBCRYPTO = y
+ endif
+diff --git a/Makefile.flags b/Makefile.flags
+index 435bf3c8..7fb243f2 100644
+--- a/Makefile.flags
++++ b/Makefile.flags
+@@ -151,6 +151,10 @@ endif
+ # libconfig is always compiled
+ LDLIBS += config
+ 
++ifeq ($(CONFIG_SELINUX),y)
++LDLIBS += selinux
++endif
++
+ # libarchive
+ ifeq ($(CONFIG_ARCHIVE),y)
+ LDLIBS += archive
+diff --git a/core/pctl.c b/core/pctl.c
+index 0e0edc28..af0e66c2 100644
+--- a/core/pctl.c
++++ b/core/pctl.c
+@@ -26,6 +26,10 @@
+ #include <parselib.h>
+ #include <swupdate_settings.h>
+ 
++#ifdef CONFIG_SELINUX
++#include <selinux/selinux.h>
++#endif
++
+ #ifndef WAIT_ANY
+ #define WAIT_ANY (-1)
+ #endif
+@@ -125,6 +129,7 @@ void wait_threads_ready(void)
+  */
+ static int spawn_process(struct swupdate_task *task,
+ 			uid_t run_as_userid, gid_t run_as_groupid,
++			const char *selinux_context,
+ 			const char *cfgname,
+ 			int ac, char **av,
+ 			swupdate_process start,
+@@ -177,6 +182,26 @@ static int spawn_process(struct swupdate_task *task,
+ 		}
+ 	}
+ 
++	/* Apply the requested SELinux context before starting the child process */
++	if (selinux_context && selinux_context[0]) {
++#ifdef CONFIG_SELINUX
++		if (is_selinux_enabled() <= 0) {
++			ERROR("Cannot set SELinux context for %s: SELinux is not enabled",
++			      task->name);
++			return -1;
++		}
++		if (setcon(selinux_context) < 0) {
++			ERROR("Cannot set SELinux context %s for %s: %s",
++			      selinux_context, task->name, strerror(errno));
++			return -1;
++		}
++#else
++		ERROR("Cannot set SELinux context for %s: built without SELinux support",
++		      task->name);
++		return -1;
++#endif
++	}
++
+ 	/* Save new pid */
+ 	pid = getpid();
+ 
+@@ -209,6 +234,7 @@ static int spawn_process(struct swupdate_task *task,
+ 
+ static void start_swupdate_subprocess(sourcetype type, const char *name,
+ 			uid_t run_as_userid, gid_t run_as_groupid,
++			const char *selinux_context,
+ 			const char* cfgfile,
+ 			int argc, char **argv,
+ 			swupdate_process start,
+@@ -216,7 +242,8 @@ static void start_swupdate_subprocess(sourcetype type, const char *name,
+ {
+ 	procs[nprocs].name = name;
+ 	procs[nprocs].type = type;
+-	if (spawn_process(&procs[nprocs], run_as_userid, run_as_groupid, cfgfile, argc, argv, start, cmdline) < 0) {
++	if (spawn_process(&procs[nprocs], run_as_userid, run_as_groupid,
++			  selinux_context, cfgfile, argc, argv, start, cmdline) < 0) {
+ 		ERROR("Spawning %s failed, exiting process...", name);
+ 		exit(1);
+ 	}
+@@ -232,17 +259,20 @@ void start_subprocess_from_file(sourcetype type, const char *name,
+ 			int argc, char **argv,
+ 			const char *cmdline)
+ {
+-	start_swupdate_subprocess(type, name, run_as_userid, run_as_groupid, cfgfile, argc, argv, NULL, cmdline);
++	start_swupdate_subprocess(type, name, run_as_userid, run_as_groupid,
++				 NULL, cfgfile, argc, argv, NULL, cmdline);
+ }
+ 
+ void start_subprocess(sourcetype type, const char *name,
+ 			uid_t run_as_userid, gid_t run_as_groupid,
++			const char *selinux_context,
+ 			const char *cfgfile,
+ 			int argc, char **argv,
+ 			swupdate_process start)
+ {
+ 
+-	start_swupdate_subprocess(type, name, run_as_userid, run_as_groupid, cfgfile, argc, argv, start, NULL);
++	start_swupdate_subprocess(type, name, run_as_userid, run_as_groupid,
++				 selinux_context, cfgfile, argc, argv, start, NULL);
+ }
+ 
+ /*
+diff --git a/core/swupdate.c b/core/swupdate.c
+index 8e287e4d..9779d3e8 100644
+--- a/core/swupdate.c
++++ b/core/swupdate.c
+@@ -1148,4 +1148,7 @@ int main(int argc, char **argv)
+ 		gid_t gid;
++		const char *context;
++		if (read_settings_selinux_context(&handle, "webserver", &context))
++			exit(EXIT_FAILURE);
+ 		read_settings_user_id(&handle, "webserver", &uid, &gid);
+-		start_subprocess(SOURCE_WEBSERVER, "webserver", uid, gid,
++		start_subprocess(SOURCE_WEBSERVER, "webserver", uid, gid, context,
+ 				 cfgfname, ac, av,
+@@ -1158,8 +1161,11 @@ int main(int argc, char **argv)
+ 	if (opt_u) {
+ 		uid_t uid;
+ 		gid_t gid;
++		const char *context;
++		if (read_settings_selinux_context(&handle, "suricatta", &context))
++			exit(EXIT_FAILURE);
+ 		read_settings_user_id(&handle, "suricatta", &uid, &gid);
+-		start_subprocess(SOURCE_SURICATTA, "suricatta", uid, gid,
++		start_subprocess(SOURCE_SURICATTA, "suricatta", uid, gid, context,
+ 				 cfgfname, argcount,
+ 				 argvalues, start_suricatta);
+ 
+@@ -1171,8 +1177,11 @@ int main(int argc, char **argv)
+ 	if (opt_d) {
+ 		uid_t uid;
+ 		gid_t gid;
++		const char *context;
++		if (read_settings_selinux_context(&handle, "download", &context))
++			exit(EXIT_FAILURE);
+ 		read_settings_user_id(&handle, "download", &uid, &gid);
+-		start_subprocess(SOURCE_DOWNLOADER, "download", uid, gid,
++		start_subprocess(SOURCE_DOWNLOADER, "download", uid, gid, context,
+ 				 cfgfname, dwlac,
+ 				 dwlav, start_download_server);
+ 		freeargs(dwlav);
+@@ -1182,8 +1191,11 @@ int main(int argc, char **argv)
+ 	{
+ 		uid_t uid;
+ 		gid_t gid;
++		const char *context;
++		if (read_settings_selinux_context(&handle, "download", &context))
++			exit(EXIT_FAILURE);
+ 		read_settings_user_id(&handle, "download", &uid, &gid);
+-		start_subprocess(SOURCE_CHUNKS_DOWNLOADER, "chunks_downloader", uid, gid,
++		start_subprocess(SOURCE_CHUNKS_DOWNLOADER, "chunks_downloader", uid, gid, context,
+ 				cfgfname, 0, NULL,
+ 				start_delta_downloader);
+ 	}
+diff --git a/corelib/swupdate_settings.c b/corelib/swupdate_settings.c
+index 229fac9d..b9f7f3aa 100644
+--- a/corelib/swupdate_settings.c
++++ b/corelib/swupdate_settings.c
+@@ -147,6 +147,32 @@ int read_settings_user_id(swupdate_cfg_handle *handle, const char *module, uid_t
+ }
+ 
+ 
++int read_settings_selinux_context(swupdate_cfg_handle *handle, const char *module,
++				 const char **context)
++{
++	config_setting_t *elem, *setting;
++
++	*context = NULL;
++	elem = find_settings_node(&handle->cfg, module);
++	if (!elem)
++		return 0;
++
++	setting = config_setting_get_member(elem, "selinux-context");
++	if (!setting)
++		return 0;
++
++	if (config_setting_type(setting) != CONFIG_TYPE_STRING) {
++		ERROR("%s.selinux-context must be a string", module);
++		return -EINVAL;
++	}
++
++	*context = config_setting_get_string(setting);
++	if (!(*context)[0])
++		*context = NULL;
++
++	return 0;
++}
++
+ /*
+  * Callback to be used to put a section of configuration
+  * into a dictionary
+diff --git a/doc/source/swupdate.rst b/doc/source/swupdate.rst
+index 216535d9..6a31f7fb 100644
+--- a/doc/source/swupdate.rst
++++ b/doc/source/swupdate.rst
+@@ -236,6 +236,30 @@ To configure the options:
+ 
+ 	make menuconfig
+ 
++SELinux subprocess contexts
++---------------------------
++
++Enable ``CONFIG_SELINUX`` (requires ``libselinux``) and set contexts
++in ``swupdate.cfg`` for Suricatta, the web server and downloaders::
++
++    suricatta : {
++        selinux-context = "system_u:system_r:swupdate_suricatta_t:s0";
++    };
++
++    webserver : {
++        selinux-context = "system_u:system_r:swupdate_webserver_t:s0";
++    };
++
++    download : {
++        selinux-context = "system_u:system_r:swupdate_download_t:s0";
++    };
++
++Both the downloader and the delta chunks downloader use ``download``.
++Omitted or empty settings preserve the inherited context.
++A requested context that cannot be applied prevents the child from starting.
++
++Replace these example contexts with ones defined by your SELinux policy.
++
+ Building
+ --------
+ 
+diff --git a/examples/configuration/swupdate.cfg b/examples/configuration/swupdate.cfg
+index 121e86da..58b0ba44 100644
+--- a/examples/configuration/swupdate.cfg
++++ b/examples/configuration/swupdate.cfg
+@@ -154,6 +154,8 @@ logcolors : {
+ #			  complete URL pointing to the SWU image of the update package
+ # retries		: integer
+ #			  Number of retries (0=forever)
++# selinux-context	: string
++#			  SELinux context for both regular and delta chunks downloaders
+ # userid		: integer
+ #			  userID for Webserver process
+ # groupid		: integer
+@@ -184,6 +186,7 @@ download :
+ 	url = "http://example.com/software.swu";
+ 	userid		= 1000;
+ 	groupid		= 1000;
++	# selinux-context = "system_u:system_r:swupdate_download_t:s0";
+ };
+ 
+ #
+@@ -228,6 +231,8 @@ identify : (
+ # retry			: integer
+ #			  number of retries to connect to server
+ # retrywait		: integer
++# selinux-context	: string
++#			  SELinux context for the Suricatta process
+ # userid		: integer
+ #			  userID for Webserver process
+ # groupid		: integer
+@@ -287,6 +292,7 @@ suricatta :
+ 	loglevel	= 10;
+ 	userid		= 1000;
+ 	groupid		= 1000;
++	# selinux-context = "system_u:system_r:swupdate_suricatta_t:s0";
+ 	enable		= true;
+ 	initial-report-resend-period = 30;
+ 	connection-timeout = 10;
+@@ -369,6 +375,8 @@ gservice :
+ #
+ # document_root		: string
+ #			  directory to the website
++# selinux-context	: string
++#			  SELinux context for the Webserver process
+ # userid		: integer
+ #			  userID for Webserver process
+ # groupid		: integer
+@@ -405,6 +413,7 @@ webserver :
+ 	document_root = "./www";
+ 	userid		= 1000;
+ 	groupid		= 1000;
++	# selinux-context = "system_u:system_r:swupdate_webserver_t:s0";
+ 	timeout		= 20;
+ };
+ 
+diff --git a/include/pctl.h b/include/pctl.h
+index 136c440e..83cf3b54 100644
+--- a/include/pctl.h
++++ b/include/pctl.h
+@@ -35,6 +35,7 @@ typedef server_op_res_t(*server_ipc_fn)(int fd);
+ 
+ void start_subprocess(sourcetype type, const char *name,
+ 			uid_t run_as_userid, gid_t run_as_groupid,
++			const char *selinux_context,
+ 			const char *cfgfile,
+ 			int argc, char **argv,
+ 			swupdate_process start);
+diff --git a/include/swupdate_settings.h b/include/swupdate_settings.h
+index e8327fd2..5c9c8662 100644
+--- a/include/swupdate_settings.h
++++ b/include/swupdate_settings.h
+@@ -23,4 +23,6 @@ int swupdate_cfg_read_file(swupdate_cfg_handle *handle, const char *filename);
+ void swupdate_cfg_destroy(swupdate_cfg_handle *handle);
+ int read_module_settings(swupdate_cfg_handle *handle, const char *module, settings_callback fcn, void *data);
+ int read_settings_user_id(swupdate_cfg_handle *handle, const char *module, uid_t *userid, gid_t *groupid);
++int read_settings_selinux_context(swupdate_cfg_handle *handle, const char *module,
++				 const char **context);
+ int settings_into_dict(void *settings, void *data);
+-- 
+2.43.0
