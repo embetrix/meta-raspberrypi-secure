@@ -6,7 +6,7 @@ part /    --ondisk mmcblk0  --part-name boot       --fixed-size 512M   --fstype=
 part /    --ondisk mmcblk0  --part-name bootA      --fixed-size 512M   --fstype=vfat  --source bootimg-partition
 part /    --ondisk mmcblk0  --part-name bootB      --fixed-size 512M   --fstype=vfat
 part /    --ondisk mmcblk0  --part-name blobs      --fixed-size 512M   --fstype=ext4
-part /    --ondisk mmcblk0  --part-name rootA      --fixed-size 1024M
-part /    --ondisk mmcblk0  --part-name rootB      --fixed-size 1024M  --fstype=${ROOTFS_TYPE}  --source rootfs_avb_verity
-part /    --ondisk mmcblk0  --part-name data       --fixed-size 4096M  --fstype=ext4
+part /    --ondisk mmcblk0  --part-name rootA      --fixed-size ${ROOT_PART_SZ}
+part /    --ondisk mmcblk0  --part-name rootB      --fixed-size ${ROOT_PART_SZ}  --fstype=${ROOTFS_TYPE}  --source rootfs_avb_verity
+part /    --ondisk mmcblk0  --part-name data       --fixed-size ${DATA_PART_SZ}  --fstype=ext4
 bootloader --ptable gpt

@@ -89,6 +89,8 @@ MACHINE_EXTRA_RRECOMMENDS += " \
 # WKS file
 WKS_FILES = "raspberrypi-secure.wks.in"
 ROOTFS_TYPE ?= "erofs"
+ROOT_PART_SZ ?= "1024M"
+DATA_PART_SZ ?= "4096M"
 
 # Set to "1" to auto-flash the signed EEPROM on first boot of a fresh Pi
 # Runs once: recovery.bin is renamed to recovery.000 after a successful flash
