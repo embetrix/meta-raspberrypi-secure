@@ -8,6 +8,9 @@ PACKAGE_INSTALL = "rpi-secure-initramfs-init \
                    ${ROOTFS_BOOTSTRAP_INSTALL} \
                 "
 
+# Keep this image minimal even when a different INITRAMFS_IMAGE is selected.
+RPI_SECURE_IMAGE_POLICY = "0"
+
 inherit core-image
 
 # Do not pollute the initrd image with rootfs features

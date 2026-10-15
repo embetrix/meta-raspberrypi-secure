@@ -27,6 +27,11 @@ RPI_SECURITY_PROFILE ?= "dev"
 # Overwrite machine config
 require conf/machine/${MACHINE}-secure.conf
 
+# Apply the secure rootfs baseline to images except for the configured initramfs
+# Special-purpose images can opt out with RPI_SECURE_IMAGE_POLICY = "0"
+RPI_SECURE_IMAGE_POLICY ?= "${@'0' if d.getVar('PN') == d.getVar('INITRAMFS_IMAGE') else '1'}"
+IMAGE_CLASSES += "${@bb.utils.contains('RPI_SECURE_IMAGE_POLICY', '1', 'rpi-secure-image-policy', '', d)}"
+
 # Set persistent Logs
 FILESYSTEM_PERMS_TABLES:remove = "files/fs-perms-volatile-log.txt"
 

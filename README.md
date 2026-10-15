@@ -64,6 +64,44 @@ or add to your distro config:
 require conf/distro/include/rpi-secure-distro.inc
 ```
 
+Images using `core-image` automatically receive the secure rootfs baseline
+through the distro's `IMAGE_CLASSES`: a read-only rootfs, OpenSSH, security and
+SWUpdate packages, profile/feature-dependent packages, and IMA/EVM signature
+manifest defaults. External layers can use their own image recipes without
+requiring `rpi-secure-image-base.bb` or inheriting a layer-specific image class:
+
+```bitbake
+# meta-myproduct/recipes-core/images/myproduct-image.bb
+SUMMARY = "My product image"
+LICENSE = "MIT"
+
+inherit core-image
+
+IMAGE_INSTALL:append = " myproduct-app"
+```
+
+Product images own their user accounts and passwords. The reference `rpi` user
+and password defaults remain in `rpi-secure-image-base.bb` (also used by the demo).
+
+The image selected by `INITRAMFS_IMAGE` and this layer's initramfs are excluded
+from the rootfs baseline. Other special-purpose images can opt out in their
+recipe with:
+
+```bitbake
+RPI_SECURE_IMAGE_POLICY = "0"
+```
+
+Or select the exception from distro/local configuration:
+
+```conf
+RPI_SECURE_IMAGE_POLICY:pn-my-recovery-image = "0"
+```
+
+This switch only controls the rootfs baseline; the distro's existing signing,
+verity, and machine configuration still apply. Image recipes can customize the
+baseline with the standard `IMAGE_INSTALL` and `IMAGE_FEATURES` append/remove
+operations and override the signature-manifest defaults.
+
 #### Standalone build
 
 Using [kas](https://kas.readthedocs.io/en/latest/userguide/getting-started.html) directly:
