@@ -8,8 +8,6 @@ SRC_URI:append = " \
      file://0006-crypto-CMS-add-CONFIG_CMS_REQUIRE_HYBRID_PQC-to-requ.patch \
      file://0007-channel-add-tls_group-option-to-restrict-TLS-key-exc.patch \
      file://swupdate.cfg \
-     file://swupdate-socket-override.conf \
-     file://swupdate-service-override.conf \
      file://suricatta.conf \
      file://20-suricatta-args \
      file://sw-versions \
@@ -24,22 +22,14 @@ SRC_URI:append = " \
 inherit useradd
 
 USERADD_PACKAGES = "${PN}"
-GROUPADD_PARAM:${PN} = "-g 4001 swupdate-www; -g 4002 swupdate-backend; --system swupdate-ipc"
-USERADD_PARAM:${PN}  = "-u 4001 -g 4001 -G swupdate-ipc --system --no-create-home -s /bin/false swupdate-www; \
-                        -u 4002 -g 4002 -G swupdate-ipc --system --no-create-home -s /bin/false swupdate-backend"
+GROUPADD_PARAM:${PN} = "-g 4001 swupdate-www; -g 4002 swupdate-backend"
+USERADD_PARAM:${PN}  = "-u 4001 -g 4001 --system --no-create-home -s /bin/false swupdate-www; \
+                        -u 4002 -g 4002 --system --no-create-home -s /bin/false swupdate-backend"
 
 do_install:append() {
 
     install -d ${D}${sysconfdir}/swupdate
     install -m 644 ${UNPACKDIR}/swupdate.cfg ${D}${sysconfdir}/swupdate/swupdate.cfg
-
-    # Restrict both IPC sockets and retain access for the built-in subprocesses.
-    install -d ${D}${systemd_system_unitdir}/swupdate.socket.d
-    install -m 0644 ${UNPACKDIR}/swupdate-socket-override.conf \
-        ${D}${systemd_system_unitdir}/swupdate.socket.d/override.conf
-    install -d ${D}${systemd_system_unitdir}/swupdate.service.d
-    install -m 0644 ${UNPACKDIR}/swupdate-service-override.conf \
-        ${D}${systemd_system_unitdir}/swupdate.service.d/override.conf
 
     # Per-device suricatta (hawkBit) settings: device id (defaults to hostname)
     # and gateway token, provisionable at runtime without rebuilding the image.
@@ -97,9 +87,7 @@ do_install:append() {
 
 FILES:${PN} += "${sysconfdir}/swupdate \
                 ${sysconfdir}/sw-versions \
-                ${sysconfdir}/hwrevision \
-                ${systemd_system_unitdir}/swupdate.socket.d \
-                ${systemd_system_unitdir}/swupdate.service.d"
+                ${sysconfdir}/hwrevision"
 
 CONFFILES:${PN} += "${sysconfdir}/swupdate/suricatta.conf"
 
