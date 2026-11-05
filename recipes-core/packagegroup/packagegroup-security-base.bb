@@ -14,6 +14,7 @@ SUMMARY:packagegroup-security-base = "Security base support"
 RDEPENDS:packagegroup-security-base = " \
     auditd   \
     nftables \
+    openvpn \
     usbguard \
     rng-tools \
     "

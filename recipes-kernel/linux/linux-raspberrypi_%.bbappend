@@ -18,6 +18,7 @@ SRC_URI += "file://patches/v6.18/0001-security-keys-add-rpi-firmware-crypto-trus
             file://kmod-sign.cfg \
             file://hwrng.cfg \
             file://netfilter.cfg \
+            file://openvpn.cfg \
             file://crypto.cfg \
             ${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '', 'file://no-wifi.cfg', d)} \
             ${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', '', 'file://no-bluetooth.cfg', d)} \
