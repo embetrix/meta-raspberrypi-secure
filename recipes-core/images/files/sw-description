@@ -45,7 +45,7 @@ software =
 				type      = "archive";
 				encrypted = true;
 				sha256    = "$swupdate_get_sha256(boot-signed.tar.gz)";
-				install-if-different = true;
+				install-if-different = @@RPI_SWUPDATE_INSTALL_IF_DIFFERENT@@;
 			},
 			{
 				name      = "boot-unsigned";
@@ -55,7 +55,7 @@ software =
 				type      = "archive";
 				encrypted = true;
 				sha256    = "$swupdate_get_sha256(boot-unsigned.tar.gz)";
-				install-if-different = true;
+				install-if-different = @@RPI_SWUPDATE_INSTALL_IF_DIFFERENT@@;
 			}
 		);
 
@@ -69,7 +69,7 @@ software =
 				compressed = "zlib";
 				encrypted  = true;
 				sha256     = "$swupdate_get_sha256(@@IMAGE@@-@@MACHINE@@.rootfs.@@ROOTFS_TYPE@@.avbverity.gz)";
-				install-if-different = true;
+				install-if-different = @@RPI_SWUPDATE_INSTALL_IF_DIFFERENT@@;
 			}
 		);
 

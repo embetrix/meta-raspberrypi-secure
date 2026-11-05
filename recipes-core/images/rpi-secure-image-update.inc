@@ -14,6 +14,9 @@ SWU_IMAGE ?= "${@d.getVar('PN').replace('-update', '')}"
 SRC_URI = "file://sw-description"
 IMAGE = "${SWU_IMAGE}"
 
+# Skip matching installed versions in production and allow reinstalling during development.
+RPI_SWUPDATE_INSTALL_IF_DIFFERENT ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'true', 'false', d)}"
+
 # IMAGE_DEPENDS: list of Yocto images that contains a root filesystem
 # it will be ensured they are built before creating swupdate image
 IMAGE_DEPENDS = "${SWU_IMAGE}"
