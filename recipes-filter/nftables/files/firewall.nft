@@ -11,7 +11,8 @@
 # Forward: drop all
 #
 # Output:  drop all, allow established/related, ICMP/ICMPv6, HTTPS, DNS, NTP,
-#          plain HTTP to CRL server only, and DHCPv4/v6 client requests
+#          OpenVPN client (UDP/1194), plain HTTP to CRL server only,
+#          and DHCPv4/v6 client requests
 
 flush ruleset
 
@@ -22,6 +23,7 @@ define CRL6      = { 2606:4700:3032::6815:5664, 2606:4700:3034::ac43:d9d3 }
 define CRL4      = { 104.21.86.100, 172.67.217.211 }
 define DNS       = 53
 define NTP       = 123
+define OPENVPN   = 1194
 define DHCP4_S   = 67
 define DHCP4_C   = 68
 define DHCP6_S   = 547
@@ -108,6 +110,9 @@ table inet filter {
         udp dport $NTP accept
         tcp dport $DNS accept
         udp dport $DNS accept
+
+        # OpenVPN client replies are allowed by established/related above
+        udp dport $OPENVPN accept
 
         # DHCP
         udp sport $DHCP4_C udp dport $DHCP4_S accept

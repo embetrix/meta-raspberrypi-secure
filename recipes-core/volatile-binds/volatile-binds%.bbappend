@@ -8,6 +8,7 @@ AVOID_OVERLAYFS = "1"
 VOLATILE_BINDS:append = "\
 ${localstatedir}/data${sysconfdir}/certs            ${sysconfdir}/certs\n\
 ${localstatedir}/data${sysconfdir}/ssh/keys         ${sysconfdir}/ssh/keys\n\
+${localstatedir}/data${sysconfdir}/openvpn          ${sysconfdir}/openvpn\n\
 ${localstatedir}/data${sysconfdir}/systemd/network/ ${sysconfdir}/systemd/network/\n\
 ${localstatedir}/data${sysconfdir}/nginx/.htpasswd ${sysconfdir}/nginx/.htpasswd\n\
 ${localstatedir}/data${sysconfdir}/swupdate/suricatta.conf ${sysconfdir}/swupdate/suricatta.conf\n\
