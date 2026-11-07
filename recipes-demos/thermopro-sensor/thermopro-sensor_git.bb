@@ -13,7 +13,7 @@ SRC_URI = "git://github.com/embetrix/thermopro-sensor.git;protocol=https;branch=
            file://openssl-thingsboard.cnf \
            file://tls.conf \
 "
-SRCREV = "c92e754154fb346611dceffb989ddeb385685305"
+SRCREV = "3ddd76be5aa20cc956e259428ee829bd46b96953"
 PV = "1.0+git"
 
 inherit cmake pkgconfig systemd features_check useradd
