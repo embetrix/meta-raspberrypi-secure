@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        iif lo accept
+        ct state invalid drop
+        ct state related,established accept
+
+        # Generic per-source SYN-flood guard
+        meta nfproto ipv4 tcp flags syn / fin,syn,rst,ack ct state new update @syn_flood4 { ip  saddr limit rate over 15/second burst 50 packets } drop
+        meta nfproto ipv6 tcp flags syn / fin,syn,rst,ack ct state new update @syn_flood6 { ip6 saddr limit rate over 15/second burst 50 packets } drop
+
+        # SSH rate-limited, private networks only
+        ip  saddr $RFC1918 tcp dport $SSH ct count over 10 drop
+        ip6 saddr $ULA     tcp dport $SSH ct count over 10 drop
+        ip  saddr $RFC1918 tcp dport $SSH ct state new limit rate 3/minute burst 5 packets accept
+        ip6 saddr $ULA     tcp dport $SSH ct state new limit rate 3/minute burst 5 packets accept
+
+        # HTTPS rate-limited, private networks only
+        ip  saddr $RFC1918 tcp dport $HTTPS ct count over 10 drop
+        ip6 saddr $ULA     tcp dport $HTTPS ct count over 10 drop
+        ip  saddr $RFC1918 tcp dport $HTTPS ct state new limit rate 25/minute burst 50 packets accept
+        ip6 saddr $ULA     tcp dport $HTTPS ct state new limit rate 25/minute burst 50 packets accept
+
+        # ICMPv4
+        icmp type destination-unreachable accept
+        icmp type time-exceeded accept
+        icmp type echo-request limit rate 1/second accept
+
+        # ICMPv6
+        icmpv6 type { destination-unreachable, packet-too-big, time-exceeded } accept
+        icmpv6 type { parameter-problem } accept
+        icmpv6 type echo-request limit rate 1/second accept
+        icmpv6 type { nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } ip6 hoplimit 255 accept
+
+        # DHCP
+        udp sport $DHCP4_S udp dport $DHCP4_C accept
+        udp sport $DHCP6_S udp dport $DHCP6_C accept
+
+        log prefix "nft:DROP:IN " level warn limit rate 5/minute burst 10 packets
+    }
+}

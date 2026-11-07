@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+
+table inet filter {
+    # Per-source SYN-flood mitigation (auto-expiring dynamic sets)
+    set syn_flood4 { type ipv4_addr; flags dynamic; timeout 1m; }
+    set syn_flood6 { type ipv6_addr; flags dynamic; timeout 1m; }
+}

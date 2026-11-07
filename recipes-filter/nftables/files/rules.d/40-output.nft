@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+
+table inet filter {
+    chain output {
+        type filter hook output priority 0; policy drop;
+
+        oif lo accept
+        ct state invalid drop
+        ct state related,established accept
+
+        # ICMPv4
+        icmp type destination-unreachable accept
+        icmp type time-exceeded accept
+        icmp type echo-request accept
+
+        # ICMPv6
+        icmpv6 type { destination-unreachable, packet-too-big, time-exceeded } accept
+        icmpv6 type { parameter-problem } accept
+        icmpv6 type echo-request accept
+        icmpv6 type { nd-router-solicit, nd-neighbor-solicit, nd-neighbor-advert } ip6 hoplimit 255 accept
+
+        # Allowed outbound services
+        tcp dport $HTTPS accept
+        tcp dport $MQTTS accept
+        # Plain HTTP to CRL server only
+        ip  daddr $CRL4 tcp dport $HTTP accept
+        ip6 daddr $CRL6 tcp dport $HTTP accept
+        udp dport $NTP accept
+        tcp dport $DNS accept
+        udp dport $DNS accept
+
+        # OpenVPN client replies are allowed by established/related above
+        udp dport $OPENVPN accept
+
+        # DHCP
+        udp sport $DHCP4_C udp dport $DHCP4_S accept
+        udp sport $DHCP6_C udp dport $DHCP6_S accept
+
+        log prefix "nft:DROP:OUT " level warn limit rate 5/minute burst 10 packets
+    }
+}

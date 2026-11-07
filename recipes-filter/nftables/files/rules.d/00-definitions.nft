@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+
+define SSH       = 22
+define HTTP      = 80
+define HTTPS     = 443
+define MQTTS     = 8883
+define CRL6      = { 2606:4700:3032::6815:5664, 2606:4700:3034::ac43:d9d3 }
+define CRL4      = { 104.21.86.100, 172.67.217.211 }
+define DNS       = 53
+define NTP       = 123
+define OPENVPN   = 1194
+define DHCP4_S   = 67
+define DHCP4_C   = 68
+define DHCP6_S   = 547
+define DHCP6_C   = 546
+define RFC1918   = { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 }
+define ULA       = { fc00::/7, fe80::/10 }

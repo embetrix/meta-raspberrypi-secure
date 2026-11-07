@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+
+table inet filter {
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        log prefix "nft:DROP:FWD " level warn limit rate 5/minute burst 10 packets
+    }
+}

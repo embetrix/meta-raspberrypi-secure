@@ -1,0 +1,7 @@
+#!/usr/sbin/nft -f
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
+
+flush ruleset
+
+include "/etc/nftables/rules.d/*.nft"
