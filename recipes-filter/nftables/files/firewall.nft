@@ -10,7 +10,8 @@
 #
 # Forward: drop all
 #
-# Output:  drop all, allow established/related, ICMP/ICMPv6, HTTPS, DNS, NTP,
+# Output:  drop all, allow established/related, ICMP/ICMPv6, HTTPS, MQTT over TLS,
+#          DNS, NTP,
 #          OpenVPN client (UDP/1194), plain HTTP to CRL server only,
 #          and DHCPv4/v6 client requests
 
@@ -19,6 +20,7 @@ flush ruleset
 define SSH       = 22
 define HTTP      = 80
 define HTTPS     = 443
+define MQTTS     = 8883
 define CRL6      = { 2606:4700:3032::6815:5664, 2606:4700:3034::ac43:d9d3 }
 define CRL4      = { 104.21.86.100, 172.67.217.211 }
 define DNS       = 53
@@ -104,6 +106,7 @@ table inet filter {
 
         # Allowed outbound services
         tcp dport $HTTPS accept
+        tcp dport $MQTTS accept
         # Plain HTTP to CRL server only
         ip  daddr $CRL4 tcp dport $HTTP accept
         ip6 daddr $CRL6 tcp dport $HTTP accept
