@@ -1,0 +1,15 @@
+[Unit]
+Description=ThermoPro persistent database
+# tmpfiles prepares the source after local filesystems are mounted
+DefaultDependencies=no
+Requires=systemd-tmpfiles-setup.service
+After=local-fs.target systemd-tmpfiles-setup.service
+Conflicts=umount.target
+Before=umount.target
+RequiresMountsFor=/var/data /var/lib
+
+[Mount]
+What=/var/data/var/lib/thermopro-sensor
+Where=/var/lib/thermopro-sensor
+Type=none
+Options=bind

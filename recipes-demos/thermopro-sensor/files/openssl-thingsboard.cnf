@@ -1,0 +1,14 @@
+# Keep the system OpenSSL providers and settings
+.include /etc/ssl/openssl.cnf
+
+[openssl_init]
+ssl_conf = thingsboard_ssl
+
+[thingsboard_ssl]
+system_default = thingsboard_tls
+
+[thingsboard_tls]
+# Connections to mqtt.thingsboard.cloud:8883 failed with the OpenSSL 3.5 default groups
+# TLS 1.3 succeeded when only X25519 was offered
+# Restrict key exchange to X25519 while keeping TLS 1.3 enabled
+Groups = X25519

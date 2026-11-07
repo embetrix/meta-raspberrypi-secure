@@ -1,0 +1,15 @@
+[Unit]
+Description=ThermoPro persistent configuration
+# tmpfiles prepares the source after local filesystems are mounted
+DefaultDependencies=no
+Requires=systemd-tmpfiles-setup.service
+After=local-fs.target systemd-tmpfiles-setup.service
+Conflicts=umount.target
+Before=umount.target
+RequiresMountsFor=/var/data
+
+[Mount]
+What=/var/data/etc/thermopro-sensor/thermopro-sensor.json
+Where=/etc/thermopro-sensor/thermopro-sensor.json
+Type=none
+Options=bind
