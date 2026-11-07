@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
+# Drop incoming traffic unless an allow rule matches
+
 table inet filter {
     chain input {
         type filter hook input priority 0; policy drop;

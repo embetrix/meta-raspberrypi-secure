@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
+# Drop all forwarded traffic
+
 table inet filter {
     chain forward {
         type filter hook forward priority 0; policy drop;

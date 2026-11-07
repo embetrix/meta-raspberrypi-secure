@@ -2,6 +2,22 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Embetrix Embedded Systems Solutions <ayoub.zaki@embetrix.com>
 
+# Default deny nftables ruleset
+#
+# Input allows established and related traffic
+# SSH and HTTPS are rate limited to private networks and IPv6 link local addresses
+# Essential ICMP and ICMPv6 traffic and DHCP client replies are allowed
+#
+# Forward drops all traffic
+#
+# Output allows established and related traffic
+# Allowed services are HTTPS and MQTT over TLS and DNS and NTP
+# OpenVPN clients use UDP port 1194
+# Plain HTTP is allowed only to the configured CRL servers
+# ICMP and ICMPv6 traffic and DHCP client requests are allowed
+#
+# Load definitions and sets before the input and forward and output chains
+
 flush ruleset
 
 include "/etc/nftables/rules.d/*.nft"
