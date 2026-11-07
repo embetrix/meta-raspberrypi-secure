@@ -9,4 +9,5 @@ IMAGE_INSTALL += " \
 	open62541 \
 	tailscale \
 	cloudflared \
+	thermopro-sensor \
 	"
