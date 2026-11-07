@@ -2,19 +2,13 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += " \
     file://firewall.nft \
-    file://nftables.service \
     "
 
-inherit systemd
-
-SYSTEMD_SERVICE:${PN} = "nftables.service"
+SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 do_install:append() {
-    install -d ${D}${sysconfdir}/nftables
-    install -m 0644 ${UNPACKDIR}/firewall.nft ${D}${sysconfdir}/nftables/
-
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${UNPACKDIR}/nftables.service ${D}${systemd_unitdir}/system/
+    install -d ${D}${sysconfdir}/nftables/rules
+    install -m 0644 ${UNPACKDIR}/firewall.nft ${D}${sysconfdir}/nftables/rules/main.nft
 }
 
 FILES:${PN} += "${sysconfdir}/nftables"
