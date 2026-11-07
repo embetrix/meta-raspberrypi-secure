@@ -1,0 +1,7 @@
+# Copy the default config only when the persistent config is missing
+d /var/data/etc/thermopro-sensor 0700 root root -
+C /var/data/etc/thermopro-sensor/thermopro-sensor.json 0600 root root - /etc/thermopro-sensor/thermopro-sensor.json
+d /var/data/var/lib/thermopro-sensor 0750 thermopro-sensor thermopro-sensor -
+# Fix database ownership if an image update changes the service UID or GID
+Z /var/data/var/lib/thermopro-sensor - thermopro-sensor thermopro-sensor -
+d /var/lib/thermopro-sensor 0750 thermopro-sensor thermopro-sensor -
