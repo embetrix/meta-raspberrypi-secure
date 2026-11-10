@@ -20,9 +20,13 @@ A Yocto layer that provides a security-hardened baseline for Raspberry Pi images
 - Optional TPM 2.0 support (Infineon SLB9670)
 - Compliance & auditability (Audit, persistent logs, static code analysis, CVE scanning, SBOM)
 
-## Secure Boot Flow
+## Presentation
 
-[![asciicast](https://asciinema.org/a/jbYmoKMJjbeX6UBD.svg)](https://asciinema.org/a/jbYmoKMJjbeX6UBD)
+Presented at the Yocto Project Workshop at Embedded Recipes 2026:
+
+- [Building a Security-Hardened Raspberry Pi Image with Yocto: From Secure Boot to Secure Applications](https://pretalx.com/yocto-embedded-recipes-2026/talk/9G3V3D/)
+- [Watch the talk on YouTube](https://www.youtube.com/watch?v=0BkiLQX2NGU&vl=en)
+
 
 ## Quick Start
 
