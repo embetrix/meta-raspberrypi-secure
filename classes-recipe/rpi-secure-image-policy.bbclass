@@ -12,7 +12,7 @@ EVM_FILE_SIGNATURES_FILE ?= "etc/evm-signatures.manifest"
 
 IMAGE_INSTALL:append = " \
     packagegroup-security-base \
-    packagegroup-swupdate \
+    ${@bb.utils.contains('BBFILE_COLLECTIONS', 'swupdate', 'packagegroup-swupdate', '', d)} \
     ${@bb.utils.contains('RPI_SECURITY_PROFILE', 'dev', 'packagegroup-dev', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'ima', 'packagegroup-ima-evm', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', 'packagegroup-selinux', '', d)} \
