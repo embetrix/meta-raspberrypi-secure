@@ -50,8 +50,8 @@ IMAGE_CLASSES += "avb-verity"
 IMAGE_FSTYPES += " ${ROOTFS_TYPE}.avbverity.gz"
 AVB_ROOT_HASH_SIGN ?= "1"
 
-# SWUpdate configuration
-SWUPDATE_SIGNING = "CMS"
+# Optional SWUpdate configuration (the collection is supplied by meta-swupdate).
+require ${@bb.utils.contains('BBFILE_COLLECTIONS', 'swupdate', 'dynamic-layers/swupdate/conf/distro/include/rpi-secure-swupdate.inc', '', d)}
 
 # Include image build information
 INHERIT += "image-buildinfo"

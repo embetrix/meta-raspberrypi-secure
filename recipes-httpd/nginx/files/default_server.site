@@ -14,12 +14,7 @@ server {
 
     server_name ~^(?<subdomain>([\w-]+\.)*)?(?<domain>[\w-]+\.[\w-]+)\.dev$;
 
-    location /swupdate/ {
-        proxy_pass http://localhost:8080/;
-        proxy_request_buffering off;
-        proxy_http_version 1.1;
-        proxy_read_timeout 300s;
-    }
+    include /etc/nginx/default-server.d/*.conf;
 }
 
 server {

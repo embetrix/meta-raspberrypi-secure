@@ -11,7 +11,6 @@ ${localstatedir}/data${sysconfdir}/ssh/keys         ${sysconfdir}/ssh/keys\n\
 ${localstatedir}/data${sysconfdir}/openvpn          ${sysconfdir}/openvpn\n\
 ${localstatedir}/data${sysconfdir}/systemd/network/ ${sysconfdir}/systemd/network/\n\
 ${localstatedir}/data${sysconfdir}/nginx/.htpasswd ${sysconfdir}/nginx/.htpasswd\n\
-${localstatedir}/data${sysconfdir}/swupdate/suricatta.conf ${sysconfdir}/swupdate/suricatta.conf\n\
 ${localstatedir}/data${sysconfdir}/systemd/journal-upload.conf ${sysconfdir}/systemd/journal-upload.conf\n\
 ${localstatedir}/data${localstatedir}/log            ${localstatedir}/log\n\
 ${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '${localstatedir}/data${sysconfdir}/wpa_supplicant ${sysconfdir}/wpa_supplicant\\n', '', d)}\
