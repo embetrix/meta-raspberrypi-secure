@@ -7,7 +7,7 @@ server {
 
     ssl_protocols TLSv1.3;
 
-    client_max_body_size   512m;
+    client_max_body_size   1024m;
 
     auth_basic "Restricted Content";
     auth_basic_user_file /etc/nginx/.htpasswd;
