@@ -37,11 +37,15 @@ python rpi_check_signing_keys() {
         ('IMA_EVM_X509',             'certificate'),
         ('MODSIGN_PRIVKEY',          'private key'),
         ('MODSIGN_X509',             'certificate'),
-        ('SWUPDATE_CMS_KEY',         'private key'),
-        ('SWUPDATE_CMS_CERT',        'certificate'),
-        ('SWUPDATE_AES_FILE',        'AES key'),
         ('OPENSSH_CA_PUBKEY',        'SSH CA public key'),
     ]
+
+    if bb.utils.contains('BBFILE_COLLECTIONS', 'swupdate', True, False, d):
+        key_defs.extend([
+            ('SWUPDATE_CMS_KEY',  'private key'),
+            ('SWUPDATE_CMS_CERT', 'certificate'),
+            ('SWUPDATE_AES_FILE', 'AES key'),
+        ])
 
     # These may hold a space-separated list of files (e.g. a classical
     # plus a pqc so every entry must exist)
