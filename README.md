@@ -206,7 +206,7 @@ build/tmp/deploy/images/<MACHINE>/rpi-secure-image-base-update-<MACHINE>.rootfs.
 - [meta-selinux](https://git.yoctoproject.org/meta-selinux/log/?h=wrynose) (optional)
 - [meta-avb](https://github.com/embetrix/meta-avb/tree/wrynose)
 - [meta-sca](https://github.com/priv-kweihmann/meta-sca/tree/master)
-- [meta-swupdate](https://github.com/sbabic/meta-swupdate/tree/wrynose)
+- [meta-swupdate](https://github.com/sbabic/meta-swupdate/tree/wrynose) (optional)
 
 ## Supported Hardware
 
