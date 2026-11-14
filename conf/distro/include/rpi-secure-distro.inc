@@ -10,7 +10,7 @@ DISTRO_VERSION := "${RPI_SECURE_VERSION}"
 IMAGE_VERSION_SUFFIX = "-${RPI_SECURITY_PROFILE}_${RPI_SECURE_VERSION}"
 
 # Distro Features
-DISTRO_FEATURES  += "systemd polkit ima integrity security selinux tpm2"
+DISTRO_FEATURES  += "systemd polkit ima integrity security tpm2"
 
 # Prefer nginx 1.29.x mainline for OpenSSL Provider support
 PREFERRED_VERSION_nginx = "1.29%"
@@ -35,11 +35,8 @@ IMAGE_CLASSES += "${@bb.utils.contains('RPI_SECURE_IMAGE_POLICY', '1', 'rpi-secu
 # Set persistent Logs
 FILESYSTEM_PERMS_TABLES:remove = "files/fs-perms-volatile-log.txt"
 
-# Selinux configuration
-PREFERRED_PROVIDER_virtual/refpolicy = "refpolicy-mls"
-IMAGE_CLASSES += "selinux-image selinux-image-order"
-SELINUX_ENFORCING ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'permissive', 'permissive', d)}"
-#SELINUX_ENFORCING ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'enforcing', 'permissive', d)}"
+# Optional SELinux configuration (the collection is supplied by meta-selinux).
+require ${@bb.utils.contains('BBFILE_COLLECTIONS', 'selinux', 'dynamic-layers/selinux/conf/distro/include/rpi-secure-selinux.inc', '', d)}
 
 # IMA/EVM Rootfs Signing
 INHERIT += "ima-evm-rootfs"
