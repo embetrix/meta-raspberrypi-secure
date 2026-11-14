@@ -22,6 +22,5 @@ SRC_URI += "file://patches/v6.18/0001-security-keys-add-rpi-firmware-crypto-trus
             file://crypto.cfg \
             ${@bb.utils.contains('MACHINE_FEATURES', 'wifi', '', 'file://no-wifi.cfg', d)} \
             ${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', '', 'file://no-bluetooth.cfg', d)} \
-            ${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'file://tpm.cfg', '', d)} \
             ${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 'file://security-harden.cfg', '', d)} \
             "

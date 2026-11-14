@@ -20,11 +20,8 @@ BOOT_DELAY              = "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', 
 PROGRAM_PUBLIC_KEY      ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
 PROGRAM_JTAG_LOCK       ?= "${@bb.utils.contains('RPI_SECURITY_PROFILE', 'prod', '0', '0', d)}"
 
-# TPM support
-MACHINE_FEATURES += "tpm"
-ENABLE_TPM_SLB9670   = "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', '1', '0', d)}"
-MACHINE_EXTRA_RRECOMMENDS      += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'packagegroup-security-tpm2', '', d)}"
-RPI_KERNEL_DEVICETREE_OVERLAYS += "${@bb.utils.contains('MACHINE_FEATURES', 'tpm', 'overlays/tpm-slb9670.dtbo', '', d)}"
+# Optional TPM hardware configuration.
+require ${@bb.utils.contains('BBFILE_COLLECTIONS', 'tpm-layer', 'dynamic-layers/tpm/conf/machine/include/rpi-secure-tpm.inc', '', d)}
 
 # Console disable serial console login in production
 SERIAL_CONSOLES_DEFAULT := "${SERIAL_CONSOLES}"
