@@ -197,16 +197,21 @@ build/tmp/deploy/images/<MACHINE>/rpi-secure-image-base-update-<MACHINE>.rootfs.
 
 > **Note:** The EEPROM update are shipped as separate `.swu` file and can be applied independently
 
-## Layers dependencies
+## Layer dependencies
 
-- [openembedded-core (core)](https://git.openembedded.org/openembedded-core/log/?h=wrynose)
-- [meta-raspberrypi](https://git.yoctoproject.org/meta-raspberrypi/log/?h=wrynose)
-- [meta-openembedded](https://github.com/openembedded/meta-openembedded/tree/wrynose)
-- [meta-security](https://git.yoctoproject.org/meta-security/log/?h=wrynose)
-- [meta-selinux](https://git.yoctoproject.org/meta-selinux/log/?h=wrynose) (optional)
-- [meta-avb](https://github.com/embetrix/meta-avb/tree/wrynose)
-- [meta-sca](https://github.com/priv-kweihmann/meta-sca/tree/master)
-- [meta-swupdate](https://github.com/sbabic/meta-swupdate/tree/wrynose) (optional)
+Repositories follow Wrynose. See [kas-rpi-secure.yml](kas-rpi-secure.yml) for
+repository URLs and the build configuration.
+
+| Repository | Branch | Layers |
+| --- | --- | --- |
+| [openembedded-core](https://github.com/openembedded/openembedded-core/tree/wrynose) | `wrynose` | meta |
+| [meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi/tree/wrynose) | `wrynose` | meta-raspberrypi |
+| [meta-openembedded](https://github.com/openembedded/meta-openembedded/tree/wrynose) | `wrynose` | meta-oe, meta-python, meta-perl, meta-networking, meta-multimedia, meta-filesystems and meta-webserver |
+| [meta-security](https://git.yoctoproject.org/meta-security/tree/?h=wrynose) | `wrynose` | meta-security, meta-integrity and meta-tpm (optional) |
+| [meta-selinux](https://git.yoctoproject.org/meta-selinux/tree/?h=wrynose) | `wrynose` | meta-selinux (optional) |
+| [meta-avb](https://github.com/embetrix/meta-avb/tree/wrynose) | `wrynose` | meta-avb |
+| [meta-sca](https://github.com/priv-kweihmann/meta-sca/tree/wrynose) | `wrynose` | meta-sca |
+| [meta-swupdate](https://github.com/sbabic/meta-swupdate/tree/wrynose) | `wrynose` | meta-swupdate (optional) |
 
 ## Supported Hardware
 
