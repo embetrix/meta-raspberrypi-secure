@@ -23,7 +23,9 @@ mount_early_fs() {
 	mount -t tmpfs tmp /tmp
 	mount -t proc proc /proc
 	mount -t sysfs sysfs /sys
-	mount -t selinuxfs selinuxfs /sys/fs/selinux
+	if [ -d /sys/fs/selinux ]; then
+		mount -t selinuxfs selinuxfs /sys/fs/selinux
+	fi
 	mount -t securityfs securityfs /sys/kernel/security
 }
 

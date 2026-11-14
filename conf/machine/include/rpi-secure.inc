@@ -43,7 +43,7 @@ TRUSTED_SRC    ?= "rpifwcrypto"
 
 CMDLINE:append  = " ${CONSOLE_SELECT} \
                      ima_appraise=${IMA_APPRAISE} ${EVM} \
-                     security=selinux enforcing=${SELINUX_ENFORCE} \
+                     ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', 'security=selinux enforcing=${SELINUX_ENFORCE}', '', d)} \
                      trusted.source=${TRUSTED_SRC} \
                      verity_mode=${VERITY_MODE}"
 
